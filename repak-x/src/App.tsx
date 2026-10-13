@@ -52,6 +52,7 @@ import PromiseTransitionLoader from './components/PromiseTransitionLoader'
 import { AuroraText } from './components/ui/AuroraText'
 import { AlertProvider, useAlert } from './components/AlertHandler'
 import { offerUndoDelete } from './custom/undoDelete'
+import './custom/uiPrefs'
 import ModStateFilter, { matchesState, type ModState } from './custom/ModStateFilter'
 import './custom/caleb.css'
 import './custom/keyboardClickables'
@@ -3590,7 +3591,7 @@ function App() {
 
   return (
     <div className={`app${isAprilFools ? ' april-fools' : ''}`}>
-      <TitleBar />
+      <TitleBar title="repakXcable" />
       {panels.install && (
         <InstallModPanel
           mods={modsToInstall}
@@ -3822,7 +3823,7 @@ function App() {
         >
           <ModularLogo size={50} className="repak-icon" />
           <div className="header-title-group">
-            <h1 className="font-logo">Repak <AuroraText className="font-logo">X</AuroraText> </h1>
+            <h1 className="font-logo">repak<span className="title-x">X</span>cable</h1>{/* caleb fork */}
             <span className="version">v{version}</span>
           </div>
         </div>

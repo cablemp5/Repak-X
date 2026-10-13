@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatedThemeToggler } from './ui/AnimatedThemeToggler'
 import Switch from './ui/Switch'
 import Checkbox from './ui/Checkbox'
+import CalebUiSettings from '../custom/uiPrefs' // caleb fork
 import TailInput from './ui/TailInput'
 import { LuFolderInput } from "react-icons/lu"
 import { RiSparkling2Fill } from "react-icons/ri"
@@ -340,6 +341,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
 
             {activeCategory === 'interface' && (
               <>
+                <CalebUiSettings />
                 <div className="setting-section">
                   <h3>Theme</h3>
                   <div className="setting-group">
