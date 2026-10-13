@@ -52,13 +52,16 @@ function walk(dir) {
 function guessDetails(stem, isIostore, size) {
   const n = stem.toLowerCase()
   const panther = /panther|^bp|catboy|wakanda|kow|kingof|damisa|bast/.test(n)
-  const category = /vfx|lightning|trail|swipe|glow|flame|fire/.test(n) ? 'VFX'
+  const category = /emote|_anim/.test(n) ? 'Animation'
+    : /matswap|bodylights|passive|ult_|eyes/.test(n) ? 'Material'
+    : /vfx|lightning|trail|swipe|glow|flame|fire/.test(n) ? 'VFX'
     : /sfx|sound|voice|audio/.test(n) ? 'Audio'
     : /icon|text|prompt|ui|wheel/.test(n) ? 'UI'
     : /texture|color|normals|blush/.test(n) ? 'Texture' : 'Mesh'
   const character_name = panther ? 'Black Panther' : ''
   return {
-    mod_name: stem, mod_type: character_name ? `${character_name} - ${category}` : category,
+    mod_name: stem,
+    mod_type: (character_name ? `${character_name} - ${category}` : category) + (/_pg_|galacta (skin )?swappable/.test(n) ? ' [Project Galacta]' : ''),
     character_name, category, character_id: panther ? '1026' : '',
     file_count: 12, total_size: size, files: [], is_iostore: isIostore, is_encrypted: false,
     has_blueprint: /bp|blueprint/.test(n), is_hybrid: false,

@@ -52,11 +52,13 @@ import PromiseTransitionLoader from './components/PromiseTransitionLoader'
 import { AuroraText } from './components/ui/AuroraText'
 import { AlertProvider, useAlert } from './components/AlertHandler'
 import { offerUndoDelete } from './custom/undoDelete'
-import './custom/uiPrefs'
 import ModStateFilter, { matchesState, type ModState } from './custom/ModStateFilter'
 import './custom/keyboardClickables'
 import FilterPanel from './custom/FilterPanel'
 import Loadouts from './custom/Loadouts'
+import LoadoutsScreen from './custom/LoadoutsScreen'
+import { setLoadoutsScreenOpen } from './custom/loadoutStore'
+import { Layers } from 'lucide-react'
 import { useGlobalTooltips } from './hooks/useGlobalTooltips'
 import { useAprilFools } from './hooks/useAprilFools'
 import Switch from './components/ui/Switch'
@@ -3911,6 +3913,9 @@ function App() {
             <span>VFX Updater</span>
           </button>
 
+          <button onClick={() => setLoadoutsScreenOpen(true)} className="btn-settings" title="Loadouts">
+            <Layers size={20} /> Loadouts
+          </button>{/* caleb fork */}
           <button
             onClick={() => setPanel('sharing', true)}
             className="btn-settings"
@@ -4030,6 +4035,14 @@ function App() {
             <div className="left-sidebar" data-tour="folder-sidebar">
               {/* caleb fork: saved loadouts (custom/Loadouts.tsx) */}
               <Loadouts
+                mods={mods}
+                scopeMods={folderMods}
+                scopeLabel={[...selectedCharacters, ...selectedCategories].join(', ') || 'all mods'}
+                blocked={gameRunning && !bypassGameRunningLock}
+                reload={loadMods}
+                alert={alert}
+              />
+              <LoadoutsScreen
                 mods={mods}
                 scopeMods={folderMods}
                 scopeLabel={[...selectedCharacters, ...selectedCategories].join(', ') || 'all mods'}

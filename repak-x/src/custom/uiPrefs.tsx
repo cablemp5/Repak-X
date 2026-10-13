@@ -1,6 +1,8 @@
-// caleb fork: show/hide switches for optional UI, saved in localStorage and applied instantly.
-// Each pref sets a data-show-* attribute on <html>; caleb.css hides the element when it is absent.
+// caleb fork: UI scale and show/hide switches for optional UI, saved in localStorage and applied
+// instantly in every window. Show/hide prefs set a data-show-* attribute on <html>; caleb.css hides
+// the element when it is absent. UI scale uses the webview zoom, like Ctrl + in a browser.
 import { useSyncExternalStore } from 'react'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 import Checkbox from '../components/ui/Checkbox'
 
 const PREFS = [
@@ -10,16 +12,25 @@ const PREFS = [
   { key: 'tools', label: 'Show Tools button' },
 ] as const
 
+const SCALES = [0.9, 1, 1.1, 1.25, 1.4, 1.5]
+const SCALE_KEY = 'caleb.uiScale'
+
 const storageKey = (key: string) => `caleb.show.${key}`
 const listeners = new Set<() => void>()
 
 const isOn = (key: string) => localStorage.getItem(storageKey(key)) === '1'
+const getScale = () => Number(localStorage.getItem(SCALE_KEY)) || 1
 
-const apply = () => PREFS.forEach(({ key }) => document.documentElement.toggleAttribute(`data-show-${key}`, isOn(key)))
+const apply = () => {
+  PREFS.forEach(({ key }) => document.documentElement.toggleAttribute(`data-show-${key}`, isOn(key)))
+  getCurrentWebview().setZoom(getScale()).catch(e => console.warn('[uiPrefs] zoom failed', e))
+}
 apply()
+// Other windows (Asset Explorer, VFX Updater) pick up changes made in Settings
+window.addEventListener('storage', e => { if (e.key?.startsWith('caleb.')) { apply(); listeners.forEach(l => l()) } })
 
-const set = (key: string, on: boolean) => {
-  localStorage.setItem(storageKey(key), on ? '1' : '0')
+const update = (key: string, value: string) => {
+  localStorage.setItem(key, value)
   apply()
   listeners.forEach(l => l())
 }
@@ -30,19 +41,34 @@ const subscribe = (l: () => void) => {
 }
 
 export default function CalebUiSettings() {
-  const snapshot = useSyncExternalStore(subscribe, () => PREFS.map(p => (isOn(p.key) ? 1 : 0)).join(''))
+  const snapshot = useSyncExternalStore(subscribe, () => PREFS.map(p => (isOn(p.key) ? 1 : 0)).join('') + '|' + getScale())
+  const scale = getScale()
   return (
-    <div className="setting-section">
-      <h3>Optional controls</h3>
-      <div className="setting-group">
-        {PREFS.map(({ key, label }, i) => (
-          <div className="setting-item" key={key}>
-            <Checkbox checked={snapshot[i] === '1'} onChange={(checked: boolean) => set(key, checked)}>
-              <span>{label}</span>
-            </Checkbox>
+    <>
+      <div className="setting-section">
+        <h3>UI scale</h3>
+        <div className="setting-group">
+          <div className="mod-state-filter ui-scale" role="group" aria-label="UI scale">
+            {SCALES.map(s => (
+              <button key={s} type="button" aria-pressed={scale === s} onClick={() => update(SCALE_KEY, String(s))}>
+                {Math.round(s * 100)}%
+              </button>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-    </div>
+      <div className="setting-section">
+        <h3>Optional controls</h3>
+        <div className="setting-group">
+          {PREFS.map(({ key, label }, i) => (
+            <div className="setting-item" key={key}>
+              <Checkbox checked={snapshot[i] === '1'} onChange={(checked: boolean) => update(storageKey(key), checked ? '1' : '0')}>
+                <span>{label}</span>
+              </Checkbox>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   )
 }

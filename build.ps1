@@ -6,6 +6,9 @@ $env:PATH = "$env:USERPROFILE\.cargo\bin;${env:ProgramFiles(x86)}\Microsoft Visu
 
 function Run([scriptblock]$cmd) { & $cmd; if ($LASTEXITCODE -ne 0) { throw "Failed: $cmd" } }
 
+# A running copy locks REPAK-X.exe and the build fails at the very end
+if (Get-Process REPAK-X -ErrorAction SilentlyContinue) { throw 'Close repakXcable first: it locks REPAK-X.exe.' }
+
 Run { dotnet publish UAssetToolRivals/src/UAssetTool/UAssetToolNative.csproj -c Release -r win-x64 -p:DebugType=none -p:DebugSymbols=false -o target/uassettool }
 Push-Location repak-x
 Run { npm install }
