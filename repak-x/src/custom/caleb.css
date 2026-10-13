@@ -489,3 +489,104 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
   background: var(--input-bg) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-radius: 6px !important; color: var(--text-primary); font-size: 13px;
 }
+
+/* ---------- credits: no gradients ---------- */
+.aurora-text, .aurora-text * {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  animation: none !important;
+}
+.credits-app-name-x { color: var(--text-secondary) !important; }
+.credits-thanks, .credits-trigger-btn, .credits-trigger-btn:hover, .credits-tester-chip.special {
+  background: var(--bg-dark) !important;
+  border-color: var(--panel-border) !important;
+}
+.credits-trigger-btn:hover, .credits-tester-chip.special:hover { background: var(--bg-light) !important; border-color: rgba(255, 255, 255, 0.14) !important; }
+.credits-badge, .credits-badge.ai, .credits-badge.community {
+  background: var(--quiet-active) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--panel-border);
+}
+.credits-heart { color: var(--text-secondary) !important; }
+
+/* ---------- new mod types and the Galacta badge ---------- */
+.material-badge { --badge-dot: #e2b07a; }
+.data-badge { --badge-dot: #94a3b8; }
+.mod-type-badge.pg-badge {
+  background: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--accent-primary), transparent 45%) !important;
+  color: color-mix(in srgb, var(--accent-primary), white 35%) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 1px 8px !important;
+}
+.ui-scale button { font-variant-numeric: tabular-nums; }
+
+/* ---------- loadouts screen (custom/LoadoutsScreen.tsx) ---------- */
+.lo-head-actions { display: inline-flex; gap: 2px; }
+.lo-screen {
+  position: fixed;
+  inset: 32px 0 0 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-darkest);
+  color: var(--text-primary);
+  font-family: var(--font-primary);
+  animation: lo-screen-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes lo-screen-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .lo-screen { animation: none; } }
+.lo-screen-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;
+  padding: 22px 28px 18px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.lo-screen-head h2 { margin: 0 0 4px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.lo-screen-head p { margin: 0; font-size: 13px; color: var(--text-secondary); max-width: 70ch; }
+.lo-close { width: 32px !important; height: 32px !important; }
+.lo-grid {
+  flex: 1; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+  align-content: start;
+  padding: 24px 28px 32px;
+}
+.lo-card {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+}
+.lo-card:hover { border-color: rgba(255, 255, 255, 0.14); }
+.lo-card.is-on { border-color: color-mix(in srgb, var(--accent-primary), transparent 35%); }
+.lo-card-image {
+  display: block !important; aspect-ratio: 16 / 9; width: 100%; padding: 0 !important;
+  border: none !important; border-radius: 0 !important; background: var(--bg-dark) !important;
+  overflow: hidden; position: relative;
+}
+.lo-card-image img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.15s ease; }
+.lo-card-image:hover img { opacity: 0.8; }
+.lo-card-placeholder {
+  height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: var(--text-secondary); font-size: 12px;
+}
+.lo-card-image:hover .lo-card-placeholder { color: var(--text-primary); }
+.lo-card-placeholder svg.lucide { width: 22px !important; height: 22px !important; }
+.lo-card-body { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 10px; }
+.lo-card-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.lo-card-title h3 { margin: 0; font-size: 15px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lo-card-meta { margin: 0; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.lo-card-actions { display: flex; gap: 2px; margin-top: 6px; opacity: 0; transition: opacity 0.15s ease; }
+.lo-card:hover .lo-card-actions, .lo-card:focus-within .lo-card-actions { opacity: 1; }
+.lo-card-new { border-style: dashed; justify-content: center; min-height: 220px; }
+.lo-card-new .lo-new { padding: 16px; }
+.lo-card-add {
+  flex: 1; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border: none !important; background: transparent !important; color: var(--text-secondary) !important; font-size: 13px !important;
+}
+.lo-card-add:hover { color: var(--text-primary) !important; background: var(--quiet-hover) !important; }
+.lo-card-add small { font-size: 12px; opacity: 0.8; }
+.lo-card-add svg.lucide { width: 20px !important; height: 20px !important; }
+.project-galacta-badge { --badge-dot: var(--accent-primary); }
+.animation-badge { --badge-dot: #a3e635; }

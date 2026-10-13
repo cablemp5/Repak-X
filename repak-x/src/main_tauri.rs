@@ -4,6 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod asset_explorer;
+mod caleb_classify; // caleb fork: extra mod types, Project Galacta check
 mod caleb_trash; // caleb fork: undoable delete
 mod character_data;
 mod crash_monitor;

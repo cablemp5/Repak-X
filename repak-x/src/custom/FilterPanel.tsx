@@ -36,7 +36,9 @@ export default function FilterPanel(p: Props) {
     const types: Record<string, number> = {}
     for (const d of Object.values(p.modDetails || {})) {
       if (d?.character_name) counts[d.character_name] = (counts[d.character_name] || 0) + 1
-      if (d?.category) types[d.category] = (types[d.category] || 0) + 1
+      // main category plus the additive ones upstream appends as "... [Blueprint, Project Galacta]"
+      const extra = (d as { mod_type?: string })?.mod_type?.match(/\[([^\]]+)\]$/)?.[1].split(', ') ?? []
+      for (const cat of new Set([d?.category, ...extra])) if (cat) types[cat] = (types[cat] || 0) + 1
     }
     const groups: Record<string, { name: string; skins: string[]; count: number }> = {}
     for (const c of p.availableCharacters) {

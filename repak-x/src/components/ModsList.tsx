@@ -491,6 +491,10 @@ const ModItem = memo(function ModItem({
                             </span>
                         </Tooltip>
                     )}
+                    {/* caleb fork: Project Galacta compatible mods (caleb_classify.rs) */}
+                    {typeof modDetails?.mod_type === 'string' && /\[[^\]]*Project Galacta[^\]]*\]$/.test(modDetails.mod_type) && (
+                        <span className="mod-type-badge pg-badge" title="Project Galacta compatible: pick it per skin in the Galacta Companion App">Galacta</span>
+                    )}
                     {/* Type badge at end for list view */}
                     {showModType && category && !isCardView && (
                         <span className={`mod-type-badge category-badge ${category.toLowerCase().replace(/\s+/g, '-')}-badge`}>
