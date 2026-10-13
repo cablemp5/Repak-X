@@ -20,6 +20,9 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       case 'get_all_tags': return data.tags
       case 'get_character_data': return data.characterData
       case 'get_mod_details': return data.details[args?.modPath] ?? null
+      case 'get_hero_image_ids': return data.heroIds ?? []
+      case 'get_hero_image':
+        return fetch(`/src/dev/heroes.local/${args?.id}.png`).then(r => r.arrayBuffer()).then(b => new Uint8Array(b))
       case 'get_app_version': return __APP_VERSION__
       case 'get_last_seen_version': return __APP_VERSION__
       case 'get_sig_bypasser_status': return 'installed'

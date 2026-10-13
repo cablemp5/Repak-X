@@ -66,6 +66,12 @@ function guessDetails(stem, isIostore, size) {
 }
 
 walk(root)
+// Hero portraits the app synced, served to the preview by Vite
+const heroSrc = path.join(appDir, 'hero')
+const heroOut = path.join(import.meta.dirname, '..', 'src', 'dev', 'heroes.local')
+fs.mkdirSync(heroOut, { recursive: true })
+const heroIds = fs.existsSync(heroSrc) ? fs.readdirSync(heroSrc).filter(f => f.endsWith('.png')) : []
+heroIds.forEach(f => fs.copyFileSync(path.join(heroSrc, f), path.join(heroOut, f)))
 const out = path.join(import.meta.dirname, '..', 'src', 'dev', 'fixture.local.json')
-fs.writeFileSync(out, JSON.stringify({ gamePath: root, settings, tags: state.custom_tag_catalog ?? [], characterData, mods, folders, details }, null, 1))
+fs.writeFileSync(out, JSON.stringify({ gamePath: root, settings, tags: state.custom_tag_catalog ?? [], characterData, heroIds: heroIds.map(f => f.replace('.png', '')), mods, folders, details }, null, 1))
 console.log(`Wrote ${mods.length} mods, ${folders.length} folders to ${out}`)
