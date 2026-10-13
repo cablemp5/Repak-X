@@ -5962,6 +5962,10 @@ async fn set_last_seen_version(version: String) -> Result<bool, String> {
 /// Check for application updates and emit update_available event when found
 #[tauri::command]
 async fn check_for_updates(window: Window) -> Result<Option<UpdateInfo>, String> {
+    // caleb fork: the self-updater installs the official zip over this build; updates come via git merge instead
+    if true {
+        return Ok(None);
+    }
     ui_log::info("Update", "Checking for a newer Repak-X release...");
 
     let client = reqwest::Client::new();

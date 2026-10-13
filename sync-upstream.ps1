@@ -1,0 +1,26 @@
+# Merge the latest (or a given) official Repak-X release into the caleb branch.
+# Usage: .\sync-upstream.ps1            -> newest X-zant release
+#        .\sync-upstream.ps1 v2.0.2     -> a specific tag
+param([string]$Tag)
+$ErrorActionPreference = 'Stop'
+Set-Location $PSScriptRoot
+
+if (git status --porcelain --untracked-files=no) { throw 'Uncommitted changes: commit them first.' }
+
+git fetch upstream --tags --quiet
+if (-not $Tag) { $Tag = gh release view -R X-zant/Repak-X --json tagName -q .tagName }
+Write-Host "Merging upstream release $Tag into caleb"
+
+git checkout caleb
+git merge --no-edit $Tag
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'Conflicts in:' -ForegroundColor Yellow
+    git diff --name-only --diff-filter=U
+    Write-Host 'Fix them, then: git add <files>; git commit; .\sync-upstream.ps1 again to finish.'
+    exit 1
+}
+
+git submodule update --init --recursive
+git push origin caleb
+git push origin "refs/remotes/upstream/main:refs/heads/main"   # keep the fork's main an exact mirror
+Write-Host "Done: caleb now includes $Tag. Rebuild with .\build.ps1" -ForegroundColor Green
