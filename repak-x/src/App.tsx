@@ -54,9 +54,9 @@ import { AlertProvider, useAlert } from './components/AlertHandler'
 import { offerUndoDelete } from './custom/undoDelete'
 import './custom/uiPrefs'
 import ModStateFilter, { matchesState, type ModState } from './custom/ModStateFilter'
-import './custom/caleb.css'
 import './custom/keyboardClickables'
 import FilterPanel from './custom/FilterPanel'
+import Loadouts from './custom/Loadouts'
 import { useGlobalTooltips } from './hooks/useGlobalTooltips'
 import { useAprilFools } from './hooks/useAprilFools'
 import Switch from './components/ui/Switch'
@@ -4028,6 +4028,15 @@ function App() {
           >
             {/* Left Sidebar - Folders */}
             <div className="left-sidebar" data-tour="folder-sidebar">
+              {/* caleb fork: saved loadouts (custom/Loadouts.tsx) */}
+              <Loadouts
+                mods={mods}
+                scopeMods={folderMods}
+                scopeLabel={[...selectedCharacters, ...selectedCategories].join(', ') || 'all mods'}
+                blocked={gameRunning && !bypassGameRunningLock}
+                reload={loadMods}
+                alert={alert}
+              />
               {/* Filters Section */}
               <div
                 className="sidebar-filters"

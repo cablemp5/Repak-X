@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import VfxUpdaterPage from './modules/vfx-updater/VfxUpdaterPage'
 import AssetExplorerPage from './modules/asset-explorer/AssetExplorerPage'
+import './custom/caleb.css' // caleb fork: theme for every window, last so it wins the cascade
 
 // Disable default browser context menu
 document.addEventListener('contextmenu', (e) => {
