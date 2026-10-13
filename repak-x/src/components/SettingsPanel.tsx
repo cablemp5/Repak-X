@@ -452,7 +452,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                       </Checkbox>
                       <p className={`setting-subtext ${!holdToDelete ? 'is-danger' : ''}`}>
                         {!holdToDelete
-                          ? 'Deleting mods is irreversible. Mods will be removed instantly on click.'
+                          ? 'Deletes happen on click. Deleted mods stay in the trash for 7 days, and an Undo button appears after each delete.'
                           : 'Hold the delete button for 2 seconds to confirm deletion.'}
                       </p>
                     </div>

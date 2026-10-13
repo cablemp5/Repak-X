@@ -38,9 +38,15 @@
   --logo-x-color: #ededed;
 }
 
-/* T3 Code type: the platform UI font (Segoe UI on Windows); JetBrains Mono (bundled upstream) for code */
+/* Geist (OFL, bundled in ./fonts, one variable file covering 100-900) for UI; JetBrains Mono (bundled upstream) for code */
+@font-face {
+  font-family: 'Geist';
+  src: url('./fonts/Geist-Variable.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
 :root {
-  --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important;
+  --font-primary: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace !important;
   --font-logo: var(--font-primary) !important;
 }
@@ -73,10 +79,14 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 }
 .header h1.font-logo, .header h1.font-logo * {
   font-family: var(--font-primary) !important;
-  font-weight: 600 !important;
-  letter-spacing: -0.01em !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.035em !important;
   text-transform: none !important;
 }
+.titlebar .titlebar-icon { display: none !important; }
+.setting-subtext.is-danger { color: var(--text-secondary) !important; }
+/* shortcut: the Discord card banner is an inline red gradient; matched on its rendered color, recheck after upstream updates */
+[style*="190, 28, 28"] { background: var(--bg-lighter) !important; }
 .header .version { font-size: 12px; color: var(--text-secondary); }
 .header-actions-right { gap: 6px; }
 .header-actions-right .btn-settings {
@@ -116,7 +126,7 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 .main-action-bar .search-wrapper { padding: 0 4px 0 8px !important; height: 40px; }
 .main-search-input { font-size: 14px !important; padding: 6px 8px !important; }
 .main-action-bar .custom-dropdown-trigger, .main-action-bar .MuiButton-root { height: 40px !important; }
-.header h1.font-logo { font-size: 18px !important; }
+.header h1.font-logo { font-size: 26px !important; line-height: 1 !important; }
 .header { padding-top: 8px !important; padding-bottom: 8px !important; }
 .search-wrapper,
 .custom-dropdown-trigger {
@@ -458,3 +468,24 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
 .tool-card svg.lucide, [class*="tool-card-icon"] svg.lucide { width: 28px !important; height: 28px !important; }
 /* Accent is locked to T3 blue in dark mode, so the picker would only mislead */
 :root:not([data-theme="light"]) .setting-group:has(.color-options) > label, :root:not([data-theme="light"]) .color-options { display: none !important; }
+
+/* ---------- loadouts (custom/Loadouts.tsx) ---------- */
+.loadouts { padding: 10px 8px 8px; border-bottom: 1px solid var(--panel-border); display: flex; flex-direction: column; gap: 1px; }
+.lo-icon {
+  width: 24px; height: 24px !important; min-height: 0 !important; padding: 0 !important; flex: none;
+  border: none !important; border-radius: 6px !important;
+  background: transparent !important; color: var(--text-secondary) !important;
+}
+.lo-icon:hover { background: var(--quiet-active) !important; color: var(--text-primary) !important; }
+.lo-hover { opacity: 0; }
+.lo-row:hover .lo-hover, .lo-row:focus-within .lo-hover { opacity: 1; }
+.lo-dot { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--text-secondary); }
+.lo-active { color: var(--accent-primary); }
+.lo-row .fp-row[aria-pressed="true"] .fp-count { display: inline; }
+.lo-row .fp-row[aria-pressed="true"] .fp-check { display: none; }
+.lo-empty, .lo-hint { margin: 2px 6px 4px; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+.lo-new input {
+  width: 100%; height: 28px; padding: 0 8px !important;
+  background: var(--input-bg) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 6px !important; color: var(--text-primary); font-size: 13px;
+}
