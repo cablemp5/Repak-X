@@ -1,3 +1,4 @@
+import './dev/mockBackend' // caleb fork: fake backend for the browser preview, inert in the app
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
