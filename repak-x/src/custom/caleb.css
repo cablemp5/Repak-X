@@ -38,15 +38,15 @@
   --logo-x-color: #ededed;
 }
 
-/* T3 Code type: the platform UI font (Segoe UI on Windows) and platform monospace */
+/* T3 Code type: the platform UI font (Segoe UI on Windows); JetBrains Mono (bundled upstream) for code */
 :root {
   --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important;
-  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace !important;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace !important;
   --font-logo: var(--font-primary) !important;
 }
 body, .app { font-family: var(--font-primary); font-size: 14px; }
-.btn-vfx, .log-drawer, .log-drawer *, .vfx-updater, [class*="vfx-updater"] { font-family: var(--font-primary) !important; }
-.log-scroll, .log-line, .file-item, .path-input, .code-input, code, pre { font-family: var(--font-mono) !important; font-size: 12px; }
+.btn-vfx, .log-drawer-header, .log-drawer-header *, .vfx-updater, [class*="vfx-updater"] { font-family: var(--font-primary) !important; }
+.log-scroll, .log-line, .log-empty, .file-item, .file-tree, .path-input, .code-input, code, pre, kbd { font-family: var(--font-mono) !important; font-size: 12px; }
 
 /* ---------- browser surfaces ---------- */
 :root:not([data-theme="light"]) body { background: var(--bg-darkest); }
@@ -428,3 +428,33 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
   box-shadow: none !important;
 }
 .log-drawer-status-text { font-size: 12px; color: var(--text-secondary); }
+
+/* ---------- title: repakXcable, no logo mark ---------- */
+.header .repak-icon { display: none !important; }
+.header .title-x { color: var(--text-secondary); }
+
+/* ---------- optional controls, off unless enabled in Settings > Interface (custom/uiPrefs.tsx) ---------- */
+html:not([data-show-priority]) .mod-card .number-input-container { display: none !important; }
+html:not([data-show-share]) [data-tour="sharing-btn"] { display: none !important; }
+html:not([data-show-tools]) [data-tour="tools-btn"] { display: none !important; }
+html:not([data-show-asset-explorer]) .btn-asset-explorer,
+html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { display: none !important; }
+
+/* ---------- icon sizes: one size per area ---------- */
+.app svg.lucide { flex: none; }
+.titlebar svg.lucide { width: 14px !important; height: 14px !important; }
+.header-actions-right svg.lucide,
+.main-action-bar svg.lucide,
+.center-header svg.lucide,
+.sidebar-header svg.lucide,
+.details-panel svg.lucide,
+.bulk-actions-toolbar svg.lucide,
+.modal-content svg.lucide,
+.settings-modal svg.lucide { width: 16px !important; height: 16px !important; }
+.main-action-bar .search-wrapper > svg.lucide { width: 18px !important; height: 18px !important; color: var(--text-secondary); }
+.folder-tree svg.lucide, .filter-panel svg.lucide { width: 15px !important; height: 15px !important; }
+.context-menu svg.lucide, .mod-card svg.lucide, .tag svg.lucide { width: 14px !important; height: 14px !important; }
+.toast-item svg.lucide { width: 18px !important; height: 18px !important; }
+.tool-card svg.lucide, [class*="tool-card-icon"] svg.lucide { width: 28px !important; height: 28px !important; }
+/* Accent is locked to T3 blue in dark mode, so the picker would only mislead */
+:root:not([data-theme="light"]) .setting-group:has(.color-options) > label, :root:not([data-theme="light"]) .color-options { display: none !important; }
