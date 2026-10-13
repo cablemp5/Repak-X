@@ -1,12 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import packageJson from './package.json'
+import lucideSwap from './src/custom/icons/vitePlugin' // caleb fork: Lucide icons
 
 export default defineConfig({
   define: {
     '__APP_VERSION__': JSON.stringify(packageJson.version),
   },
-  plugins: [react()],
+  plugins: [lucideSwap(), react()],
   clearScreen: false,
   server: {
     port: 5173,

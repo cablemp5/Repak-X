@@ -30,7 +30,23 @@
   --quiet-active: rgba(255, 255, 255, 0.07);
   --quiet-radius: 8px;
   --focus-ring: color-mix(in srgb, var(--accent-primary), white 25%);
+  /* T3 Code primary (oklch 0.571 0.21 264). !important beats the accent the app sets inline from
+     Settings, so no red anywhere; the accent picker no longer applies in dark mode. */
+  --accent-primary: #346bf1 !important;
+  --accent-secondary: #346bf1 !important;
+  --accent-gradient: #346bf1 !important;
+  --logo-x-color: #ededed;
 }
+
+/* T3 Code type: the platform UI font (Segoe UI on Windows) and platform monospace */
+:root {
+  --font-primary: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif !important;
+  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace !important;
+  --font-logo: var(--font-primary) !important;
+}
+body, .app { font-family: var(--font-primary); font-size: 14px; }
+.btn-vfx, .log-drawer, .log-drawer *, .vfx-updater, [class*="vfx-updater"] { font-family: var(--font-primary) !important; }
+.log-scroll, .log-line, .file-item, .path-input, .code-input, code, pre { font-family: var(--font-mono) !important; font-size: 12px; }
 
 /* ---------- browser surfaces ---------- */
 :root:not([data-theme="light"]) body { background: var(--bg-darkest); }
@@ -52,9 +68,16 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 .header .aurora-text, .header .aurora-text--accent {
   background: none !important;
   -webkit-text-fill-color: currentColor !important;
-  color: var(--accent-primary) !important;
+  color: inherit !important;
   animation: none !important;
 }
+.header h1.font-logo, .header h1.font-logo * {
+  font-family: var(--font-primary) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+}
+.header .version { font-size: 12px; color: var(--text-secondary); }
 .header-actions-right { gap: 6px; }
 .header-actions-right .btn-settings {
   height: 32px;
@@ -93,7 +116,7 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 .main-action-bar .search-wrapper { padding: 0 4px 0 8px !important; height: 40px; }
 .main-search-input { font-size: 14px !important; padding: 6px 8px !important; }
 .main-action-bar .custom-dropdown-trigger, .main-action-bar .MuiButton-root { height: 40px !important; }
-.header h1.font-logo { font-size: 26px !important; }
+.header h1.font-logo { font-size: 18px !important; }
 .header { padding-top: 8px !important; padding-bottom: 8px !important; }
 .search-wrapper,
 .custom-dropdown-trigger {
@@ -143,6 +166,75 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 .folder-tree .node-content:hover { background: var(--quiet-hover); }
 .folder-tree .node-content.selected { background: var(--quiet-active); color: var(--text-primary); }
 .folder-tree .folder-icon { color: var(--text-secondary); }
+
+/* ---------- filter panel (custom/FilterPanel.tsx) ---------- */
+.sidebar-filters { padding: 10px 8px 6px !important; overflow-y: auto; }
+.filter-panel { display: flex; flex-direction: column; gap: 1px; }
+.fp-head { display: flex; align-items: center; justify-content: space-between; padding: 0 6px 6px; }
+.fp-title, .sidebar-header h3 { font-size: 13px !important; font-weight: 600 !important; color: var(--text-primary) !important; }
+.fp-clear {
+  padding: 2px 8px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: var(--quiet-active) !important;
+  color: var(--text-primary) !important;
+  font-size: 12px !important;
+}
+.fp-clear:hover { background: var(--bg-lighter) !important; }
+.fp-section-label { padding: 10px 6px 4px; font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+.fp-row-wrap { display: flex; align-items: center; gap: 2px; }
+.fp-row {
+  flex: 1;
+  min-width: 0;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  height: 28px !important;
+  min-height: 0 !important;
+  padding: 0 6px !important;
+  border: none !important;
+  border-radius: 6px !important;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  text-align: left;
+}
+.fp-row:hover { background: var(--quiet-hover) !important; color: var(--text-primary) !important; }
+.fp-row[aria-pressed="true"] { background: var(--quiet-active) !important; color: var(--text-primary) !important; }
+.fp-lead { display: inline-flex; width: 18px; justify-content: center; flex: none; }
+.fp-avatar { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; background: var(--bg-lighter); }
+.fp-avatar-empty { display: inline-block; }
+.fp-dot { width: 7px; height: 7px; border-radius: 50%; padding: 0 !important; border: none !important; background: var(--badge-dot, #8f8f8f) !important; }
+.fp-indent { width: 18px; }
+.fp-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-count { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.fp-check { display: none; color: var(--accent-primary); flex: none; }
+.fp-row[aria-pressed="true"] .fp-check { display: block; }
+.fp-row[aria-pressed="true"] .fp-count { display: none; }
+.fp-expand {
+  width: 24px; height: 28px !important; min-height: 0 !important; padding: 0 !important;
+  border: none !important; border-radius: 6px !important;
+  background: transparent !important; color: var(--text-secondary) !important;
+}
+.fp-expand:hover { background: var(--quiet-hover) !important; color: var(--text-primary) !important; }
+.fp-expand svg { transition: transform 0.15s ease; }
+.fp-expand[aria-expanded="true"] svg { transform: rotate(90deg); }
+.fp-more {
+  justify-content: flex-start !important;
+  height: 26px !important; min-height: 0 !important; padding: 0 6px 0 32px !important;
+  border: none !important; background: transparent !important;
+  color: var(--text-secondary) !important; font-size: 12px !important;
+}
+.fp-more:hover { color: var(--text-primary) !important; }
+.vertical-resizer { background: transparent !important; border-top: 1px solid var(--panel-border); }
+.vertical-resizer::after { background: rgba(255, 255, 255, 0.12) !important; }
+.sidebar-header { padding: 10px 14px !important; border-bottom: none !important; }
+.folder-tree { padding: 0 8px !important; }
+.folder-tree .node-content { height: 28px; font-size: 13px; color: var(--text-secondary); border-radius: 6px; }
+.folder-tree .node-content.selected { color: var(--text-primary); }
+.folder-count { font-size: 12px; color: var(--text-secondary) !important; opacity: 1 !important; }
 
 /* ---------- list header ---------- */
 .center-header { padding: 12px 14px !important; flex-wrap: wrap !important; row-gap: 10px !important; }
@@ -212,7 +304,14 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 }
 .mod-card.selected { background: color-mix(in srgb, var(--accent-primary), transparent 88%) !important; }
 .mod-card.mod-disabled .mod-name-button { color: var(--text-secondary); }
-.mod-name-button { font-size: 13.5px !important; font-weight: 500 !important; }
+.mod-name-button { font-size: 13px !important; font-weight: 400 !important; }
+.mod-card:not(.mod-disabled) .mod-name-button { font-weight: 600 !important; }
+
+/* No gradient art on cards: hero backdrop, spotlight, beam and shine effects are off */
+.mod-card-hero-bg, .magic-card-gradient, .border-beam, .shine-border { display: none !important; }
+.mod-card.has-hero-bg > *:not(.mod-card-hero-bg) { text-shadow: none !important; }
+.magic-card, [class*="magic-card"] { background: var(--panel-bg) !important; background-image: none !important; }
+.mod-hero-icon-inline { width: 20px !important; height: 20px !important; border-radius: 50% !important; box-shadow: none !important; border: none !important; }
 .mod-name-button:hover { background: transparent !important; color: var(--text-primary); }
 .mod-name-text { text-shadow: none !important; }
 .mod-name-inner:has(.mod-name-head) { display: flex; max-width: 100%; }
@@ -317,6 +416,10 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 .toast-description { color: var(--text-secondary); }
 :root:not([data-theme="light"]) .toast-action-btn { background: #ededed; color: #0a0a0a; font-weight: 600; }
 :root:not([data-theme="light"]) .toast-action-btn:hover { background: #fff; transform: none; }
+
+/* "Off" is a normal state, not an error: grey, not red */
+.tool-card-status.is-off { color: var(--text-secondary) !important; }
+.tool-card-status.is-off .tool-status-dot { background: var(--text-secondary) !important; box-shadow: none !important; }
 
 /* ---------- log bar ---------- */
 .log-drawer {

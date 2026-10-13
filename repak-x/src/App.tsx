@@ -55,6 +55,7 @@ import { offerUndoDelete } from './custom/undoDelete'
 import ModStateFilter, { matchesState, type ModState } from './custom/ModStateFilter'
 import './custom/caleb.css'
 import './custom/keyboardClickables'
+import FilterPanel from './custom/FilterPanel'
 import { useGlobalTooltips } from './hooks/useGlobalTooltips'
 import { useAprilFools } from './hooks/useAprilFools'
 import Switch from './components/ui/Switch'
@@ -4031,82 +4032,17 @@ function App() {
                 className="sidebar-filters"
                 style={filtersHeight !== null ? { height: `${filtersHeight}px` } : { maxHeight: '35vh' }}
               >
-                <div className="sidebar-filters-inner">
-                  <div className="filter-title-row">
-                    <div className="filter-label">FILTERS</div>
-                    {(selectedCharacters.size > 0 || selectedCategories.size > 0) && (
-                      <button
-                        className="btn-ghost-mini"
-                        onClick={() => { setSelectedCharacters(new Set()); setSelectedCategories(new Set()) }}
-                        title="Clear all filters"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Character/Hero Chips */}
-                  <div
-                    className="filter-section-header"
-                    onClick={() => setShowCharacterFilters(v => !v)}
-                  >
-                    <div className="filter-label-secondary">Characters {selectedCharacters.size > 0 && `(${selectedCharacters.size})`}</div>
-                    <span className="filter-chevron">{showCharacterFilters ? '\u25bc' : '\u25b6'}</span>
-                  </div>
-                  {showCharacterFilters && (
-                    <HeroFilterDropdown
-                      availableCharacters={availableCharacters}
-                      selectedCharacters={selectedCharacters}
-                      modDetails={modDetails}
-                      onToggle={(target: string | string[]) => setSelectedCharacters(prev => {
-                        const next = new Set(prev);
-
-                        if (Array.isArray(target)) {
-                          // Bulk toggle logic
-                          const allSelected = target.every(t => next.has(t));
-                          if (allSelected) {
-                            // If all are selected, deselect all
-                            target.forEach(t => next.delete(t));
-                          } else {
-                            // Otherwise, select all (add missing ones)
-                            target.forEach(t => next.add(t));
-                          }
-                        } else {
-                          // Single toggle logic
-                          next.has(target) ? next.delete(target) : next.add(target);
-                        }
-
-                        return next;
-                      })}
-                    />
-                  )}
-
-                  {/* Category Chips */}
-                  <div
-                    className="filter-section-header with-margin"
-                    onClick={() => setShowTypeFilters(v => !v)}
-                  >
-                    <div className="filter-label-secondary">Types {selectedCategories.size > 0 && `(${selectedCategories.size})`}</div>
-                    <span className="filter-chevron">{showTypeFilters ? '\u25bc' : '\u25b6'}</span>
-                  </div>
-                  {showTypeFilters && (
-                    <div className="filter-chips-scroll">
-                      {availableCategories.map(cat => {
-                        const active = selectedCategories.has(cat)
-                        return (
-                          <button
-                            key={cat}
-                            className={`filter-chip-compact ${active ? 'active' : ''}`}
-                            onClick={() => setSelectedCategories(prev => { const next = new Set(prev); active ? next.delete(cat) : next.add(cat); return next; })}
-                            title={cat}
-                          >
-                            {cat}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
+                {/* caleb fork: redesigned filters (custom/FilterPanel.tsx) */}
+                <FilterPanel
+                  availableCharacters={availableCharacters}
+                  availableCategories={availableCategories}
+                  selectedCharacters={selectedCharacters}
+                  selectedCategories={selectedCategories}
+                  setSelectedCharacters={setSelectedCharacters}
+                  setSelectedCategories={setSelectedCategories}
+                  modDetails={modDetails}
+                  characterData={characterData}
+                />
               </div>
               {/* Vertical Resize Handle */}
               <div
