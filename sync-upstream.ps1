@@ -5,6 +5,8 @@ param([string]$Tag)
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
+# every build rewrites these; drop them so they never block a merge
+git checkout -- repak-x/gen/schemas repak-x/package-lock.json
 if (git status --porcelain --untracked-files=no) { throw 'Uncommitted changes: commit them first.' }
 
 git fetch upstream --tags --quiet
