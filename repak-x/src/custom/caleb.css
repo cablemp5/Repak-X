@@ -1,0 +1,327 @@
+/* caleb fork: quiet "pro tool" theme modeled on T3 Code (neutral greys, hairline borders, no glow).
+   Loaded after every upstream stylesheet. The accent color only marks state: enabled, checked,
+   focus. Upstream files stay untouched so X-zant's updates merge cleanly. Dark theme only;
+   light theme keeps the upstream look. */
+
+:root:not([data-theme="light"]) {
+  --bg-darkest: #0a0a0a;
+  --bg-darker: #0f0f0f;
+  --bg-dark: #141414;
+  --bg-light: #1c1c1c;
+  --bg-lighter: #242424;
+  --panel-bg: #0f0f0f;
+  --panel-border: rgba(255, 255, 255, 0.07);
+  --border-color: rgba(255, 255, 255, 0.07);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --text-primary: #ededed;
+  --text-secondary: #8f8f8f;
+  --header-bg: #0a0a0a;
+  --header-border: rgba(255, 255, 255, 0.07);
+  --status-bar-bg: #0a0a0a;
+  --status-bar-border: rgba(255, 255, 255, 0.07);
+  --input-bg: #121212;
+  --input-border: rgba(255, 255, 255, 0.09);
+  --card-bg: transparent;
+  --field-bg: rgba(255, 255, 255, 0.04);
+  --mod-size-color: #8f8f8f;
+  --mod-switch-track: rgba(255, 255, 255, 0.12);
+  --danger: #e5484d;
+  --quiet-hover: rgba(255, 255, 255, 0.04);
+  --quiet-active: rgba(255, 255, 255, 0.07);
+  --quiet-radius: 8px;
+  --focus-ring: color-mix(in srgb, var(--accent-primary), white 25%);
+}
+
+/* ---------- browser surfaces ---------- */
+:root:not([data-theme="light"]) body { background: var(--bg-darkest); }
+button, input, select, textarea, .MuiButton-root { font-family: inherit !important; }
+::selection { background: color-mix(in srgb, var(--accent-primary), transparent 60%); color: #fff; }
+.app * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.1) transparent; }
+.app :focus-visible {
+  outline: 2px solid var(--focus-ring) !important;
+  outline-offset: 2px !important;
+}
+.app .mod-name-button:focus-visible { outline-offset: 0 !important; border-radius: 4px; }
+
+/* ---------- header ---------- */
+.titlebar, .header {
+  background: var(--bg-darkest) !important;
+  border-bottom: 1px solid var(--panel-border) !important;
+  box-shadow: none !important;
+}
+.header .aurora-text, .header .aurora-text--accent {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--accent-primary) !important;
+  animation: none !important;
+}
+.header-actions-right { gap: 6px; }
+.header-actions-right .btn-settings {
+  height: 32px;
+  padding: 0 12px !important;
+  background: transparent !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: var(--quiet-radius) !important;
+  color: var(--text-primary) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.header-actions-right .btn-settings:hover {
+  background: var(--quiet-hover) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  transform: none !important;
+}
+.header-actions-right .btn-settings svg { color: var(--text-secondary); }
+.header-actions-right .btn-vfx::before, .header-actions-right .btn-vfx::after { display: none !important; }
+/* Launch is the one primary action: solid light button. Running/launched keep upstream colors. */
+.header-actions-right .btn-settings[data-launch="idle"] {
+  background: #ededed !important;
+  border-color: #ededed !important;
+  color: #0a0a0a !important;
+}
+.header-actions-right .btn-settings[data-launch="idle"] svg { color: #0a0a0a; }
+.header-actions-right .btn-settings[data-launch="idle"]:hover { background: #fff !important; }
+
+/* ---------- search, sort, tags, install ---------- */
+.main-action-bar { gap: 8px; height: 40px; align-items: center; }
+.main-action-bar .action-controls, .main-action-bar [aria-label="add mods button group"] { height: 40px; align-items: center; }
+.main-action-bar .search-wrapper { padding: 0 4px 0 8px !important; height: 40px; }
+.main-search-input { font-size: 14px !important; padding: 6px 8px !important; }
+.main-action-bar .custom-dropdown-trigger, .main-action-bar .MuiButton-root { height: 40px !important; }
+.header h1.font-logo { font-size: 26px !important; }
+.header { padding-top: 8px !important; padding-bottom: 8px !important; }
+.search-wrapper,
+.custom-dropdown-trigger {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  border-radius: var(--quiet-radius) !important;
+  box-shadow: none !important;
+  min-height: 38px;
+}
+.search-wrapper:focus-within { border-color: rgba(255, 255, 255, 0.2) !important; box-shadow: none !important; }
+.main-search-input { background: transparent !important; border: none !important; font-size: 14px; }
+.custom-dropdown-trigger { font-size: 13px !important; font-weight: 500 !important; }
+.custom-dropdown-trigger:hover { background: var(--bg-dark) !important; }
+.custom-dropdown-icon svg { color: var(--text-secondary) !important; }
+[aria-label="add mods button group"] { box-shadow: none !important; border-radius: var(--quiet-radius) !important; }
+[aria-label="add mods button group"] .MuiButton-root {
+  background: var(--bg-light) !important;
+  border: 1px solid var(--input-border) !important;
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+  min-height: 38px;
+  padding: 0 16px !important;
+}
+[aria-label="add mods button group"] .MuiButton-root:hover { background: var(--bg-lighter) !important; }
+[aria-label="add mods button group"] .MuiButtonGroup-firstButton { border-radius: var(--quiet-radius) 0 0 var(--quiet-radius) !important; }
+[aria-label="add mods button group"] .MuiButtonGroup-lastButton { border-radius: 0 var(--quiet-radius) var(--quiet-radius) 0 !important; margin-left: -1px !important; }
+[aria-label="add mods button group"] .MuiButton-root svg { color: var(--text-secondary); font-size: 18px; }
+
+/* ---------- panels ---------- */
+.left-sidebar, .center-header {
+  background: var(--panel-bg) !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.filter-title-row, .sidebar-filters .filter-title-row span:first-child {
+  color: var(--text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.sidebar-header h3 { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.btn-icon { background: transparent !important; border: 1px solid var(--panel-border) !important; border-radius: var(--quiet-radius) !important; }
+.btn-icon:hover { background: var(--quiet-hover) !important; }
+.folder-tree .node-content:hover { background: var(--quiet-hover); }
+.folder-tree .node-content.selected { background: var(--quiet-active); color: var(--text-primary); }
+.folder-tree .folder-icon { color: var(--text-secondary); }
+
+/* ---------- list header ---------- */
+.center-header { padding: 12px 14px !important; flex-wrap: wrap !important; row-gap: 10px !important; }
+/* Title + state filter never shrink; when the details panel narrows the header, actions wrap below */
+.center-header .header-title { display: flex; align-items: center; gap: 14px; min-width: max-content; }
+.center-header .header-actions { margin-left: auto; }
+.center-header .header-title h2 { font-size: 16px; font-weight: 600; flex: none; }
+/* The state filter took header room; collapse the two text buttons to icons sooner */
+@container modheader (max-width: 960px) {
+  .center-header .header-actions .btn-label { display: none; }
+}
+.btn-ghost {
+  border-radius: var(--quiet-radius) !important;
+  border-color: var(--panel-border) !important;
+  background: transparent !important;
+  font-size: 13px;
+  font-weight: 500 !important;
+}
+.btn-ghost:hover { background: var(--quiet-hover) !important; border-color: rgba(255, 255, 255, 0.14) !important; }
+.btn-ghost.active { background: var(--quiet-active) !important; }
+.center-header .header-actions svg { color: var(--text-secondary) !important; }
+.btn-ghost.danger:hover { border-color: var(--danger) !important; color: var(--danger); }
+
+.mod-state-filter {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--bg-dark);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--quiet-radius);
+}
+.mod-state-filter button {
+  padding: 3px 10px;
+  gap: 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.mod-state-filter button:hover { color: var(--text-primary); }
+.mod-state-filter button[aria-pressed="true"] { background: var(--bg-lighter); color: var(--text-primary); }
+.mod-state-count { font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.mod-state-filter button[aria-pressed="true"] .mod-state-count { color: var(--text-primary); }
+
+/* ---------- mod rows ---------- */
+.mod-card .hold-delete { display: none; }
+.mod-list-grid.view-list { gap: 0 !important; }
+.mod-list-grid.view-list .mod-card {
+  min-height: 40px !important;
+  padding: 4px 10px !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 6px !important;
+}
+.mod-card {
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: background 0.12s ease !important;
+}
+.mod-card:hover { background: var(--quiet-hover) !important; transform: none !important; border-color: var(--panel-border); }
+.mod-card.viewing, .mod-card.viewing:hover {
+  background: var(--quiet-active) !important;
+  border-left-width: 1px !important;
+  border-left-color: var(--panel-border);
+}
+.mod-card.selected { background: color-mix(in srgb, var(--accent-primary), transparent 88%) !important; }
+.mod-card.mod-disabled .mod-name-button { color: var(--text-secondary); }
+.mod-name-button { font-size: 13.5px !important; font-weight: 500 !important; }
+.mod-name-button:hover { background: transparent !important; color: var(--text-primary); }
+.mod-name-text { text-shadow: none !important; }
+.mod-name-inner:has(.mod-name-head) { display: flex; max-width: 100%; }
+.mod-name-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mod-name-tail { flex: none; white-space: nowrap; }
+.mod-list-grid.view-list .mod-size { display: none; }
+
+/* Type badges: neutral chip, category hue kept only in a small dot */
+.character-badge, .iostore-badge, .badges-group > * {
+  background: transparent !important;
+  border: 1px solid var(--panel-border) !important;
+  color: var(--text-primary) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+.category-badge, .additional-badge, .mod-type-badge.category-badge {
+  background: transparent !important;
+  border: 1px solid var(--panel-border) !important;
+  color: var(--text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 1px 8px 1px 7px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.category-badge::before, .additional-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--badge-dot, #8f8f8f);
+}
+.mesh-badge { --badge-dot: #22d3ee; }
+.static-mesh-badge { --badge-dot: #38bdf8; }
+.vfx-badge { --badge-dot: #fb923c; }
+.audio-badge { --badge-dot: #4ade80; }
+.ui-badge { --badge-dot: #c084fc; }
+.texture-badge, .retexture-badge { --badge-dot: #facc15; }
+.movies-badge { --badge-dot: #f472b6; }
+.animation-badge { --badge-dot: #a3e635; }
+.blueprint-badge { --badge-dot: #60a5fa; }
+
+.tag { background: transparent !important; border: 1px solid var(--panel-border) !important; color: var(--text-secondary) !important; font-size: 11px !important; }
+
+/* Priority stepper: flat, accent only on hover */
+.number-input-container { background: transparent !important; border-color: var(--panel-border) !important; }
+.number-btn { background: transparent !important; color: var(--text-secondary) !important; }
+.number-btn:hover:not(:disabled) { background: var(--quiet-active) !important; color: var(--text-primary) !important; transform: none !important; }
+
+/* Bulk toolbar only when something is checked */
+.bulk-actions-toolbar.inactive { display: none !important; }
+
+/* ---------- details panel, menus, modals ---------- */
+.right-panel { background: var(--panel-bg) !important; border-color: var(--panel-border) !important; }
+.detail-section h3 {
+  color: var(--text-secondary) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.04em !important;
+}
+.detail-label { color: var(--text-secondary) !important; }
+.details-header h2.mod-title { font-size: 14px !important; font-weight: 600 !important; }
+.header-action-btn, .copy-paths-btn {
+  background: transparent !important;
+  border: 1px solid var(--panel-border) !important;
+  border-radius: var(--quiet-radius) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+.header-action-btn:hover, .copy-paths-btn:hover { background: var(--quiet-hover) !important; }
+.context-menu {
+  background: var(--bg-dark) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important;
+  font-size: 13px;
+}
+.context-menu-item { border-radius: 6px; }
+.context-menu-item:hover { background: var(--quiet-active) !important; color: var(--text-primary) !important; }
+.context-menu-item.danger { color: var(--danger) !important; }
+.context-menu-separator { background: rgba(255, 255, 255, 0.07) !important; }
+
+.settings-modal, .modal-content {
+  background: var(--bg-darker) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6) !important;
+}
+.setting-section h3 { color: var(--text-secondary) !important; font-size: 11px !important; letter-spacing: 0.04em; }
+
+/* Toasts: one neutral surface, status hue only on the icon and progress line */
+:root:not([data-theme="light"]) .toast-item {
+  --toast-bg: #161616;
+  --toast-text: #ededed;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: none !important;
+}
+.toast-icon { color: var(--toast-color); }
+.toast-description { color: var(--text-secondary); }
+:root:not([data-theme="light"]) .toast-action-btn { background: #ededed; color: #0a0a0a; font-weight: 600; }
+:root:not([data-theme="light"]) .toast-action-btn:hover { background: #fff; transform: none; }
+
+/* ---------- log bar ---------- */
+.log-drawer {
+  background: var(--bg-darkest) !important;
+  border-top: 1px solid var(--panel-border) !important;
+  box-shadow: none !important;
+}
+.log-drawer-status-text { font-size: 12px; color: var(--text-secondary); }

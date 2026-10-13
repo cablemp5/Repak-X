@@ -391,7 +391,13 @@ const ModItem = memo(function ModItem({
                             style={nameReveal.revealStyle}
                         >
                             <span ref={nameReveal.innerRef} className="mod-name-inner">
-                                {cleanName}
+                                {/* caleb fork: head shrinks with an ellipsis, tail keeps the version suffix visible */}
+                                {cleanName.length > 16 ? (
+                                    <>
+                                        <span className="mod-name-head">{cleanName.slice(0, -12)}</span>
+                                        <span className="mod-name-tail">{cleanName.slice(-12)}</span>
+                                    </>
+                                ) : cleanName}
                                 {shouldShowSuffix && <span className="mod-name-suffix">{suffix}</span>}
                             </span>
                         </span>
