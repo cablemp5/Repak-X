@@ -412,6 +412,8 @@ const ContextMenu = ({ x, y, mod, folder, onClose, onAssignTag, onNewTag, onMove
         Rename
       </div>
 
+      <div className="context-menu-separator" />
+
       <div
         className={`context-menu-item danger ${isDeleting ? 'holding' : ''}`}
         onMouseDown={handleDeleteDown}

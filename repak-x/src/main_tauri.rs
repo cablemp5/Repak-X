@@ -4,6 +4,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod asset_explorer;
+mod caleb_trash; // caleb fork: undoable delete
 mod character_data;
 mod crash_monitor;
 mod discord_presence;
@@ -3372,7 +3373,7 @@ async fn delete_mod(
 
     // Try to delete the main file
     if actual_path.exists() {
-        if let Err(e) = std::fs::remove_file(&actual_path) {
+        if let Err(e) = caleb_trash::discard(&actual_path) {
             let error_msg = format!("Failed to delete mod file: {}", e);
             toast_events::emit_delete_failed(&window, &error_msg);
             return Err(error_msg);
@@ -3425,7 +3426,7 @@ async fn delete_mod(
     // Delete associated IoStore files (.ucas and .utoc)
     let ucas_path = base_pak_path.with_extension("ucas");
     if ucas_path.exists() {
-        if let Err(e) = std::fs::remove_file(&ucas_path) {
+        if let Err(e) = caleb_trash::discard(&ucas_path) {
             log::warn!("Failed to delete .ucas file: {}", e);
         } else {
             log::info!("Deleted associated .ucas file: {:?}", ucas_path);
@@ -3434,7 +3435,7 @@ async fn delete_mod(
 
     let utoc_path = base_pak_path.with_extension("utoc");
     if utoc_path.exists() {
-        if let Err(e) = std::fs::remove_file(&utoc_path) {
+        if let Err(e) = caleb_trash::discard(&utoc_path) {
             log::warn!("Failed to delete .utoc file: {}", e);
         } else {
             log::info!("Deleted associated .utoc file: {:?}", utoc_path);
@@ -8674,6 +8675,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            caleb_trash::restore_trashed_mods,
             get_game_path,
             set_game_path,
             auto_detect_game_path,

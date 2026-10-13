@@ -51,6 +51,10 @@ import ChangelogModal from './components/ChangelogModal'
 import PromiseTransitionLoader from './components/PromiseTransitionLoader'
 import { AuroraText } from './components/ui/AuroraText'
 import { AlertProvider, useAlert } from './components/AlertHandler'
+import { offerUndoDelete } from './custom/undoDelete'
+import ModStateFilter, { matchesState, type ModState } from './custom/ModStateFilter'
+import './custom/caleb.css'
+import './custom/keyboardClickables'
 import { useGlobalTooltips } from './hooks/useGlobalTooltips'
 import { useAprilFools } from './hooks/useAprilFools'
 import Switch from './components/ui/Switch'
@@ -267,7 +271,8 @@ function App() {
   }, [enableAnimations]);
   const [theme, setTheme] = useState('dark');
   const [accentColor, setAccentColor] = useState('#4a9eff');
-  const [sortBy, setSortBy] = useState<'name' | 'modified'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'modified' | 'enabled'>('name');
+  const [modState, setModState] = useState<ModState>('all');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Update system state
@@ -1130,6 +1135,7 @@ function App() {
 
       const modPaths = Array.from(selectedMods)
       let deletedCount = 0
+      const deletedPaths: string[] = []
       let errors: string[] = []
 
       for (const path of modPaths) {
@@ -1138,6 +1144,7 @@ function App() {
           // If we don't have details, try delete_mod anyway
           await invoke('delete_mod', { path: path })
           deletedCount++
+          deletedPaths.push(path)
         } catch (e) {
           console.error(`Failed to delete ${path}:`, e)
           errors.push(path)
@@ -1149,9 +1156,8 @@ function App() {
           'Bulk Delete Incomplete',
           `Deleted ${deletedCount} mods. Failed to delete ${errors.length} mods.`
         )
-      } else {
-        alert.success('Bulk Delete', `Successfully deleted ${deletedCount} mods.`)
       }
+      offerUndoDelete(alert, deletedPaths, loadMods)
 
       setSelectedMods(new Set()) // Clear selection
       await loadMods()
@@ -2140,6 +2146,7 @@ function App() {
       // rewriting .bak_repak to .pak deleted the enabled copy when both exist.
       await invoke('delete_mod', { path: modPath })
       setStatus('Mod deleted')
+      offerUndoDelete(alert, [modPath], loadMods)
 
       // Clear selection if the deleted mod was selected
       if (selectedMod && selectedMod.path === modPath) {
@@ -3022,7 +3029,7 @@ function App() {
   })
 
   // Apply folder filter to get final list for display
-  const filteredMods = baseFilteredMods.filter(mod => {
+  const folderMods = baseFilteredMods.filter(mod => {
     if (selectedFolderId === 'all') return true
 
     if (showSubfolderMods) {
@@ -3034,8 +3041,10 @@ function App() {
       // Match exact folder only
       return mod.folder_id === selectedFolderId
     }
-  }).sort((a, b) => {
-    if (sortBy === 'name') {
+  })
+  const filteredMods = folderMods.filter(matchesState(modState)).sort((a, b) => {
+    if (sortBy === 'enabled' && Boolean(a.enabled) !== Boolean(b.enabled)) return a.enabled ? -1 : 1
+    if (sortBy === 'name' || sortBy === 'enabled') {
       const aName = (a.custom_name || a.path.split(/[/\\]/).pop() || '').toLowerCase()
       const bName = (b.custom_name || b.path.split(/[/\\]/).pop() || '').toLowerCase()
       return sortDirection === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName)
@@ -3166,6 +3175,13 @@ function App() {
           setSelectedMod(filteredMods[0])
         }
       }
+      // Delete - delete the checked mods, or the viewed one (undoable, caleb fork)
+      else if (key === 'delete' && (selectedMods.size > 0 || selectedMod)) {
+        e.preventDefault()
+        if (gameRunning && !bypassGameRunningLock) alert.warning('Game Running', 'Cannot delete mods while game is running.')
+        else if (selectedMods.size > 0) handleBulkDelete()
+        else if (selectedMod) handleDeleteMod(selectedMod.path)
+      }
       // F1 - Show shortcuts help
       else if (key === 'f1') {
         e.preventDefault()
@@ -3176,7 +3192,7 @@ function App() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [
-    selectedMod, panels, viewMode,
+    selectedMod, selectedMods, panels, viewMode,
     filteredMods, isRightPanelOpen, lastPanelWidth
   ])
 
@@ -3813,6 +3829,7 @@ function App() {
           <button
             className="btn-settings"
             data-tour="launch-btn"
+            data-launch={gameRunning ? 'running' : launchSuccess ? 'done' : 'idle'}
             title={gameRunning ? "Game is currently running" : "Launch Rivals"}
             style={{
               background: gameRunning
@@ -3954,11 +3971,12 @@ function App() {
                 { value: 'name_desc', label: 'Name (Z-A)' },
                 { value: 'modified_desc', label: 'Newest First' },
                 { value: 'modified_asc', label: 'Oldest First' },
+                { value: 'enabled_asc', label: 'Enabled First' },
               ]}
               value={`${sortBy}_${sortDirection}`}
               onChange={(val) => {
                 const [newSortBy, newSortDir] = val.split('_');
-                setSortBy(newSortBy as 'name' | 'modified');
+                setSortBy(newSortBy as 'name' | 'modified' | 'enabled');
                 setSortDirection(newSortDir as 'asc' | 'desc');
               }}
               placeholder="Sort By"
@@ -4137,10 +4155,8 @@ function App() {
                       {selectedFolderId === 'all' ? 'All Mods' :
                         folders.find(f => f.id === selectedFolderId)?.name || 'Unknown Folder'}
                     </span>
-                    <span className="mod-count">
-                      ({filteredMods.filter(m => m.enabled).length}/{filteredMods.length}<span className="mod-count-word">&nbsp;enabled</span>)
-                    </span>
                   </h2>
+                  <ModStateFilter value={modState} onChange={setModState} mods={folderMods} />
                 </div>
                 <div className="header-actions" data-tour="header-actions">
                   <button
