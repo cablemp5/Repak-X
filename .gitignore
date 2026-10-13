@@ -42,3 +42,6 @@ ScriptObjectExportTest/
 # Sensitive files
 *.env
 *.env.local
+# caleb fork: personal library snapshot for the browser preview
+repak-x/src/dev/fixture.local.json
+repak-x/.impeccable/live/
