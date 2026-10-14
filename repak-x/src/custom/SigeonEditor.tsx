@@ -294,9 +294,10 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
               <div className="sg-head">
                 <h3>{label(pick!)}</h3>
                 <span className="sg-head-actions">
-                  <button type="button" className="lo-text-btn" onClick={openInNotepad} title="The config file itself, for the license key or by hand">
-                    <FileText size={14} /> Open in Notepad
-                  </button>
+                  {lines.some(l => l.kind === 'license' && l.set) && /* without a key, the notice below has this button */
+                    <button type="button" className="lo-text-btn" onClick={openInNotepad} title="The config file itself, to edit it by hand">
+                      <FileText size={14} /> Open in Notepad
+                    </button>}
                   {inUse
                     ? <span className="sg-status">In use{status?.game_running ? ', game running' : ''}. Saving updates the game's copy.</span>
                     : <button type="button" className="lo-text-btn" onClick={use} disabled={Boolean(status?.game_running || status?.problem || dirty(pick!))}
@@ -369,8 +370,10 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
                   const add = adding[s.at] ?? { key: '', value: '' }
                   const addOk = KEY_OK.test(add.key.trim()) && !/^licensekey$/i.test(add.key.trim())
                   return (
-                    <div className="sg-block" key={s.at}>
+                    <div className={`sg-block${lines.slice(s.at + 1, s.end).some(l => l.kind === 'entry' || l.kind === 'comment') ? '' : ' is-empty'}`} key={s.at}>
                       {s.name !== 'Overrides' && <div className="sg-block-name">[{s.name}]</div>}
+                      {!lines.slice(s.at + 1, s.end).some(l => l.kind === 'entry' || l.kind === 'comment') &&
+                        <p className="sg-none">No overrides yet. Add a console setting below, like r.Fog = 0.</p>}
                       {lines.slice(s.at + 1, s.end).map((l, j) => {
                         const i = s.at + 1 + j
                         if (l.kind === 'comment' && !q) return <p key={i} className="sg-note">{l.text.trim()}</p>
