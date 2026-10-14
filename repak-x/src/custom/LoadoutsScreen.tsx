@@ -3,12 +3,12 @@
 // On = its mods on, the rest of its group off, and other loadouts sharing mods off. Off = its mods off.
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ChevronDown, ImageOff, ImagePlus, Plus, RefreshCw, Trash2, X } from 'lucide-react'
+import { ChevronDown, Download, ImageOff, ImagePlus, Plus, RefreshCw, Trash2, Upload, X } from 'lucide-react'
 import Switch from '../components/ui/Switch'
 import { type LoadoutProps, runChanges } from './Loadouts'
 import { deleteMedia, prepareMedia, putMedia, useMediaUrl } from './loadoutMedia'
 import {
-  type Loadout, changesToTurnOff, deleteLoadout, displayName, isActive, modKey, patchLoadout, planTurnOn,
+  type Loadout, changesToTurnOff, deleteLoadout, displayName, exportLoadouts, importLoadouts, isActive, modKey, patchLoadout, planTurnOn,
   readLoadouts, setLoadoutsScreenOpen, snapshotLoadout, useLoadouts, useLoadoutsScreenOpen, writeLoadouts,
 } from './loadoutStore'
 
@@ -29,6 +29,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
   const [name, setName] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const fileRef = useRef<HTMLInputElement>(null)
+  const importRef = useRef<HTMLInputElement>(null)
   const mediaTarget = useRef<string | null>(null)
   const hovered = useRef<string | null>(null)
 
@@ -83,6 +84,15 @@ export default function LoadoutsScreen(p: LoadoutProps) {
     setName('')
   }
 
+  const exportFile = () => {
+    const url = URL.createObjectURL(new Blob([exportLoadouts()], { type: 'application/json' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'repakxcable-loadouts.json'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
   const toggleExpanded = (id: string) => setExpanded(prev => {
     const next = new Set(prev)
     next.has(id) ? next.delete(id) : next.add(id)
@@ -97,10 +107,31 @@ export default function LoadoutsScreen(p: LoadoutProps) {
           <h2>Loadouts</h2>
           <p>On switches a loadout's mods on, the rest of its group off, and any other loadout sharing its mods off. Off switches its mods off. Press L to open or close.</p>
         </div>
-        <button type="button" className="lo-icon lo-close" title="Close (Esc)" onClick={() => setLoadoutsScreenOpen(false)}>
-          <X size={18} />
-        </button>
+        <div className="lo-head-tools">
+          <button type="button" className="lo-text-btn" title="Add loadouts from a .json file" onClick={() => importRef.current?.click()}>
+            <Upload size={14} /> Import
+          </button>
+          <button type="button" className="lo-text-btn" title="Save all loadouts to a .json file (images stay in the app)" onClick={exportFile}>
+            <Download size={14} /> Export
+          </button>
+          <button type="button" className="lo-icon lo-close" title="Close (Esc)" onClick={() => setLoadoutsScreenOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
       </header>
+
+      <input ref={importRef} type="file" accept=".json,application/json" hidden
+        onChange={async e => {
+          const f = e.target.files?.[0]
+          e.target.value = ''
+          if (!f) return
+          try {
+            const { added, skipped } = importLoadouts(await f.text())
+            p.alert.success('Loadouts imported', `${added} added${skipped ? `, ${skipped} skipped (same name already exists)` : ''}.`)
+          } catch (err) {
+            p.alert.error('Import failed', err instanceof Error ? err.message : String(err))
+          }
+        }} />
 
       <input ref={fileRef} type="file" accept="image/*,video/*" hidden
         onChange={e => { const f = e.target.files?.[0]; if (f && mediaTarget.current) setMedia(mediaTarget.current, f); e.target.value = '' }} />
@@ -109,7 +140,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
         {loadouts.map(l => {
           const active = isActive(l, p.mods)
           const byKey = new Map(p.mods.map(m => [modKey(m.path), m]))
-          const present = l.scope.filter(k => byKey.has(k)).length
+          const present = new Set(l.scope.map(displayName).filter(k => byKey.has(k))).size
           const isOpen = expanded.has(l.id)
           const hasMedia = Boolean(l.mediaRev || l.image)
           return (
@@ -152,7 +183,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
                 {isOpen && (
                   <ul className="lo-mod-list">
                     {l.on.length === 0 && <li className="lo-mod-missing">No mods on in this loadout.</li>}
-                    {[...l.on].sort((a, b) => a.localeCompare(b)).map(key => {
+                    {[...new Set(l.on.map(displayName))].sort((a, b) => a.localeCompare(b)).map(key => {
                       const mod = byKey.get(key)
                       return (
                         <li key={key} className={mod ? (mod.enabled ? 'is-on' : '') : 'lo-mod-missing'}
