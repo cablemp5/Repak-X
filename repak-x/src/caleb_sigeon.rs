@@ -136,9 +136,285 @@ pub async fn sigeon_set(preset: Option<String>, state: State<'_, Arc<Mutex<crate
     apply(&storage, &plugins, preset.as_deref())
 }
 
+// ---------- Editor: presets as lines, so comments, order and the license line survive every save ----------
+
+/// One line of a SigeonLoader ini. The license line never leaves Rust: the frontend sees only `License`, and a save
+/// puts back the exact line that is on disk.
+#[derive(Serialize, serde::Deserialize, Clone, Debug, PartialEq)]
+#[serde(tag = "kind", rename_all = "lowercase")]
+pub enum Line {
+    Blank,
+    Comment { text: String },
+    Section { name: String },
+    /// `on: false` is a commented-out setting (`;gamma=0`): kept, but not in force
+    Entry { key: String, value: String, on: bool },
+    License,
+    /// Anything else, written back as it was
+    Raw { text: String },
+}
+
+fn is_key(k: &str) -> bool {
+    !k.is_empty() && k.len() <= 128 && k.chars().all(|c| c.is_ascii_alphanumeric() || "!._-/:".contains(c))
+}
+
+fn is_license(line: &str) -> bool {
+    line.trim_start_matches(';').trim_start().to_ascii_lowercase().starts_with("licensekey")
+}
+
+fn parse(text: &str) -> Vec<Line> {
+    text.lines()
+        .map(|raw| {
+            let t = raw.trim();
+            if is_license(t) {
+                return Line::License;
+            }
+            if t.is_empty() {
+                return Line::Blank;
+            }
+            if t.starts_with('[') && t.ends_with(']') {
+                return Line::Section { name: t[1..t.len() - 1].to_string() };
+            }
+            // ";gamma=0" is a switched-off setting; ";   r.Fog=0" (spaced, the file's own examples) stays a comment
+            let (body, on) = match t.strip_prefix(';') {
+                Some(rest) if rest.starts_with(|c: char| c.is_ascii_alphanumeric() || c == '!') => (rest, false),
+                Some(rest) => return Line::Comment { text: rest.to_string() },
+                None => (t, true),
+            };
+            match body.split_once('=') {
+                Some((k, v)) if is_key(k.trim()) => Line::Entry { key: k.trim().to_string(), value: v.trim().to_string(), on },
+                _ if on => Line::Raw { text: raw.to_string() },
+                _ => Line::Comment { text: body.to_string() },
+            }
+        })
+        .collect()
+}
+
+/// Lines back to text. `license` holds the file's own license lines, in order; a new preset copies another's.
+fn render(lines: &[Line], license: &[String], crlf: bool) -> Result<String, String> {
+    let clean = |s: &str, what: &str| {
+        if s.contains(['\r', '\n']) { Err(format!("{what} can't contain a line break")) } else { Ok(()) }
+    };
+    let wanted = lines.iter().filter(|l| matches!(l, Line::License)).count();
+    if wanted != license.len() {
+        return Err("The license line went missing; nothing was saved.".into());
+    }
+    let mut lic = license.iter();
+    let mut out = Vec::with_capacity(lines.len());
+    for l in lines {
+        out.push(match l {
+            Line::Blank => String::new(),
+            Line::Comment { text } => { clean(text, "A note")?; format!(";{text}") }
+            Line::Section { name } => {
+                clean(name, "A section name")?;
+                if name.contains([']', '[']) || name.trim().is_empty() { return Err(format!("\"{name}\" is not a section name")); }
+                format!("[{name}]")
+            }
+            Line::Entry { key, value, on } => {
+                if !is_key(key) || is_license(key) { return Err(format!("\"{key}\" is not a setting name")); }
+                clean(value, "A value")?;
+                format!("{}{key}={value}", if *on { "" } else { ";" })
+            }
+            Line::License => lic.next().cloned().unwrap_or_default(),
+            Line::Raw { text } => { clean(text, "A line")?; text.clone() }
+        });
+    }
+    let nl = if crlf { "\r\n" } else { "\n" };
+    Ok(out.join(nl) + nl)
+}
+
+fn license_lines(text: &str) -> Vec<String> {
+    text.lines().filter(|l| is_license(l.trim())).map(str::to_string).collect()
+}
+
+fn valid_name(name: &str) -> Result<(), String> {
+    let ok = !name.is_empty() && name.len() <= 32 && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+    if !ok || ["off", "custom"].contains(&name.to_ascii_lowercase().as_str()) {
+        return Err(format!("\"{name}\" can't be a config name: use letters, numbers, - or _ (up to 32)"));
+    }
+    Ok(())
+}
+
+fn preset_file(storage: &Path, name: &str) -> Result<PathBuf, String> {
+    valid_name(name)?;
+    Ok(storage.join(format!("SigeonLoader.{name}.ini")))
+}
+
+fn read_preset(storage: &Path, name: &str) -> Result<Vec<Line>, String> {
+    let text = fs::read_to_string(preset_file(storage, name)?).map_err(|e| format!("Could not read the {name} config: {e}"))?;
+    Ok(parse(&text))
+}
+
+/// Writes through a temporary file and keeps the previous version as SigeonLoader.<name>.ini.bak.
+fn save_preset(storage: &Path, name: &str, lines: &[Line]) -> Result<(), String> {
+    let file = preset_file(storage, name)?;
+    let old = fs::read_to_string(&file).map_err(|e| format!("Could not read the {name} config: {e}"))?;
+    let text = render(lines, &license_lines(&old), old.contains("\r\n"))?;
+    let tmp = file.with_extension("ini.tmp");
+    fs::write(&tmp, &text).map_err(|e| format!("Could not save: {e}"))?;
+    let _ = fs::copy(&file, file.with_extension("ini.bak"));
+    fs::rename(&tmp, &file).map_err(|e| format!("Could not save: {e}"))
+}
+
+fn create_preset(storage: &Path, name: &str, from: &str) -> Result<(), String> {
+    let (src, dst) = (preset_file(storage, from)?, preset_file(storage, name)?);
+    if dst.exists() {
+        return Err(format!("A config named {name} already exists"));
+    }
+    fs::copy(&src, &dst).map(|_| ()).map_err(|e| format!("Could not copy {from}: {e}"))
+}
+
+fn rename_preset(storage: &Path, from: &str, to: &str) -> Result<(), String> {
+    let (src, dst) = (preset_file(storage, from)?, preset_file(storage, to)?);
+    if dst.exists() && !from.eq_ignore_ascii_case(to) {
+        return Err(format!("A config named {to} already exists"));
+    }
+    fs::rename(&src, &dst).map_err(|e| format!("Could not rename: {e}"))
+}
+
+/// Whether the game runs this preset now. By content, not by state name: a fresh copy matches its source byte for
+/// byte, and the state names only the first of them.
+fn in_use(storage: &Path, plugins: Option<&Path>, name: &str) -> bool {
+    let live = plugins.filter(|p| p.join(ASI).exists()).and_then(|p| fs::read(p.join(LIVE_INI)).ok());
+    live.is_some() && preset_file(storage, name).ok().and_then(|f| fs::read(f).ok()) == live
+}
+
+/// Deleted configs wait in Sigeon V2\.deleted for Undo.
+fn delete_preset(storage: &Path, plugins: Option<&Path>, name: &str) -> Result<(), String> {
+    if in_use(storage, plugins, name) {
+        return Err(format!("{name} is the config in use. Switch to another or turn Sigeon off first."));
+    }
+    let src = preset_file(storage, name)?;
+    let bin = storage.join(".deleted");
+    fs::create_dir_all(&bin).map_err(|e| e.to_string())?;
+    fs::rename(&src, bin.join(src.file_name().unwrap())).map_err(|e| format!("Could not delete: {e}"))
+}
+
+fn restore_preset(storage: &Path, name: &str) -> Result<(), String> {
+    let dst = preset_file(storage, name)?;
+    if dst.exists() {
+        return Err(format!("A config named {name} already exists"));
+    }
+    fs::rename(storage.join(".deleted").join(dst.file_name().unwrap()), &dst).map_err(|e| format!("Could not restore: {e}"))
+}
+
+#[tauri::command]
+pub async fn sigeon_read(preset: String) -> Result<Vec<Line>, String> {
+    read_preset(&storage_dir(), &preset)
+}
+
+#[derive(Serialize)]
+pub struct Saved {
+    state: String,
+    /// The saved config is the one in use and was copied into the game again
+    applied: bool,
+}
+
+/// Saves a preset. When it is the one in use and the game is closed, the game's copy is refreshed too.
+#[tauri::command]
+pub async fn sigeon_save(preset: String, lines: Vec<Line>, state: State<'_, Arc<Mutex<crate::AppState>>>) -> Result<Saved, String> {
+    let (storage, plugins) = paths(&state);
+    let was_live = in_use(&storage, plugins.as_deref(), &preset);
+    save_preset(&storage, &preset, &lines)?;
+    let applied = was_live && !crate::is_game_process_running();
+    if applied {
+        apply(&storage, plugins.as_deref().unwrap(), Some(&preset))?;
+    }
+    let state = plugins.as_deref().map(|p| current_state(&storage, p)).unwrap_or_else(|| "off".into());
+    Ok(Saved { state, applied })
+}
+
+#[tauri::command]
+pub async fn sigeon_create(name: String, from: String) -> Result<(), String> {
+    create_preset(&storage_dir(), &name, &from)
+}
+
+#[tauri::command]
+pub async fn sigeon_rename(from: String, to: String) -> Result<(), String> {
+    rename_preset(&storage_dir(), &from, &to)
+}
+
+#[tauri::command]
+pub async fn sigeon_delete(name: String, state: State<'_, Arc<Mutex<crate::AppState>>>) -> Result<(), String> {
+    let (storage, plugins) = paths(&state);
+    delete_preset(&storage, plugins.as_deref(), &name)
+}
+
+#[tauri::command]
+pub async fn sigeon_restore(name: String) -> Result<(), String> {
+    restore_preset(&storage_dir(), &name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const SAMPLE: &str = "; SigeonLoader configuration.\r\n\r\nlicenseKey=TEST-KEY-123\r\n\r\n; Which config\r\nvariant=high\r\nlowLatency=0\r\n;gamma=0\r\n;   [Overrides]\r\n;   r.Fog=0\r\n\r\n[Overrides]\r\n; ---- my notes ----\r\nr.DetailMode=1\r\n!r.Fog=\r\n[/Script/Engine.UserInterfaceSettings]\r\nApplicationScale=1.4\r\n";
+
+    fn temp(tag: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("sigeon-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn parses_settings_comments_and_hides_the_license() {
+        let lines = parse(SAMPLE);
+        assert!(!format!("{lines:?}").contains("TEST-KEY"), "the key must not reach the frontend");
+        assert_eq!(lines[2], Line::License);
+        assert_eq!(lines[5], Line::Entry { key: "variant".into(), value: "high".into(), on: true });
+        assert_eq!(lines[7], Line::Entry { key: "gamma".into(), value: "0".into(), on: false });
+        assert!(matches!(&lines[8], Line::Comment { text } if text == "   [Overrides]"), "the file's own examples stay comments");
+        assert!(matches!(&lines[9], Line::Comment { .. }));
+        assert_eq!(lines[11], Line::Section { name: "Overrides".into() });
+        assert_eq!(lines[14], Line::Entry { key: "!r.Fog".into(), value: "".into(), on: true });
+        assert_eq!(render(&lines, &license_lines(SAMPLE), true).unwrap(), SAMPLE, "an unedited save is byte for byte");
+    }
+
+    #[test]
+    fn saves_keep_the_license_and_refuse_bad_lines() {
+        let storage = temp("save");
+        fs::write(storage.join("SigeonLoader.high.ini"), SAMPLE).unwrap();
+        let mut lines = read_preset(&storage, "high").unwrap();
+        lines[6] = Line::Entry { key: "lowLatency".into(), value: "1".into(), on: true };
+        lines.push(Line::Entry { key: "r.Fog".into(), value: "0".into(), on: true });
+        save_preset(&storage, "high", &lines).unwrap();
+        let text = fs::read_to_string(storage.join("SigeonLoader.high.ini")).unwrap();
+        assert!(text.contains("licenseKey=TEST-KEY-123\r\n") && text.contains("lowLatency=1\r\n") && text.ends_with("r.Fog=0\r\n"));
+        assert!(storage.join("SigeonLoader.high.ini.bak").exists());
+        let no_license: Vec<Line> = lines.iter().filter(|l| **l != Line::License).cloned().collect();
+        assert!(save_preset(&storage, "high", &no_license).is_err(), "dropping the license line is refused");
+        let mut bad = lines.clone();
+        bad.push(Line::Entry { key: "r.Fog".into(), value: "0\nlicenseKey=x".into(), on: true });
+        assert!(save_preset(&storage, "high", &bad).is_err());
+        bad.pop();
+        bad.push(Line::Entry { key: "licenseKey".into(), value: "x".into(), on: true });
+        assert!(save_preset(&storage, "high", &bad).is_err(), "a second license line can't be smuggled in");
+        assert!(fs::read_to_string(storage.join("SigeonLoader.high.ini")).unwrap().contains("TEST-KEY-123"));
+        let _ = fs::remove_dir_all(&storage);
+    }
+
+    #[test]
+    fn presets_are_created_renamed_deleted_and_restored() {
+        let storage = temp("presets");
+        let plugins = storage.join("plugins");
+        fs::write(storage.join(ASI), b"asi").unwrap();
+        fs::write(storage.join("SigeonLoader.high.ini"), SAMPLE).unwrap();
+        create_preset(&storage, "comp", "high").unwrap();
+        assert!(fs::read_to_string(storage.join("SigeonLoader.comp.ini")).unwrap().contains("TEST-KEY-123"), "a copy carries the license");
+        assert!(create_preset(&storage, "comp", "high").is_err());
+        assert!(create_preset(&storage, "../x", "high").is_err() && create_preset(&storage, "off", "high").is_err());
+        rename_preset(&storage, "comp", "ranked").unwrap();
+        assert_eq!(presets(&storage), vec!["high", "ranked"]);
+        apply(&storage, &plugins, Some("ranked")).unwrap();
+        assert!(delete_preset(&storage, Some(&plugins), "ranked").is_err(), "the config in use can't be deleted");
+        apply(&storage, &plugins, None).unwrap();
+        delete_preset(&storage, Some(&plugins), "ranked").unwrap();
+        assert_eq!(presets(&storage), vec!["high"]);
+        restore_preset(&storage, "ranked").unwrap();
+        assert_eq!(presets(&storage), vec!["high", "ranked"]);
+        let _ = fs::remove_dir_all(&storage);
+    }
 
     #[test]
     fn switches_between_off_and_presets() {

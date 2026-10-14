@@ -2,9 +2,10 @@
 // switches between Off and each SigeonLoader.<preset>.ini found in Desktop\Sigeon V2.
 import { useEffect, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
-import { Check, ChevronDown, Gauge } from 'lucide-react'
+import { Check, ChevronDown, Gauge, SlidersHorizontal } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
 import { dialogOpen, isTyping } from './hotkeys'
+import SigeonEditor from './SigeonEditor'
 
 type Status = { state: string; presets: string[]; storage: string; plugins: string; game_running: boolean; problem?: string | null }
 
@@ -14,6 +15,7 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
   const [status, setStatus] = useState<Status | null>(null)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
   const refresh = () => invoke<Status>('sigeon_status').then(setStatus).catch(e => console.warn('[sigeon]', e))
@@ -21,7 +23,8 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
   useEffect(() => {
     refresh()
     window.addEventListener('focus', refresh)
-    return () => window.removeEventListener('focus', refresh)
+    window.addEventListener('sigeon-changed', refresh)   // the editor added, renamed, saved or switched a config
+    return () => { window.removeEventListener('focus', refresh); window.removeEventListener('sigeon-changed', refresh) }
   }, [])
 
   // S cycles Off -> each preset -> Off
@@ -91,9 +94,13 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
               </button>
             )
           })}
+          <button type="button" role="menuitem" className="sigeon-item sigeon-edit" onClick={() => { setOpen(false); setEditing(true) }}>
+            <span><SlidersHorizontal size={14} /> Edit configs…</span>
+          </button>
           <p className="sigeon-foot" title={status?.storage}>Configs from Desktop\Sigeon V2</p>
         </div>
       )}
+      {editing && <SigeonEditor alert={alert} onClose={() => { setEditing(false); refresh() }} />}
     </div>
   )
 }
