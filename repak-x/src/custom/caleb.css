@@ -58,7 +58,6 @@ body, .app { font-family: var(--font-primary); font-size: 14px; }
 :root:not([data-theme="light"]) body { background: var(--bg-darkest); }
 button, input, select, textarea, .MuiButton-root { font-family: inherit !important; }
 ::selection { background: color-mix(in srgb, var(--accent-primary), transparent 60%); color: #fff; }
-.app * { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.1) transparent; }
 .app :focus-visible {
   outline: 2px solid var(--focus-ring) !important;
   outline-offset: 2px !important;
@@ -79,8 +78,8 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 }
 .header h1.font-logo, .header h1.font-logo * {
   font-family: var(--font-primary) !important;
-  font-weight: 900 !important;
-  letter-spacing: -0.035em !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
   text-transform: none !important;
 }
 .titlebar .titlebar-icon { display: none !important; }
@@ -238,8 +237,6 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
   color: var(--text-secondary) !important; font-size: 12px !important;
 }
 .fp-more:hover { color: var(--text-primary) !important; }
-.vertical-resizer { background: transparent !important; border-top: 1px solid var(--panel-border); }
-.vertical-resizer::after { background: rgba(255, 255, 255, 0.12) !important; }
 .sidebar-header { padding: 10px 14px !important; border-bottom: none !important; }
 .folder-tree { padding: 0 8px !important; }
 .folder-tree .node-content { height: 28px; font-size: 13px; color: var(--text-secondary); border-radius: 6px; }
@@ -477,8 +474,6 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
   background: transparent !important; color: var(--text-secondary) !important;
 }
 .lo-icon:hover { background: var(--quiet-active) !important; color: var(--text-primary) !important; }
-.lo-hover { opacity: 0; }
-.lo-row:hover .lo-hover, .lo-row:focus-within .lo-hover { opacity: 1; }
 .lo-dot { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--text-secondary); }
 .lo-active { color: var(--accent-primary); }
 .lo-row .fp-row[aria-pressed="true"] .fp-count { display: inline; }
@@ -577,8 +572,6 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
 .lo-card-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .lo-card-title h3 { margin: 0; font-size: 15px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lo-card-meta { margin: 0; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-.lo-card-actions { display: flex; gap: 2px; margin-top: 6px; opacity: 0; transition: opacity 0.15s ease; }
-.lo-card:hover .lo-card-actions, .lo-card:focus-within .lo-card-actions { opacity: 1; }
 .lo-card-new { border-style: dashed; justify-content: center; min-height: 220px; }
 .lo-card-new .lo-new { padding: 16px; }
 .lo-card-add {
@@ -590,3 +583,135 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
 .lo-card-add svg.lucide { width: 20px !important; height: 20px !important; }
 .project-galacta-badge { --badge-dot: var(--accent-primary); }
 .animation-badge { --badge-dot: #a3e635; }
+
+/* ---------- round 7 fixes ---------- */
+/* Scrollbars: thin thumb, no arrow buttons (scrollbar-width would bring the arrows back) */
+.app ::-webkit-scrollbar, .lo-screen ::-webkit-scrollbar { width: 8px; height: 8px; }
+.app ::-webkit-scrollbar-button, .lo-screen ::-webkit-scrollbar-button { display: none; height: 0; }
+.app ::-webkit-scrollbar-track, .lo-screen ::-webkit-scrollbar-track { background: transparent; }
+.app ::-webkit-scrollbar-thumb, .lo-screen ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+.app ::-webkit-scrollbar-thumb:hover, .lo-screen ::-webkit-scrollbar-thumb:hover { background-color: rgba(255, 255, 255, 0.2); }
+
+/* Resize handle between filters and folders: one hairline and a small grip */
+.vertical-resizer { height: 12px !important; margin: 0 !important; background: transparent !important; border: none !important; }
+.vertical-resizer::before { height: 1px !important; background: var(--panel-border) !important; }
+.vertical-resizer::after {
+  width: 32px !important; height: 4px !important; border: none !important; border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.14) !important; background-image: none !important;
+}
+.vertical-resizer:hover::before, .vertical-resizer.resizing::before { background: rgba(255, 255, 255, 0.14) !important; }
+.vertical-resizer:hover::after, .vertical-resizer.resizing::after { background: rgba(255, 255, 255, 0.35) !important; }
+
+/* Title: no hover glow */
+.header-branding:hover h1, .header-branding:hover h4 { text-shadow: none !important; }
+.header-branding:hover { background: transparent !important; }
+.header-branding:hover h1 { opacity: 0.85; }
+
+/* Dropdowns: every option the same size; selection shown by color and a soft fill, not weight */
+.custom-dropdown-menu {
+  background: var(--bg-dark) !important; border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 10px !important; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55) !important; padding: 4px !important;
+}
+.custom-dropdown-item {
+  height: 32px !important; font-size: 13px !important; font-weight: 400 !important;
+  margin-bottom: 1px !important; color: var(--text-secondary) !important;
+}
+.custom-dropdown-item:hover { background: var(--quiet-hover) !important; color: var(--text-primary) !important; }
+.custom-dropdown-item.selected, .custom-dropdown-item.selected:hover {
+  background: var(--quiet-active) !important; color: var(--text-primary) !important; font-weight: 400 !important;
+}
+.custom-dropdown-item.add-new { color: var(--text-secondary) !important; }
+
+/* Label and count read as two things: the count sits in its own small chip */
+.mod-state-count {
+  display: inline-block; min-width: 22px; padding: 1px 6px; margin-left: 2px;
+  border-radius: 999px; background: rgba(255, 255, 255, 0.06);
+  font-size: 11px; line-height: 16px; text-align: center; color: var(--text-secondary);
+}
+.mod-state-filter button[aria-pressed="true"] .mod-state-count { background: rgba(255, 255, 255, 0.12); color: var(--text-primary); }
+
+/* Sidebar spacing: loadout rows span the full width; tools replace the count on hover */
+.loadouts { padding: 12px 8px 10px !important; gap: 2px !important; }
+.lo-row { position: relative; }
+.lo-row .lo-hover { display: none; }
+.lo-row:hover .lo-hover, .lo-row:focus-within .lo-hover { display: inline-flex; }
+.sidebar-filters { padding: 12px 8px 8px !important; }
+.fp-head { padding: 0 6px 8px !important; }
+
+/* Loadout cards: mods list, media, actions */
+.lo-sep { margin: 0 6px; opacity: 0.6; }
+.lo-card-image video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lo-card-placeholder span { text-align: center; padding: 0 16px; }
+.lo-card-actions { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-top: 8px; }
+.lo-card-tools { display: inline-flex; gap: 2px; opacity: 0; transition: opacity 0.15s ease; }
+.lo-card:hover .lo-card-tools, .lo-card:focus-within .lo-card-tools { opacity: 1; }
+.lo-expand {
+  display: inline-flex !important; align-items: center; gap: 4px;
+  height: 26px !important; min-height: 0 !important; padding: 0 8px !important;
+  border: 1px solid var(--panel-border) !important; border-radius: 6px !important;
+  background: transparent !important; color: var(--text-secondary) !important; font-size: 12px !important;
+}
+.lo-expand:hover { color: var(--text-primary) !important; background: var(--quiet-hover) !important; }
+.lo-expand svg { transition: transform 0.15s ease; }
+.lo-expand[aria-expanded="true"] svg { transform: rotate(180deg); }
+.lo-mod-list {
+  list-style: none; margin: 10px 0 2px; padding: 8px 0 0;
+  border-top: 1px solid var(--panel-border);
+  display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow-y: auto;
+}
+.lo-mod-list li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); min-height: 22px; }
+.lo-mod-list li.is-on { color: var(--text-primary); }
+.lo-mod-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; background: rgba(255, 255, 255, 0.2); }
+.lo-mod-list li.is-on .lo-mod-dot { background: var(--accent-primary); }
+.lo-mod-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lo-mod-missing { opacity: 0.5; text-decoration: line-through; }
+
+/* ---------- VFX Updater window: same type, controls and quiet surfaces as the main app ---------- */
+.vfx-window-container, .vfx-updater-page { background: var(--bg-darkest) !important; font-family: var(--font-primary) !important; }
+.vfx-header { border-bottom: 1px solid var(--panel-border) !important; padding: 18px 0 16px !important; }
+.vfx-header h1, .vfx-header h1 * {
+  font-family: var(--font-primary) !important; font-weight: 800 !important; font-size: 22px !important;
+  letter-spacing: -0.02em !important; text-transform: none !important; color: var(--text-primary) !important;
+  -webkit-text-fill-color: currentColor !important; background: none !important; text-shadow: none !important;
+}
+.vfx-header h1 .aurora-text, .vfx-header h1 span { color: var(--text-secondary) !important; }
+.vfx-inputs-container, .vfx-progress-top-panel, .vfx-dial-panel, .vfx-logs {
+  background: var(--panel-bg) !important; border: 1px solid var(--panel-border) !important;
+  border-radius: 12px !important; box-shadow: none !important;
+}
+.vfx-setting-row label {
+  text-transform: none !important; letter-spacing: 0 !important; font-size: 12px !important;
+  font-weight: 500 !important; color: var(--text-secondary) !important;
+}
+.vfx-input-group input {
+  height: 36px !important; font-size: 13px !important; padding: 0 12px !important;
+  background: var(--input-bg) !important; border: 1px solid var(--input-border) !important; border-radius: var(--quiet-radius) !important;
+}
+.vfx-input-group input:focus { border-color: rgba(255, 255, 255, 0.2) !important; box-shadow: none !important; }
+.vfx-input-group button, .btn-secondary, .vfx-cancel-btn {
+  height: 36px !important; padding: 0 14px !important; font-size: 13px !important; font-weight: 500 !important;
+  background: transparent !important; border: 1px solid var(--panel-border) !important; border-radius: var(--quiet-radius) !important;
+  color: var(--text-primary) !important; box-shadow: none !important; text-transform: none !important;
+}
+.vfx-input-group button:hover:not(:disabled), .btn-secondary:hover, .vfx-cancel-btn:hover {
+  background: var(--quiet-hover) !important; border-color: rgba(255, 255, 255, 0.14) !important;
+}
+/* The one primary action, styled like Launch Game */
+.vfx-start-btn, .btn-save {
+  background: #ededed !important; color: #0a0a0a !important; border: 1px solid #ededed !important;
+  border-radius: var(--quiet-radius) !important; text-transform: none !important; letter-spacing: 0 !important;
+  font-size: 14px !important; font-weight: 600 !important; box-shadow: none !important;
+}
+.vfx-start-btn::before { display: none !important; }
+.vfx-start-btn:hover:not(:disabled), .btn-save:hover { background: #fff !important; transform: none !important; }
+.vfx-start-btn:disabled { background: var(--bg-light) !important; color: var(--text-secondary) !important; border-color: var(--panel-border) !important; }
+.vfx-start-status { font-size: 12px !important; color: var(--text-secondary) !important; }
+.vfx-segment.active { background: var(--accent-primary) !important; animation: none !important; }
+.vfx-complete-header { background: transparent !important; border-bottom: 1px solid var(--panel-border) !important; }
+.vfx-logs-content { font-family: var(--font-mono) !important; font-size: 12px !important; }
+.vfx-log-entry.log-error { color: #e5484d !important; }
+.vfx-log-entry.log-warning { color: #f5a524 !important; }
+.vfx-log-entry.log-success { color: #46a758 !important; }
+.vfx-panel { background: transparent !important; border: none !important; box-shadow: none !important; }
+.lo-grid { align-items: start; }
+.custom-dropdown-item { flex-shrink: 0 !important; }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, LayoutGrid, Plus, Save, X } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
 import {
-  type Loadout, type Mod, changesToTurnOn, deleteLoadout, flipMods, isActive, readLoadouts,
+  type Loadout, type Mod, changesToTurnOff, changesToTurnOn, deleteLoadout, flipMods, isActive, planTurnOn, readLoadouts,
   setLoadoutsScreenOpen, snapshotLoadout, useLoadouts, writeLoadouts,
 } from './loadoutStore'
 
@@ -18,7 +18,7 @@ export type LoadoutProps = {
 }
 
 /** Shared by the sidebar and the cards screen: apply a set of flips with the game-running guard. */
-export async function runChanges(p: LoadoutProps, l: Loadout, changes: Mod[], verb: string) {
+export async function runChanges(p: LoadoutProps, l: Loadout, changes: Mod[], verb: string, displaced: Loadout[] = []) {
   if (p.blocked) {
     p.alert.warning('Game Running', 'Cannot toggle mods while game is running.')
     return
@@ -27,7 +27,10 @@ export async function runChanges(p: LoadoutProps, l: Loadout, changes: Mod[], ve
   const failed = await flipMods(changes)
   await p.reload()
   if (failed) p.alert.warning(`${l.name} partly ${verb}`, `${failed} of ${changes.length} mods could not be switched.`)
-  else p.alert.success(`${l.name} ${verb}`, `${changes.length} mod${changes.length === 1 ? '' : 's'} switched.`)
+  else {
+    const also = displaced.length ? ` Turned off ${displaced.map(d => d.name).join(', ')}.` : ''
+    p.alert.success(`${l.name} ${verb}`, `${changes.length} mod${changes.length === 1 ? '' : 's'} switched.${also}`)
+  }
 }
 
 export default function Loadouts(p: LoadoutProps) {
@@ -50,9 +53,14 @@ export default function Loadouts(p: LoadoutProps) {
     p.alert.success('Loadout updated', `${l.name} now matches the ${p.scopeMods.length} shown mods.`)
   }
 
+  // Click toggles: an active loadout turns off, any other turns on (and displaces overlapping ones)
   const apply = async (l: Loadout) => {
     setBusy(l.id)
-    await runChanges(p, l, changesToTurnOn(l, p.mods), 'on')
+    if (isActive(l, p.mods)) await runChanges(p, l, changesToTurnOff(l, p.mods), 'off')
+    else {
+      const { flips, displaced } = planTurnOn(l, readLoadouts(), p.mods)
+      await runChanges(p, l, flips, 'on', displaced)
+    }
     setBusy(null)
   }
 
@@ -80,7 +88,7 @@ export default function Loadouts(p: LoadoutProps) {
         return (
           <div className="fp-row-wrap lo-row" key={l.id}>
             <button type="button" className="fp-row" aria-pressed={active} disabled={busy !== null}
-              onClick={() => apply(l)} title={active ? `${l.name} is on` : `Turn on ${l.name}: switches ${pending} mods in ${l.label}`}>
+              onClick={() => apply(l)} title={active ? `${l.name} is on. Click to turn it off` : `Turn on ${l.name}: switches ${pending} mods in ${l.label}`}>
               <span className="fp-lead">{active ? <Check size={15} className="lo-active" /> : <span className="lo-dot" />}</span>
               <span className="fp-label">{l.name}</span>
               <span className="fp-count">{busy === l.id ? '…' : `${l.on.length} on`}</span>
