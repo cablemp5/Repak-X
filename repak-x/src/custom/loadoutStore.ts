@@ -41,9 +41,15 @@ export const deleteLoadout = (id: string) => {
 export const useLoadouts = (): Loadout[] =>
   JSON.parse(useSyncExternalStore(subscribe, () => localStorage.getItem(STORAGE) || '[]'))
 
-/** Same mod across enable/disable renames: file name without .pak / .bak_repak / .pak_disabled. */
+/** Strips the _9999999_P priority suffix so a key survives priority changes (same as the backend's tag key). */
+const normKey = (key: string) => key.replace(/(_\d+_P)+$/i, '')
+
+/** Same mod across enable/disable and priority renames: file name without extension or priority suffix. */
 export const modKey = (path: string) =>
-  (path.split(/[/\\]/).pop() || path).replace(/(\.pak)?(\.bak_repak|\.pak_disabled)?$/i, '').replace(/_disabled$/i, '')
+  normKey((path.split(/[/\\]/).pop() || path).replace(/(\.pak)?(\.bak_repak|\.pak_disabled)?$/i, '').replace(/_disabled$/i, ''))
+
+/** Stored keys normalized, so loadouts saved before the suffix was dropped still match. */
+const keySet = (keys: string[]) => new Set(keys.map(normKey))
 
 export const snapshotLoadout = (base: Pick<Loadout, 'id' | 'name'> & Partial<Loadout>, scopeMods: Mod[], label: string): Loadout => ({
   ...base,
@@ -54,19 +60,21 @@ export const snapshotLoadout = (base: Pick<Loadout, 'id' | 'name'> & Partial<Loa
 
 /** Mods to flip so the loadout is on: its mods on, the rest of its scope off. */
 export const changesToTurnOn = (l: Loadout, mods: Mod[]) => {
-  const scope = new Set(l.scope)
-  const on = new Set(l.on)
+  const scope = keySet(l.scope)
+  const on = keySet(l.on)
   return mods.filter(m => scope.has(modKey(m.path)) && Boolean(m.enabled) !== on.has(modKey(m.path)))
 }
 
 /** Mods to flip so the loadout is off: its own mods that are currently on. */
 export const changesToTurnOff = (l: Loadout, mods: Mod[]) => {
-  const on = new Set(l.on)
+  const on = keySet(l.on)
   return mods.filter(m => on.has(modKey(m.path)) && m.enabled)
 }
 
-export const isActive = (l: Loadout, mods: Mod[]) =>
-  mods.some(m => l.scope.includes(modKey(m.path))) && changesToTurnOn(l, mods).length === 0
+export const isActive = (l: Loadout, mods: Mod[]) => {
+  const scope = keySet(l.scope)
+  return mods.some(m => scope.has(modKey(m.path))) && changesToTurnOn(l, mods).length === 0
+}
 
 /**
  * Turning a loadout on also turns off every other active loadout that shares mods with it
@@ -75,11 +83,11 @@ export const isActive = (l: Loadout, mods: Mod[]) =>
  */
 export const planTurnOn = (l: Loadout, all: Loadout[], mods: Mod[]) => {
   const flips = new Map(changesToTurnOn(l, mods).map(m => [m.path, m]))
-  const scope = new Set(l.scope)
-  const keep = new Set(l.on)
+  const scope = keySet(l.scope)
+  const keep = keySet(l.on)
   const displaced: Loadout[] = []
   for (const k of all) {
-    if (k.id === l.id || !isActive(k, mods) || !k.scope.some(key => scope.has(key))) continue
+    if (k.id === l.id || !isActive(k, mods) || !k.scope.some(key => scope.has(normKey(key)))) continue
     displaced.push(k)
     for (const m of changesToTurnOff(k, mods)) if (!keep.has(modKey(m.path))) flips.set(m.path, m)
   }
@@ -87,7 +95,28 @@ export const planTurnOn = (l: Loadout, all: Loadout[], mods: Mod[]) => {
 }
 
 /** Readable mod name from its key: drops the _9999999_P priority suffix. */
-export const displayName = (key: string) => key.replace(/(_\d+_P)+$/i, '')
+export const displayName = normKey
+
+/** Loadouts as a JSON file (media stays in this app). Import adds loadouts whose name is new. */
+export const exportLoadouts = () =>
+  JSON.stringify({
+    format: 'repakxcable-loadouts',
+    version: 1,
+    loadouts: readLoadouts().map(({ image: _i, mediaRev: _r, mediaType: _t, ...l }) => l),
+  }, null, 2)
+
+export const importLoadouts = (text: string) => {
+  const data = JSON.parse(text)
+  const incoming: Loadout[] = Array.isArray(data) ? data : data?.loadouts
+  if (!Array.isArray(incoming)) throw new Error('Not a loadouts file.')
+  const existing = readLoadouts()
+  const names = new Set(existing.map(l => l.name.toLowerCase()))
+  const added: Loadout[] = incoming
+    .filter(l => l && typeof l.name === 'string' && Array.isArray(l.scope) && Array.isArray(l.on) && !names.has(l.name.toLowerCase()))
+    .map(l => ({ id: crypto.randomUUID(), name: l.name, label: l.label || 'imported', scope: l.scope.map(String), on: l.on.map(String) }))
+  writeLoadouts([...existing, ...added])
+  return { added: added.length, skipped: incoming.length - added.length }
+}
 
 /** Toggle each mod through the backend; returns how many failed. */
 export const flipMods = async (changes: Mod[]) => {

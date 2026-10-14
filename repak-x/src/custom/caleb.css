@@ -715,3 +715,11 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
 .vfx-panel { background: transparent !important; border: none !important; box-shadow: none !important; }
 .lo-grid { align-items: start; }
 .custom-dropdown-item { flex-shrink: 0 !important; }
+.lo-head-tools { display: flex; align-items: center; gap: 6px; }
+.lo-text-btn {
+  display: inline-flex !important; align-items: center; gap: 6px;
+  height: 32px !important; min-height: 0 !important; padding: 0 12px !important;
+  border: 1px solid var(--panel-border) !important; border-radius: var(--quiet-radius) !important;
+  background: transparent !important; color: var(--text-primary) !important; font-size: 13px !important; font-weight: 500 !important;
+}
+.lo-text-btn:hover { background: var(--quiet-hover) !important; border-color: rgba(255, 255, 255, 0.14) !important; }
