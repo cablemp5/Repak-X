@@ -1,9 +1,10 @@
-// caleb fork: Sigeon V2 config editor (backend: caleb_sigeon.rs). Each SigeonLoader.<preset>.ini in Desktop\Sigeon V2
+// caleb fork: Sigeon V2 config editor (backend: caleb_sigeon.rs). Each SigeonLoader.<preset>.ini in the Sigeon folder
 // is edited as its own lines, so its notes, order and license line stay as they are; the license never reaches this file.
 import { useEffect, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { motion } from 'framer-motion'
-import { Copy, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { Copy, FileText, FolderOpen, KeyRound, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import { open as pickFolder } from '@tauri-apps/plugin-dialog'
 import Switch from '../components/ui/Switch'
 import CustomDropdown from '../components/CustomDropdown'
 import type { useAlert } from '../components/AlertHandler'
@@ -13,9 +14,10 @@ export type Line =
   | { kind: 'comment'; text: string }
   | { kind: 'section'; name: string }
   | { kind: 'entry'; key: string; value: string; on: boolean }
-  | { kind: 'license' }
+  | { kind: 'license'; set?: boolean }
   | { kind: 'raw'; text: string }
 type Status = { state: string; presets: string[]; game_running: boolean; problem?: string | null }
+type Storage = { path: string; default: boolean; loader: boolean }
 type Alert = ReturnType<typeof useAlert>
 
 const VARIANTS = [
@@ -100,13 +102,15 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
   const [saved, setSaved] = useState<Record<string, Line[]>>({})
   const [drafts, setDrafts] = useState<Record<string, Line[]>>({})
   const [pick, setPick] = useState<string | null>(null)
-  const [naming, setNaming] = useState<{ mode: 'new' | 'rename'; value: string } | null>(null)
+  const [naming, setNaming] = useState<{ mode: 'new' | 'copy' | 'rename'; value: string } | null>(null)
+  const [storage, setStorage] = useState<Storage | null>(null)
   const [query, setQuery] = useState('')
   const [adding, setAdding] = useState<Record<number, { key: string; value: string }>>({})
   const [busy, setBusy] = useState(false)
   const [leaving, setLeaving] = useState(false)
 
   const load = async (keep?: string) => {
+    invoke<Storage>('sigeon_storage').then(setStorage).catch(() => {})
     const s = await invoke<Status>('sigeon_status').catch(() => null)
     setStatus(s)
     const names = s?.presets ?? []
@@ -114,7 +118,13 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
     setSaved(Object.fromEntries(read.filter(Boolean) as (readonly [string, Line[]])[]))
     setPick(p => (keep && names.includes(keep) ? keep : p && names.includes(p) ? p : (s && names.includes(s.state) ? s.state : names[0] ?? null)))
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    // Back from Notepad (the license key) or the file browser: read the configs again; unsaved edits stay
+    const again = () => load()
+    window.addEventListener('focus', again)
+    return () => window.removeEventListener('focus', again)
+  }, [])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { e.stopPropagation(); close() }
@@ -159,8 +169,22 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
     } catch (e) { alert.warning('Sigeon not switched', String(e)) }
   }
 
+  const changeFolder = async (reset = false) => {
+    const path = reset ? null : await pickFolder({ directory: true, title: 'The folder with SigeonLoader.asi and your configs' }).catch(() => null)
+    if (!reset && !path) return
+    try {
+      setStorage(await invoke<Storage>('sigeon_set_storage', { path }))
+      setDrafts({})
+      setPick(null)
+      await load()
+      changed()
+    } catch (e) { alert.warning('Folder not changed', String(e)) }
+  }
+
+  const openInNotepad = () => pick && invoke('sigeon_open', { preset: pick }).catch(e => alert.warning('Not opened', String(e)))
+
   const commitName = async () => {
-    if (!naming || !pick) return
+    if (!naming || (naming.mode !== 'new' && !pick)) return
     const name = naming.value.trim()
     if (!NAME_OK.test(name) || ['off', 'custom'].includes(name.toLowerCase())) {
       alert.warning('Pick another name', 'Letters, numbers, - or _ (up to 32).')
@@ -168,9 +192,12 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
     }
     try {
       if (naming.mode === 'new') {
+        await invoke('sigeon_create', { name, from: null })
+        alert.success('Config added', `${label(name)} starts on Base with every switch off. Paste your license key into it to use it.`)
+      } else if (naming.mode === 'copy') {
         await invoke('sigeon_create', { name, from: pick })
-        alert.success('Config added', `${label(name)} starts as a copy of ${label(pick)}.`)
-      } else if (name !== pick) {
+        alert.success('Config added', `${label(name)} starts as a copy of ${label(pick!)}.`)
+      } else if (pick && name !== pick) {
         await invoke('sigeon_rename', { from: pick, to: name })
         setDrafts(({ [pick]: d, ...rest }) => (d ? { ...rest, [name]: d } : rest))
       }
@@ -209,10 +236,10 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
 
   return (
     <div className="modal-overlay" onClick={close}>
-      <motion.div className="modal-content sg-modal" role="dialog" aria-label="Sigeon configs" onClick={e => e.stopPropagation()}
+      <motion.div className="modal-content sg-modal" role="dialog" aria-label="Sigeon V2 Editor" onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.15 }}>
         <div className="modal-header">
-          <h2>Sigeon configs</h2>
+          <h2>Sigeon V2 Editor</h2>
           <button className="modal-close" onClick={close} aria-label="Close">×</button>
         </div>
 
@@ -226,36 +253,66 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
               </button>
             ))}
             {naming ? (
-              <input className="sg-name" autoFocus value={naming.value} aria-label={naming.mode === 'new' ? 'New config name' : 'Config name'}
-                placeholder={naming.mode === 'new' ? 'New config name' : ''} onChange={e => setNaming({ ...naming, value: e.target.value })}
+              <input className="sg-name" autoFocus value={naming.value} aria-label={naming.mode === 'rename' ? 'Config name' : 'New config name'}
+                placeholder={naming.mode === 'rename' ? '' : 'New config name'} onChange={e => setNaming({ ...naming, value: e.target.value })}
                 onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') commitName(); if (e.key === 'Escape') setNaming(null) }}
                 onBlur={() => setNaming(null)} />
             ) : (
               <div className="sg-list-actions">
-                <button type="button" className="lo-text-btn" disabled={!pick} onClick={() => setNaming({ mode: 'new', value: '' })}
-                  title={pick ? `A new config, starting as a copy of ${label(pick)}` : undefined}><Plus size={14} /> New</button>
+                <button type="button" className="lo-text-btn" onClick={() => setNaming({ mode: 'new', value: '' })}
+                  title="A new config: Base, every switch off, no overrides"><Plus size={14} /> New</button>
                 <button type="button" className="lo-text-btn sg-icon" disabled={!pick} onClick={() => setNaming({ mode: 'rename', value: pick ?? '' })}
                   title="Rename" aria-label="Rename"><Pencil size={14} /></button>
-                <button type="button" className="lo-text-btn sg-icon" disabled={!pick} onClick={() => setNaming({ mode: 'new', value: `${pick}-copy` })}
+                <button type="button" className="lo-text-btn sg-icon" disabled={!pick} onClick={() => setNaming({ mode: 'copy', value: `${pick}-copy` })}
                   title="Duplicate" aria-label="Duplicate"><Copy size={14} /></button>
                 <button type="button" className="lo-text-btn sg-icon" disabled={!pick || inUse} onClick={remove}
                   title={inUse ? 'In use: switch to another config or turn Sigeon off first' : 'Delete'} aria-label="Delete"><Trash2 size={14} /></button>
               </div>
             )}
-            <p className="sg-foot">Desktop\Sigeon V2. Your license key stays in each file as it is and is never shown here.</p>
+            <div className="sg-folder">
+              <span className="sg-folder-label">Sigeon folder</span>
+              <code title={storage?.path}>{storage?.path.replace(/^.*[\\/](Desktop[\\/])/i, '$1') ?? '…'}</code>
+              {storage && !storage.loader && <span className="sg-folder-warn">SigeonLoader.asi is not in this folder.</span>}
+              <span className="sg-folder-actions">
+                <button type="button" className="lo-text-btn" onClick={() => changeFolder()}><FolderOpen size={14} /> Change</button>
+                {storage && !storage.default && <button type="button" className="lo-text-btn" onClick={() => changeFolder(true)}>Desktop</button>}
+              </span>
+            </div>
+            <p className="sg-foot">License keys are typed into each config file (Open in Notepad) and never shown here.</p>
           </aside>
 
           {!lines ? (
-            <div className="sg-empty">{status?.problem ?? 'No configs found in Desktop\\Sigeon V2.'}</div>
+            <div className="sg-empty">
+              <h3>No Sigeon configs yet</h3>
+              <p>{storage && !storage.loader
+                ? 'Point the editor at the folder where you put SigeonLoader.asi (Change, on the left), or make a config here first.'
+                : 'Make one to start: it begins on Base with every switch off.'}</p>
+              <button type="button" className="btn-primary" onClick={() => setNaming({ mode: 'new', value: 'base' })}><Plus size={14} /> New config</button>
+            </div>
           ) : (
             <div className="sg-edit">
               <div className="sg-head">
                 <h3>{label(pick!)}</h3>
-                {inUse
-                  ? <span className="sg-status">In use{status?.game_running ? ', game running' : ''}. Saving updates the game's copy.</span>
-                  : <button type="button" className="lo-text-btn" onClick={use} disabled={Boolean(status?.game_running || status?.problem || dirty(pick!))}
-                      title={dirty(pick!) ? 'Save first' : status?.game_running ? 'Close the game first' : undefined}>Use this config</button>}
+                <span className="sg-head-actions">
+                  <button type="button" className="lo-text-btn" onClick={openInNotepad} title="The config file itself, for the license key or by hand">
+                    <FileText size={14} /> Open in Notepad
+                  </button>
+                  {inUse
+                    ? <span className="sg-status">In use{status?.game_running ? ', game running' : ''}. Saving updates the game's copy.</span>
+                    : <button type="button" className="lo-text-btn" onClick={use} disabled={Boolean(status?.game_running || status?.problem || dirty(pick!))}
+                        title={dirty(pick!) ? 'Save first' : status?.game_running ? 'Close the game first' : undefined}>Use this config</button>}
+                </span>
               </div>
+              {!lines.some(l => l.kind === 'license' && l.set) && (
+                <div className="sg-license" role="note">
+                  <KeyRound size={16} />
+                  <div>
+                    <b>Add your license key</b>
+                    <span>Open this config in Notepad, paste your key right after <code>licenseKey=</code>, then save the file. The editor never reads or shows the key.</span>
+                  </div>
+                  <button type="button" className="btn-primary" onClick={openInNotepad}>Open in Notepad</button>
+                </div>
+              )}
 
               <section className="sg-section">
                 <h4>Config</h4>
@@ -299,13 +356,15 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
 
               <section className="sg-section">
                 <div className="sg-section-head">
-                  <h4>Overrides</h4>
+                  <div>
+                    <h4>Overrides</h4>
+                    <p className="sg-hint">Console settings on top of the config; they win over everything above. Notes from the file stay where they are.</p>
+                  </div>
                   <label className="sg-search"><Search size={14} />
                     <input value={query} placeholder="Find a setting" aria-label="Find a setting" onChange={e => setQuery(e.target.value)}
                       onKeyDown={e => e.stopPropagation()} />
                   </label>
                 </div>
-                <p className="sg-hint">Console settings on top of the config; they win over everything above. Notes from the file stay where they are.</p>
                 {sections(lines).map(s => {
                   const add = adding[s.at] ?? { key: '', value: '' }
                   const addOk = KEY_OK.test(add.key.trim()) && !/^licensekey$/i.test(add.key.trim())
