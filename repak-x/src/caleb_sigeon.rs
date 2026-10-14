@@ -24,8 +24,23 @@ pub struct SigeonStatus {
     problem: Option<String>,
 }
 
-fn storage_dir() -> PathBuf {
+fn default_storage() -> PathBuf {
     dirs::desktop_dir().unwrap_or_default().join("Sigeon V2")
+}
+
+fn storage_setting() -> PathBuf {
+    crate::app_dir().join("sigeon.json")
+}
+
+/// Where SigeonLoader.asi and the SigeonLoader.<preset>.ini files live: the folder picked in the editor, else
+/// Desktop\Sigeon V2.
+fn storage_dir() -> PathBuf {
+    fs::read_to_string(storage_setting())
+        .ok()
+        .and_then(|t| serde_json::from_str::<serde_json::Value>(&t).ok())
+        .and_then(|v| v["storage"].as_str().map(PathBuf::from))
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(default_storage)
 }
 
 /// ...\Content\Paks\~mods -> ...\Marvel\Binaries\Win64\plugins
@@ -148,7 +163,11 @@ pub enum Line {
     Section { name: String },
     /// `on: false` is a commented-out setting (`;gamma=0`): kept, but not in force
     Entry { key: String, value: String, on: bool },
-    License,
+    /// `set`: a key is filled in (its value never leaves Rust). Ignored on save: the line on disk is written back.
+    License {
+        #[serde(default)]
+        set: bool,
+    },
     /// Anything else, written back as it was
     Raw { text: String },
 }
@@ -166,7 +185,8 @@ fn parse(text: &str) -> Vec<Line> {
         .map(|raw| {
             let t = raw.trim();
             if is_license(t) {
-                return Line::License;
+                let set = !t.starts_with(';') && t.split_once('=').is_some_and(|(_, v)| !v.trim().is_empty());
+                return Line::License { set };
             }
             if t.is_empty() {
                 return Line::Blank;
@@ -194,7 +214,7 @@ fn render(lines: &[Line], license: &[String], crlf: bool) -> Result<String, Stri
     let clean = |s: &str, what: &str| {
         if s.contains(['\r', '\n']) { Err(format!("{what} can't contain a line break")) } else { Ok(()) }
     };
-    let wanted = lines.iter().filter(|l| matches!(l, Line::License)).count();
+    let wanted = lines.iter().filter(|l| matches!(l, Line::License { .. })).count();
     if wanted != license.len() {
         return Err("The license line went missing; nothing was saved.".into());
     }
@@ -214,7 +234,7 @@ fn render(lines: &[Line], license: &[String], crlf: bool) -> Result<String, Stri
                 clean(value, "A value")?;
                 format!("{}{key}={value}", if *on { "" } else { ";" })
             }
-            Line::License => lic.next().cloned().unwrap_or_default(),
+            Line::License { .. } => lic.next().cloned().unwrap_or_default(),
             Line::Raw { text } => { clean(text, "A line")?; text.clone() }
         });
     }
@@ -255,12 +275,42 @@ fn save_preset(storage: &Path, name: &str, lines: &[Line]) -> Result<(), String>
     fs::rename(&tmp, &file).map_err(|e| format!("Could not save: {e}"))
 }
 
-fn create_preset(storage: &Path, name: &str, from: &str) -> Result<(), String> {
-    let (src, dst) = (preset_file(storage, from)?, preset_file(storage, name)?);
+/// A new config: Sigeon's defaults (base, every switch off, stretched 1.0, gamma and sharpening left to the config, no
+/// overrides) and an empty licenseKey line, which the user fills in the file itself.
+const NEW_CONFIG: &str = "; SigeonLoader configuration.\r
+; Paste your license key after licenseKey= below (in Notepad), save, then launch the game.\r
+; Lines starting with ';' are comments.\r
+\r
+licenseKey=\r
+\r
+; Which config to load (base = default): base, n64, low, mid or high\r
+variant=base\r
+\r
+; Optional switches (0 = off, 1 = on). stretched: 1.0 = off, up to 2.0 for stretched res.\r
+; gamma and enableCAS stay commented out to keep the config's own look.\r
+lowLatency=0\r
+stretched=1.0\r
+darkHair=0\r
+fontAA=0\r
+fixDarkMaps=0\r
+;gamma=0\r
+;enableCAS=1\r
+\r
+; ADVANCED: lines below [Overrides] merge on top of the config, one key=value per line, and win over everything.\r
+[Overrides]\r
+";
+
+/// `from`: a copy of that config (its key included); None: a new one from the defaults above.
+fn create_preset(storage: &Path, name: &str, from: Option<&str>) -> Result<(), String> {
+    let dst = preset_file(storage, name)?;
     if dst.exists() {
         return Err(format!("A config named {name} already exists"));
     }
-    fs::copy(&src, &dst).map(|_| ()).map_err(|e| format!("Could not copy {from}: {e}"))
+    fs::create_dir_all(storage).map_err(|e| format!("Could not make the folder: {e}"))?;
+    match from {
+        Some(from) => fs::copy(preset_file(storage, from)?, &dst).map(|_| ()).map_err(|e| format!("Could not copy {from}: {e}")),
+        None => fs::write(&dst, NEW_CONFIG).map_err(|e| format!("Could not create it: {e}")),
+    }
 }
 
 fn rename_preset(storage: &Path, from: &str, to: &str) -> Result<(), String> {
@@ -324,8 +374,48 @@ pub async fn sigeon_save(preset: String, lines: Vec<Line>, state: State<'_, Arc<
 }
 
 #[tauri::command]
-pub async fn sigeon_create(name: String, from: String) -> Result<(), String> {
-    create_preset(&storage_dir(), &name, &from)
+pub async fn sigeon_create(name: String, from: Option<String>) -> Result<(), String> {
+    create_preset(&storage_dir(), &name, from.as_deref())
+}
+
+#[derive(Serialize)]
+pub struct Storage {
+    path: String,
+    default: bool,
+    /// SigeonLoader.asi is in the folder
+    loader: bool,
+}
+
+#[tauri::command]
+pub async fn sigeon_storage() -> Result<Storage, String> {
+    let path = storage_dir();
+    Ok(Storage { loader: path.join(ASI).exists(), default: path == default_storage(), path: path.display().to_string() })
+}
+
+/// Picks the folder holding SigeonLoader.asi and the configs; None goes back to Desktop\Sigeon V2.
+#[tauri::command]
+pub async fn sigeon_set_storage(path: Option<String>) -> Result<Storage, String> {
+    let _ = fs::create_dir_all(crate::app_dir());
+    match path.filter(|p| !p.trim().is_empty()) {
+        Some(p) => {
+            if !Path::new(&p).is_dir() {
+                return Err(format!("{p} is not a folder"));
+            }
+            fs::write(storage_setting(), serde_json::json!({ "storage": p }).to_string()).map_err(|e| e.to_string())?;
+        }
+        None => { let _ = fs::remove_file(storage_setting()); }
+    }
+    sigeon_storage().await
+}
+
+/// Opens a config in Notepad, where the license key is pasted (the app never handles the key).
+#[tauri::command]
+pub async fn sigeon_open(preset: String) -> Result<(), String> {
+    let file = preset_file(&storage_dir(), &preset)?;
+    if !file.exists() {
+        return Err(format!("{} not found", file.display()));
+    }
+    std::process::Command::new("notepad.exe").arg(&file).spawn().map(|_| ()).map_err(|e| format!("Could not open Notepad: {e}"))
 }
 
 #[tauri::command]
@@ -361,7 +451,7 @@ mod tests {
     fn parses_settings_comments_and_hides_the_license() {
         let lines = parse(SAMPLE);
         assert!(!format!("{lines:?}").contains("TEST-KEY"), "the key must not reach the frontend");
-        assert_eq!(lines[2], Line::License);
+        assert_eq!(lines[2], Line::License { set: true });
         assert_eq!(lines[5], Line::Entry { key: "variant".into(), value: "high".into(), on: true });
         assert_eq!(lines[7], Line::Entry { key: "gamma".into(), value: "0".into(), on: false });
         assert!(matches!(&lines[8], Line::Comment { text } if text == "   [Overrides]"), "the file's own examples stay comments");
@@ -382,7 +472,7 @@ mod tests {
         let text = fs::read_to_string(storage.join("SigeonLoader.high.ini")).unwrap();
         assert!(text.contains("licenseKey=TEST-KEY-123\r\n") && text.contains("lowLatency=1\r\n") && text.ends_with("r.Fog=0\r\n"));
         assert!(storage.join("SigeonLoader.high.ini.bak").exists());
-        let no_license: Vec<Line> = lines.iter().filter(|l| **l != Line::License).cloned().collect();
+        let no_license: Vec<Line> = lines.iter().filter(|l| !matches!(l, Line::License { .. })).cloned().collect();
         assert!(save_preset(&storage, "high", &no_license).is_err(), "dropping the license line is refused");
         let mut bad = lines.clone();
         bad.push(Line::Entry { key: "r.Fog".into(), value: "0\nlicenseKey=x".into(), on: true });
@@ -400,10 +490,18 @@ mod tests {
         let plugins = storage.join("plugins");
         fs::write(storage.join(ASI), b"asi").unwrap();
         fs::write(storage.join("SigeonLoader.high.ini"), SAMPLE).unwrap();
-        create_preset(&storage, "comp", "high").unwrap();
+        create_preset(&storage, "comp", Some("high")).unwrap();
         assert!(fs::read_to_string(storage.join("SigeonLoader.comp.ini")).unwrap().contains("TEST-KEY-123"), "a copy carries the license");
-        assert!(create_preset(&storage, "comp", "high").is_err());
-        assert!(create_preset(&storage, "../x", "high").is_err() && create_preset(&storage, "off", "high").is_err());
+        assert!(create_preset(&storage, "comp", Some("high")).is_err());
+        assert!(create_preset(&storage, "../x", Some("high")).is_err() && create_preset(&storage, "off", Some("high")).is_err());
+        create_preset(&storage, "fresh", None).unwrap();
+        let fresh = read_preset(&storage, "fresh").unwrap();
+        assert!(fresh.contains(&Line::License { set: false }), "a new config waits for its key");
+        assert!(fresh.contains(&Line::Entry { key: "variant".into(), value: "base".into(), on: true }));
+        assert!(fresh.contains(&Line::Entry { key: "gamma".into(), value: "0".into(), on: false }));
+        assert!(fresh.contains(&Line::Entry { key: "fontAA".into(), value: "0".into(), on: true }));
+        assert_eq!(fresh.last(), Some(&Line::Section { name: "Overrides".into() }), "no overrides");
+        fs::remove_file(storage.join("SigeonLoader.fresh.ini")).unwrap();
         rename_preset(&storage, "comp", "ranked").unwrap();
         assert_eq!(presets(&storage), vec!["high", "ranked"]);
         apply(&storage, &plugins, Some("ranked")).unwrap();
