@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { Check, ChevronDown, Gauge } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
+import { dialogOpen, isTyping } from './hotkeys'
 
 type Status = { state: string; presets: string[]; storage: string; plugins: string; game_running: boolean; problem?: string | null }
 
@@ -21,6 +22,25 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
     refresh()
     window.addEventListener('focus', refresh)
     return () => window.removeEventListener('focus', refresh)
+  }, [])
+
+  // S cycles Off -> each preset -> Off
+  useEffect(() => {
+    const onKey = async (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 's' || e.ctrlKey || e.altKey || e.metaKey || isTyping(e.target) || dialogOpen()) return
+      e.preventDefault()
+      const s = await invoke<Status>('sigeon_status').catch(() => null)
+      if (!s) return
+      if (s.game_running || s.problem) {
+        alert.warning('Sigeon', s.problem ?? 'Close Marvel Rivals to switch.')
+        return
+      }
+      const order: (string | null)[] = [null, ...s.presets]
+      const at = order.indexOf(s.state === 'off' ? null : s.state)
+      choose(order[(at + 1) % order.length])
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
   }, [])
 
   useEffect(() => {
