@@ -26,6 +26,16 @@ const apply = () => {
   getCurrentWebview().setZoom(getScale()).catch(e => console.warn('[uiPrefs] zoom failed', e))
 }
 apply()
+// Ctrl + / Ctrl - step through the scales, Ctrl 0 resets to 100%
+window.addEventListener('keydown', e => {
+  if (!e.ctrlKey || e.altKey) return
+  const i = SCALES.indexOf(getScale())
+  const step = e.key === '=' || e.key === '+' ? 1 : e.key === '-' || e.key === '_' ? -1 : e.key === '0' ? 0 : null
+  if (step === null) return
+  e.preventDefault()
+  const next = step === 0 ? 1 : SCALES[Math.max(0, Math.min(SCALES.length - 1, (i < 0 ? SCALES.indexOf(1) : i) + step))]
+  update(SCALE_KEY, String(next))
+})
 // Other windows (Asset Explorer, VFX Updater) pick up changes made in Settings
 window.addEventListener('storage', e => { if (e.key?.startsWith('caleb.')) { apply(); listeners.forEach(l => l()) } })
 

@@ -275,9 +275,9 @@ function App() {
   }, [enableAnimations]);
   const [theme, setTheme] = useState('dark');
   const [accentColor, setAccentColor] = useState('#4a9eff');
-  const [sortBy, setSortBy] = useState<'name' | 'modified' | 'enabled'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'modified' | 'enabled'>('modified'); // caleb fork: newest first
   const [modState, setModState] = useState<ModState>('all');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Update system state
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null); // { latest, url, asset_url, asset_name }
