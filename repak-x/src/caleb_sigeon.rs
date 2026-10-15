@@ -16,6 +16,8 @@ const LIVE_INI: &str = "SigeonLoader.ini";
 pub struct SigeonStatus {
     /// "off", a preset name, or "custom" when the live ini matches no preset
     state: String,
+    /// SigeonLoader.asi is in the Sigeon folder; false until Sigeon is set up
+    configured: bool,
     presets: Vec<String>,
     storage: String,
     plugins: String,
@@ -122,7 +124,8 @@ fn paths(state: &State<'_, Arc<Mutex<crate::AppState>>>) -> (PathBuf, Option<Pat
 #[tauri::command]
 pub async fn sigeon_status(state: State<'_, Arc<Mutex<crate::AppState>>>) -> Result<SigeonStatus, String> {
     let (storage, plugins) = paths(&state);
-    let problem = if !storage.join(ASI).exists() {
+    let configured = storage.join(ASI).exists();
+    let problem = if !configured {
         Some(format!("{} not found", storage.join(ASI).display()))
     } else if plugins.is_none() {
         Some("Set the game mods path in Settings first".into())
@@ -132,6 +135,7 @@ pub async fn sigeon_status(state: State<'_, Arc<Mutex<crate::AppState>>>) -> Res
     let plugins = plugins.unwrap_or_default();
     Ok(SigeonStatus {
         state: current_state(&storage, &plugins),
+        configured,
         presets: presets(&storage),
         storage: storage.display().to_string(),
         plugins: plugins.display().to_string(),

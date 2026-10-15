@@ -1,13 +1,15 @@
 // caleb fork: header switch for Sigeon V2 (backend: caleb_sigeon.rs). Shows the live state and
-// switches between Off and each SigeonLoader.<preset>.ini found in Desktop\Sigeon V2.
+// switches between Off and each SigeonLoader.<preset>.ini found in Desktop\Sigeon V2. Until that folder has
+// SigeonLoader.asi it reads "not configured" and opens the setup instead.
 import { useEffect, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { Check, ChevronDown, Gauge, SlidersHorizontal } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
 import { dialogOpen, isTyping } from './hotkeys'
 import SigeonEditor from './SigeonEditor'
+import SigeonSetup from './SigeonSetup'
 
-type Status = { state: string; presets: string[]; storage: string; plugins: string; game_running: boolean; problem?: string | null }
+type Status = { state: string; configured: boolean; presets: string[]; storage: string; plugins: string; game_running: boolean; problem?: string | null }
 
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -16,6 +18,7 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [settingUp, setSettingUp] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
 
   const refresh = () => invoke<Status>('sigeon_status').then(setStatus).catch(e => console.warn('[sigeon]', e))
@@ -34,6 +37,7 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
       e.preventDefault()
       const s = await invoke<Status>('sigeon_status').catch(() => null)
       if (!s) return
+      if (!s.configured) { setSettingUp(true); return }
       if (s.game_running || s.problem) {
         alert.warning('Sigeon', s.problem ?? 'Close Marvel Rivals to switch.')
         return
@@ -70,15 +74,23 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
   }
 
   const state = status?.state ?? 'off'
+  const unset = status?.configured === false
   const on = state !== 'off'
   const blocked = Boolean(status?.game_running || status?.problem)
 
   return (
     <div className="sigeon" ref={wrapRef}>
-      <button type="button" className={`btn-settings sigeon-btn ${on ? 'is-on' : ''}`} onClick={() => setOpen(v => !v)}
-        aria-haspopup="menu" aria-expanded={open} title="Sigeon V2 performance loader">
-        <Gauge size={16} /> Sigeon <span className="sigeon-state">{label(state)}</span> <ChevronDown size={14} />
-      </button>
+      {unset ? (
+        <button type="button" className="btn-settings sigeon-btn is-unset" onClick={() => setSettingUp(true)}
+          aria-haspopup="dialog" title="Set up Sigeon V2">
+          <Gauge size={16} /> Sigeon <span className="sigeon-state">not configured</span>
+        </button>
+      ) : (
+        <button type="button" className={`btn-settings sigeon-btn ${on ? 'is-on' : ''}`} onClick={() => setOpen(v => !v)}
+          aria-haspopup="menu" aria-expanded={open} title="Sigeon V2 performance loader">
+          <Gauge size={16} /> Sigeon <span className="sigeon-state">{label(state)}</span> <ChevronDown size={14} />
+        </button>
+      )}
       {open && (
         <div className="sigeon-menu" role="menu">
           {status?.problem && <p className="sigeon-note">{status.problem}</p>}
@@ -101,6 +113,8 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
         </div>
       )}
       {editing && <SigeonEditor alert={alert} onClose={() => { setEditing(false); refresh() }} />}
+      {settingUp && <SigeonSetup alert={alert} onClose={() => { setSettingUp(false); refresh() }}
+        onEdit={() => { setSettingUp(false); setEditing(true) }} />}
     </div>
   )
 }
