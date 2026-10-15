@@ -1,4 +1,4 @@
-//! caleb fork: Sigeon V2 switch, the same logic as Caleb's Desktop `toggle-sigeon.ps1`.
+//! repakxtra: Sigeon V2 switch, the same logic as the `toggle-sigeon.ps1` desktop script.
 //! Source files live in `%USERPROFILE%\Desktop\Sigeon V2` (SigeonLoader.asi plus one
 //! `SigeonLoader.<preset>.ini` per preset). On = copy the .asi and the chosen ini (as
 //! SigeonLoader.ini) into the game's Binaries\Win64\plugins folder; off = remove both.
