@@ -60,6 +60,7 @@ This fork is personal and unofficial: it is not made by the Repak X team, and ne
 - Create, duplicate, rename and delete Sigeon V2 configs, pick the base config, flip its switches, set stretched resolution, gamma and sharpening, and add, edit or remove console overrides with search.
 - Your notes in the files stay where they are. The license key is never shown or touched by the app; you type it into the config file yourself (`Open in Notepad`).
 - Choose where your Sigeon folder lives. Switch configs from the header's Sigeon menu.
+- No Sigeon yet? The header reads `Sigeon not configured` and opens a short setup: where to buy it ([oinkerhub.com/CABLE](https://oinkerhub.com/CABLE)), the signature bypass it loads through, and its folder.
 
 <img src=".github/screenshots/sigeon-editor.png" alt="Sigeon V2 Editor" width="900" />
 
