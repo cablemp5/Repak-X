@@ -42,4 +42,4 @@ if (-not $pr) {
 Run { git push origin "refs/remotes/upstream/main:refs/heads/upstream" }   # keep the fork's upstream branch an exact mirror of Repak-X's main
 Run { git checkout main }
 Write-Host "Pull request: $pr" -ForegroundColor Green
-Write-Host 'When its checks pass, merge it with "Create a merge commit" (not squash), then: git pull; .\build.ps1' -ForegroundColor Green
+Write-Host 'When its checks pass, merge it with "Create a merge commit" (not squash), then: git pull; .\build.ps1 -Shortcut' -ForegroundColor Green

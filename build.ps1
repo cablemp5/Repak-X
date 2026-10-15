@@ -1,8 +1,9 @@
 # Release build, same steps as .github/workflows/release.yml.
-#   .\build.ps1        the stable app: only from a clean main. Output: dist\Repak-X-Caleb (or -next), shortcut "repakxtra"
-#   .\build.ps1 -Test  whatever is in the folder now, even uncommitted edits. Output: dist\Repak-X-Test, shortcut "repakxtra test"
+#   .\build.ps1            the stable app: only from a clean main. Output: dist\Repak-X-Caleb (or -next), no desktop shortcut
+#   .\build.ps1 -Shortcut  the same, and points the desktop shortcut "repakxtra" at it
+#   .\build.ps1 -Test      whatever is in the folder now, even uncommitted edits. Output: dist\Repak-X-Test, shortcut "repakxtra test"
 # The two never overwrite each other. The app runs one copy at a time (single-instance) and both share %APPDATA%\Repak-X.
-param([switch]$Test)
+param([switch]$Test, [switch]$Shortcut)
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
@@ -42,6 +43,8 @@ Copy-Item target\x86_64-pc-windows-msvc\release\REPAK-X.exe $out -Force
 Copy-Item target\uassettool\* $out -Recurse -Force
 Remove-Item "$out\*.pdb", "$out\UAssetTool.exe" -ErrorAction SilentlyContinue
 Copy-Item repak-x\src\data\character_data.json "$out\data" -Force
+# no shortcut by default, so someone building their own copy does not get one dropped on their desktop
+if (-not ($Test -or $Shortcut)) { Write-Host "Built: $out\REPAK-X.exe" -ForegroundColor Green; return }
 # The shortcut opens the build just made (stable builds alternate between the two stable folders; the test build has its own)
 $exe = (Resolve-Path "$out\REPAK-X.exe").Path
 $lnk = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) $shortcut))
