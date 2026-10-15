@@ -1,4 +1,4 @@
-// caleb fork: Sigeon V2 config editor (backend: caleb_sigeon.rs). Each SigeonLoader.<preset>.ini in the Sigeon folder
+// repakxtra: Sigeon V2 config editor (backend: xtra_sigeon.rs). Each SigeonLoader.<preset>.ini in the Sigeon folder
 // is edited as its own lines, so its notes, order and license line stay as they are; the license never reaches this file.
 import { useEffect, useMemo, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'

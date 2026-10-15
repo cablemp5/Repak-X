@@ -1,4 +1,4 @@
-// caleb fork: Sigeon V2 setup, opened from the header while Sigeon reads "not configured" (no SigeonLoader.asi in the
+// repakxtra: Sigeon V2 setup, opened from the header while Sigeon reads "not configured" (no SigeonLoader.asi in the
 // Sigeon folder). Where to buy it, the signature bypass it loads through and the folder its files stay in; the editor
 // takes over from there (a config and its license key).
 import { useEffect, useState } from 'react'
