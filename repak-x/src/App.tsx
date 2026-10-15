@@ -2090,10 +2090,10 @@ function App() {
       })
 
       if (selected) {
-        await invoke('set_game_path', { path: selected })
-        setGamePath(selected)
-        uiLog.info('GamePath', `Mods folder set to ${selected}`)
-        setStatus('Game path set: ' + selected)
+        const stored = await invoke<string>('set_game_path', { path: selected }) // repakxtra: the game folder means its ~mods
+        setGamePath(stored)
+        uiLog.info('GamePath', `Mods folder set to ${stored}`)
+        setStatus('Game path set: ' + stored)
         await loadMods()
         await loadFolders()
       }

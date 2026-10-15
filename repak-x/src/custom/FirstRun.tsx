@@ -9,11 +9,11 @@ import { motion } from 'framer-motion'
 import { Check, FolderOpen, Upload } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
 import { DoctorProblems, KitProgressBar } from './SetupPanel'
-import { usePreviewKit } from './previewKit'
+import { isKitZip, usePreviewKit } from './previewKit'
 
 type Alert = ReturnType<typeof useAlert>
 type Bypass = { state: 'installed' | 'disabled' | 'partial' | 'other' | 'missing' }
-type Galacta = { installed: string | null }
+type Galacta = { installed: string | null; disabled: boolean }
 
 const SEEN = 'repakxtra.welcomed'
 const NEXUS = 'https://www.nexusmods.com/marvelrivals/mods'
@@ -46,7 +46,9 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
 }) {
   const [open, setOpen] = useState(firstLaunch)
   const [bypass, setBypass] = useState<Bypass | null>(null)
+  const [bypassError, setBypassError] = useState<string | null>(null)
   const [galacta, setGalacta] = useState<Galacta | null>(null)
+  const asked = useRef(0) // the newest status check: answers to an older one (another game folder) are dropped
   const [busy, setBusy] = useState<string | null>(null)
   const kit = usePreviewKit(alert)
   const detected = useRef(false)
@@ -57,17 +59,27 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
     return () => window.removeEventListener('repakxtra-first-run', show)
   }, [])
   const close = () => { localStorage.setItem(SEEN, '1'); setOpen(false) }
+  const checkStatus = () => {
+    const id = ++asked.current
+    const mine = () => asked.current === id
+    setBypass(null); setBypassError(null); setGalacta(null)
+    invoke<Bypass>('setup_bypass_status').then(b => { if (mine()) setBypass(b) }, e => { if (mine()) setBypassError(String(e)) })
+    invoke<Galacta>('setup_galacta_status', { online: false }).then(g => { if (mine()) setGalacta(g) }, () => undefined)
+  }
   useEffect(() => {
     if (!open) return
-    invoke<Bypass>('setup_bypass_status').then(setBypass).catch(() => setBypass(null))
-    invoke<Galacta>('setup_galacta_status', { online: false }).then(setGalacta).catch(() => setGalacta(null))
+    checkStatus()
     kit.peek()
     if (!gamePath && !detected.current) { detected.current = true; onAutoDetect().catch(() => undefined) } // most installs are found
-    // Mods dropped on the window go to the install panel: this screen steps aside for it
-    const off = listen('tauri://drag-drop', close)
+    // Mods dropped on the window go to the install panel: this screen steps aside for it. A kit zip installs as the
+    // kit (App's drop handler), so the screen stays and step 4 updates
+    const off = listen<{ paths?: string[] } | string[]>('tauri://drag-drop', e => {
+      const paths = Array.isArray(e.payload) ? e.payload : e.payload?.paths ?? []
+      if (!(paths.length === 1 && isKitZip(paths[0]))) close()
+    })
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('.su-changelog-overlay')) { e.stopPropagation(); close() } }
     window.addEventListener('keydown', esc, true)
-    return () => { off.then(f => f()).catch(() => undefined); window.removeEventListener('keydown', esc, true) }
+    return () => { asked.current++; off.then(f => f()).catch(() => undefined); window.removeEventListener('keydown', esc, true) }
   }, [open, gamePath])
   if (!open) return null
 
@@ -92,6 +104,12 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
 
   const where = gamePath.replace(/^.*[\\/](MarvelRivals|Marvel Rivals)[\\/]/i, '…\\$1\\')
   const bypassOn = bypass?.state === 'installed'
+  const galactaOn = Boolean(galacta?.installed && !galacta.disabled)
+  const bypassText = bypassOn ? 'Installed. Mods load from the next game launch.'
+    : bypass?.state === 'disabled' ? 'Installed but turned off. Mods that need it will not load.'
+    : bypass?.state === 'other' ? 'A different loader or bypass is installed. Installing keeps it next to the new one as a .repakxtra-backup file.'
+    : bypass?.state === 'partial' ? 'Part of it is missing. Repair puts the missing files back.'
+    : 'Lets the game load mods that replace its files. Every mod needs it. It comes with repakxtra; Setup shows why it is safe.'
   const kitReady = Boolean((kit.kit?.version || kit.kit?.dev) && kit.kit?.blender)
   const noGame = !gamePath
 
@@ -117,20 +135,23 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
           </Step>
 
           <Step n={2} done={bypassOn} title="Install the signature bypass"
-            action={!bypassOn && <button type="button" className="btn-primary" disabled={noGame || !bypass || Boolean(busy)} onClick={installBypass}
-              title={noGame ? 'Find the game first' : undefined}>{busy === 'bypass' ? 'Installing…' : bypass?.state === 'disabled' ? 'Turn on' : 'Install'}</button>}>
-            <p>{bypassOn ? 'Installed. Mods load from the next game launch.' : 'Lets the game load mods that replace its files. Every mod needs it. It comes with repakxtra; Setup shows why it is safe.'}</p>
+            action={bypassError
+              ? <button type="button" className="lo-text-btn" onClick={checkStatus}>Retry</button>
+              : !bypassOn && <button type="button" className="btn-primary" disabled={noGame || !bypass || Boolean(busy)} onClick={installBypass}
+                  title={noGame ? 'Find the game first' : undefined}>
+                  {busy === 'bypass' ? 'Installing…' : bypass?.state === 'disabled' ? 'Turn on' : bypass?.state === 'partial' ? 'Repair' : 'Install'}</button>}>
+            <p>{bypassError ? `Could not check it: ${bypassError}` : bypassText}</p>
           </Step>
 
-          <Step n={3} done={Boolean(galacta?.installed)} optional title="Project Galacta"
+          <Step n={3} done={galactaOn} optional title="Project Galacta"
             action={!galacta?.installed && <button type="button" className="lo-text-btn" disabled={noGame || Boolean(busy)} onClick={installGalacta}
               title={noGame ? 'Find the game first' : 'Downloads the newest release from GitHub'}>{busy === 'galacta' ? 'Installing…' : 'Install'}</button>}>
-            <p>{galacta?.installed ? 'Installed.' : 'The loader Galacta skin mods need. Skip it if you have none.'}</p>
+            <p>{galactaOn ? 'Installed.' : galacta?.installed ? 'Installed but switched off. Turn it on in the Library.' : 'The loader Galacta skin mods need. Skip it if you have none.'}</p>
           </Step>
 
           <Step n={4} done={kitReady && kit.doctor?.ok !== false} optional title="Mod previews"
             action={!kitReady && <button type="button" className="lo-text-btn" disabled={Boolean(kit.busy) || (kit.latest === null && !kit.kit?.dev)} onClick={() => kit.setUp()}
-              title={kit.latest === null ? 'No kit published yet: drop a kit zip on the window' : 'Downloads the preview kit and installs Blender if it is missing'}>
+              title={kit.latest === null ? 'No kit published yet: drop a kit zip on the window' : 'Downloads the preview kit and installs Blender if it is missing (Windows asks for admin rights once)'}>
               {kit.busy === 'setup' ? 'Setting up…' : 'Set up previews'}</button>}>
             <p>{kitReady ? 'Ready. A loadout page renders its preview.' : `Pictures of your mods and loadouts, and clips of animation mods. Downloads the preview kit${kit.latest?.size ? ` (${Math.round(kit.latest.size / 1048576)} MB)` : ''} and uses Blender (installed for you if missing).`}</p>
             <KitProgressBar p={kit.progress} />

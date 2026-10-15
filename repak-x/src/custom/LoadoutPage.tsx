@@ -23,7 +23,7 @@ export default function LoadoutPage({ p, l, busy, onToggle, onBack, onPickMedia,
   onToggle: (on: boolean) => void
   onBack: () => void
   onPickMedia: () => void
-  onSetMedia: (image: Blob) => Promise<void>
+  onSetMedia: (image: Blob) => Promise<boolean>
 }) {
   const [name, setName] = useState(l.name)
   const groups = useGroups()

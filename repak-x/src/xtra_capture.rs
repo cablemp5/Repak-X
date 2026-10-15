@@ -33,22 +33,45 @@ const NOT_RUNNING: &str = "Marvel Rivals is not running. Start it and open the h
 const BLACK: &str = "The picture came out black. Set the game's display mode to borderless or windowed, then try again.";
 
 static BUSY: AtomicBool = AtomicBool::new(false);
-static CANCEL: AtomicBool = AtomicBool::new(false);
-/// The thread waiting for Ctrl+Shift+X (0: none), so Cancel can wake it.
+/// The newest capture request. Every request (and every cancel) takes the next number, so whatever came before it is
+/// cancelled: a worker that is not the newest stops at its next check, before registering, capturing or switching windows.
+static GEN: AtomicU32 = AtomicU32::new(0);
+/// The thread waiting for Ctrl+Shift+X (0: none), woken to check whether it is still the newest request.
 static WAITER: AtomicU32 = AtomicU32::new(0);
+
+/// A new request: earlier ones are cancelled and a waiting listener is woken to notice. Returns its number.
+fn supersede() -> u32 {
+    let my = GEN.fetch_add(1, Ordering::SeqCst).wrapping_add(1);
+    wake_waiter();
+    my
+}
+
+/// Ok while request `my` is still the newest, else "cancelled".
+fn fresh(my: u32) -> Result<(), String> {
+    if GEN.load(Ordering::SeqCst) == my { Ok(()) } else { Err(CANCELLED.into()) }
+}
+
+fn wake_waiter() {
+    let t = WAITER.load(Ordering::SeqCst);
+    if t != 0 {
+        sys::wake(t);
+    }
+}
 
 /// One capture at a time; released when dropped, on every path.
 struct Busy;
 impl Busy {
-    /// A waiting hotkey capture gives way to a new one (Capture now while listening, or a listener left behind by a
-    /// dialog closed the moment it opened); a capture already taking its picture gets about 2 s to finish.
-    fn take() -> Result<Busy, String> {
+    /// An older listener gives way (it was cancelled by this request and is woken until it lets go); a capture already
+    /// taking its picture gets about 2 s to finish. A request that is no longer the newest stops here.
+    fn take(my: u32) -> Result<Busy, String> {
         for _ in 0..40 {
+            fresh(my)?;
             if !BUSY.swap(true, Ordering::SeqCst) {
-                CANCEL.store(false, Ordering::SeqCst);
-                return Ok(Busy);
+                let busy = Busy;
+                fresh(my)?; // cancelled while it waited: dropping `busy` lets go again
+                return Ok(busy);
             }
-            wake_waiter();
+            wake_waiter(); // only ever an older request: a newer one would have failed `fresh` above
             std::thread::sleep(Duration::from_millis(50));
         }
         Err("Another capture is still running. Try again in a moment.".into())
@@ -57,14 +80,6 @@ impl Busy {
 impl Drop for Busy {
     fn drop(&mut self) {
         BUSY.store(false, Ordering::SeqCst);
-    }
-}
-
-fn wake_waiter() {
-    CANCEL.store(true, Ordering::SeqCst);
-    let t = WAITER.load(Ordering::SeqCst);
-    if t != 0 {
-        sys::wake(t);
     }
 }
 
@@ -177,12 +192,19 @@ async fn on_thread(f: impl FnOnce() -> Result<Vec<u8>, String> + Send + 'static)
     rx.await.map_err(|_| "The capture stopped unexpectedly. Try again.".to_string())?
 }
 
-/// repakxtra comes back to the front after it switched to the game.
-fn come_back(app: &AppHandle) {
-    if let Some(w) = app.get_webview_window("main") {
-        let _ = w.unminimize();
-        let _ = w.set_focus();
+/// repakxtra asks to come back to the front after a capture, unless the request was cancelled meanwhile. A plain
+/// SetForegroundWindow: tao's set_focus would tap Alt into the game when Windows refuses. Refused, Windows flashes the
+/// taskbar button instead and the picture waits in the dialog.
+fn come_back(app: &AppHandle, my: u32) {
+    if fresh(my).is_err() {
+        return;
     }
+    #[cfg(windows)]
+    if let Some(Ok(h)) = app.get_webview_window("main").map(|w| w.hwnd()) {
+        sys::raise(h.0 as sys::Hwnd);
+    }
+    #[cfg(not(windows))]
+    let _ = app;
 }
 
 #[derive(Serialize)]
@@ -204,14 +226,16 @@ pub async fn capture_game_status() -> GameStatus {
 /// and switches back.
 #[tauri::command]
 pub async fn capture_game_now(app: AppHandle) -> Result<tauri::ipc::Response, String> {
-    let r = on_thread(|| {
-        let _busy = Busy::take()?;
+    let my = supersede(); // a listener waiting for Ctrl+Shift+X gives way
+    let r = on_thread(move || {
+        let _busy = Busy::take(my)?;
         let hwnd = game_window()?;
         sys::bring_to_front(hwnd)?;
+        fresh(my)?;
         grab(hwnd)
     })
     .await;
-    come_back(&app);
+    come_back(&app, my);
     r.map(tauri::ipc::Response::new)
 }
 
@@ -219,34 +243,36 @@ pub async fn capture_game_now(app: AppHandle) -> Result<tauri::ipc::Response, St
 /// back. Errors "cancelled" (capture_game_cancel, or Capture now took over) and "timeout" are for the app, not the user.
 #[tauri::command]
 pub async fn capture_game_hotkey(app: AppHandle, seconds: u32) -> Result<tauri::ipc::Response, String> {
+    let my = supersede(); // numbered before its thread starts, so a cancel right after it is never lost
     let r = on_thread(move || {
-        let _busy = Busy::take()?;
+        let _busy = Busy::take(my)?;
         game_window()?;
-        sys::wait_for_hotkey(seconds.clamp(1, 3600))?;
+        sys::wait_for_hotkey(seconds.clamp(1, 3600), my)?;
+        fresh(my)?;
         let hwnd = game_window()?;
         if sys::foreground() != hwnd {
             sys::bring_to_front(hwnd)?; // pressed while repakxtra (or another app) was in front
         }
+        fresh(my)?;
         grab(hwnd)
     })
     .await;
     if !matches!(&r, Err(e) if e == CANCELLED || e == TIMEOUT) {
-        come_back(&app);
+        come_back(&app, my);
     }
     r.map(tauri::ipc::Response::new)
 }
 
-/// Stops a capture that waits for Ctrl+Shift+X (it returns "cancelled").
+/// Cancels every capture asked for so far: one waiting for Ctrl+Shift+X returns "cancelled", one not started yet never
+/// starts.
 #[tauri::command]
 pub fn capture_game_cancel() {
-    if BUSY.load(Ordering::SeqCst) {
-        wake_waiter();
-    }
+    supersede();
 }
 
 #[cfg(windows)]
 mod sys {
-    use super::{CANCEL, CANCELLED, FRONT_TIMEOUT, SETTLE, TIMEOUT, WAITER};
+    use super::{fresh, CANCELLED, FRONT_TIMEOUT, SETTLE, TIMEOUT, WAITER};
     use std::ffi::c_void;
     use std::sync::atomic::Ordering;
     use std::time::{Duration, Instant};
@@ -450,8 +476,10 @@ mod sys {
         Ok(px)
     }
 
-    /// Registers Ctrl+Shift+X for this thread and waits on its message queue for the key, the timeout or a cancel.
-    pub fn wait_for_hotkey(seconds: u32) -> Result<(), String> {
+    /// Registers Ctrl+Shift+X for this thread and waits on its message queue for the key or the timeout, while request
+    /// `my` stays the newest (a wake only means: check again).
+    pub fn wait_for_hotkey(seconds: u32, my: u32) -> Result<(), String> {
+        fresh(my)?;
         unsafe {
             let mut msg = Msg::default();
             PeekMessageW(&mut msg, 0, 0, 0, 0); // creates this thread's message queue
@@ -460,20 +488,18 @@ mod sys {
             }
             WAITER.store(GetCurrentThreadId(), Ordering::SeqCst);
             let timer = SetTimer(0, 0, seconds * 1000, std::ptr::null());
-            // Checked after WAITER is set: a cancel either sees this thread or is seen here
-            let r = if CANCEL.load(Ordering::SeqCst) {
-                Err(CANCELLED.to_string())
-            } else {
-                loop {
-                    if GetMessageW(&mut msg, 0, 0, 0) <= 0 {
-                        break Err(CANCELLED.to_string());
-                    }
-                    match msg.message {
-                        WM_HOTKEY => break Ok(()),
-                        WM_TIMER => break Err(TIMEOUT.to_string()),
-                        WM_APP => break Err(CANCELLED.to_string()),
-                        _ => {}
-                    }
+            // Checked after WAITER is set: a newer request either wakes this thread or is seen here
+            let r = loop {
+                if fresh(my).is_err() {
+                    break Err(CANCELLED.to_string());
+                }
+                if GetMessageW(&mut msg, 0, 0, 0) <= 0 {
+                    break Err(CANCELLED.to_string());
+                }
+                match msg.message {
+                    WM_HOTKEY => break Ok(()),
+                    WM_TIMER => break Err(TIMEOUT.to_string()),
+                    _ => {} // WM_APP: a wake, checked at the top
                 }
             };
             WAITER.store(0, Ordering::SeqCst);
@@ -485,6 +511,16 @@ mod sys {
 
     pub fn wake(thread: u32) {
         unsafe { PostThreadMessageW(thread, WM_APP, 0, 0) };
+    }
+
+    /// Restores and asks Windows to bring this window to the front; refused, Windows flashes its taskbar button.
+    pub fn raise(hwnd: Hwnd) {
+        unsafe {
+            if IsIconic(hwnd) != 0 {
+                ShowWindow(hwnd, SW_RESTORE);
+            }
+            SetForegroundWindow(hwnd);
+        }
     }
 }
 
@@ -508,7 +544,7 @@ mod sys {
     pub fn copy_client(_: Hwnd, _: u32, _: u32, _: u32, _: u32) -> Result<Vec<u8>, String> {
         Err(ONLY.into())
     }
-    pub fn wait_for_hotkey(_: u32) -> Result<(), String> {
+    pub fn wait_for_hotkey(_: u32, _: u32) -> Result<(), String> {
         Err(ONLY.into())
     }
     pub fn wake(_: u32) {}
@@ -584,6 +620,28 @@ mod tests {
         let mut px = [3, 2, 5, 255].repeat(100);
         px[..4 * 5].copy_from_slice(&[90, 60, 170, 255].repeat(5)); // 5% purple
         assert!(!is_black(&px));
+    }
+
+    #[test]
+    fn a_newer_request_or_a_cancel_stops_older_ones() {
+        // One test: these share the module's statics
+        let first = supersede();
+        assert!(fresh(first).is_ok());
+        let busy = Busy::take(first).expect("the newest request gets the capture");
+        let second = supersede(); // Capture now while the first listens
+        assert_eq!(fresh(first), Err(CANCELLED.to_string()));
+        if cfg!(windows) {
+            assert_eq!(sys::wait_for_hotkey(1, first).unwrap_err(), CANCELLED, "a stale listener stops before it registers");
+        }
+        drop(busy);
+        let third = supersede(); // the dialog closed before the second one's thread started
+        assert_eq!(Busy::take(second).err().as_deref(), Some(CANCELLED), "a cancelled request never starts");
+        assert!(!BUSY.load(Ordering::SeqCst), "and holds nothing");
+        let busy = Busy::take(third).unwrap();
+        capture_game_cancel();
+        assert!(fresh(third).is_err(), "a cancel reaches a request that already holds the capture");
+        drop(busy);
+        assert!(!BUSY.load(Ordering::SeqCst));
     }
 
     #[test]

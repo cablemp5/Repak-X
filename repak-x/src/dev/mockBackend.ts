@@ -166,6 +166,7 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       case 'preview_kit_remove': localStorage.removeItem('mock.kit'); return null
       case 'preview_kit_set_blender': return args?.path ?? null
       case 'preview_kit_install_blender': return 'C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe'
+      case 'set_game_path': return String(args?.path ?? '')
       case 'previews_doctor': return localStorage.getItem('mock.doctor') === 'fail'
         ? { ok: false, problems: ["The game's Paks folder was not found (REPAKXTRA_PAKS is not set)."] } : { ok: true, problems: [] }
       // Capture: the game counts as open while window.__mockGameRunning is set; captures fail (no game to picture)

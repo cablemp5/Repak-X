@@ -456,13 +456,13 @@ async fn get_game_path(state: State<'_, Arc<Mutex<AppState>>>) -> Result<String,
 }
 
 #[tauri::command]
-async fn set_game_path(path: String, state: State<'_, Arc<Mutex<AppState>>>) -> Result<(), String> {
-    let mods_path = PathBuf::from(&path);
+async fn set_game_path(path: String, state: State<'_, Arc<Mutex<AppState>>>) -> Result<String, String> {
+    let mods_path = xtra_setup::mods_folder_for(&PathBuf::from(&path))?; // repakxtra: the install folder means its ~mods
 
     let mut state = state.lock().unwrap();
-    state.game_path = mods_path;
+    state.game_path = mods_path.clone();
     save_state(&state).map_err(|e| e.to_string())?;
-    Ok(())
+    Ok(mods_path.to_string_lossy().to_string()) // repakxtra: the folder actually stored
 }
 
 #[tauri::command]

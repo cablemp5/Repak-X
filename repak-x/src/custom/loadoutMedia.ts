@@ -35,7 +35,11 @@ async function carryOverMedia(to: IDBDatabase) {
         const [keys, blobs] = await Promise.all([ask(read.getAllKeys()), ask(read.getAll())])
         const tx = to.transaction('media', 'readwrite')
         const store = tx.objectStore('media')
-        keys.forEach((k, i) => { store.add(blobs[i], k).onerror = e => { e.preventDefault(); e.stopPropagation() } }) // add: never over a file stored here
+        keys.forEach((k, i) => {
+          const req = store.add(blobs[i], k) // add: never over a file stored here
+          // Only "already here" is skipped; any other error aborts the copy and it runs again next start
+          req.onerror = e => { if (req.error?.name === 'ConstraintError') { e.preventDefault(); e.stopPropagation() } }
+        })
         await new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); tx.onabort = () => rej(tx.error) })
       }
     } finally {

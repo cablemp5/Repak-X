@@ -18,6 +18,7 @@ import {
   inGroup, isActive, modKey, moveGroup, nextLoadoutName, openLoadout, patchLoadout, readLoadouts, renameGroup,
   setLoadoutGroup, setView, snapshotLoadout, sweepMediaOnce, useGroups, useLoadouts, useOpenLoadout, useView, writeLoadouts,
 } from './loadoutStore'
+import { savedItem } from './storageCarryOver'
 
 type GroupBy = 'group' | 'hero'
 const GROUP_BY_KEY = 'repakxtra.loadoutGroupBy'
@@ -107,7 +108,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
   const lastRun = usePreviewSummary()
   const [editingGroup, setEditingGroup] = useState<string | null>(null)
   const [dropGroup, setDropGroup] = useState<string | null>(null)
-  const [groupBy, setGroupByState] = useState<GroupBy>(() => (localStorage.getItem(GROUP_BY_KEY) === 'hero' ? 'hero' : 'group'))
+  const [groupBy, setGroupByState] = useState<GroupBy>(() => (savedItem(GROUP_BY_KEY) === 'hero' ? 'hero' : 'group'))
   const setGroupBy = (g: GroupBy) => { localStorage.setItem(GROUP_BY_KEY, g); setGroupByState(g) }
   const fileRef = useRef<HTMLInputElement>(null)
   const [genMenu, setGenMenu] = useState(false)
@@ -135,13 +136,16 @@ export default function LoadoutsScreen(p: LoadoutProps) {
     ;(edit || newRef.current)?.focus()
   })
 
+  /** Stores the loadout's picture; false (with the reason shown) when it could not be saved. */
   const setMedia = async (id: string, file: Blob) => {
     try {
       const { blob, type } = await prepareMedia(file)
       await putMedia(id, blob)
       patchLoadout(id, { mediaType: type, mediaRev: Date.now(), image: undefined })
+      return true
     } catch (e) {
-      p.alert.error('Media not saved', e instanceof Error ? e.message : String(e))
+      p.alert.warning('Media not saved', e instanceof Error ? e.message : String(e))
+      return false
     }
   }
 

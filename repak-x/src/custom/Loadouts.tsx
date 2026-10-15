@@ -11,6 +11,7 @@ import {
 import { isTyping } from './hotkeys'
 import { plural } from './modName'
 import { Num } from './motion'
+import { savedItem } from './storageCarryOver'
 
 export type LoadoutProps = {
   mods: Mod[]            // every installed mod
@@ -20,7 +21,7 @@ export type LoadoutProps = {
   isBlocked: () => boolean // the same, read live (Undo toasts outlive the component that made them)
   reload: () => Promise<unknown>
   alert: ReturnType<typeof useAlert>
-  modDetails?: Record<string, { character_name?: string | null; category?: string | null } | undefined>
+  modDetails?: Record<string, { character_name?: string | null; category?: string | null; additional_categories?: string[]; mod_type?: string } | undefined>
   selected?: string[]    // paths picked in the Library: + makes a loadout of exactly these
 }
 
@@ -28,7 +29,7 @@ const HEIGHT_KEY = 'repakxtra.loadoutsHeight'
 
 /** Drag to set the sidebar list's height (same grip as the filters/folders handle); saved across starts. */
 function useListHeight() {
-  const [height, setHeight] = useState<number | null>(() => Number(localStorage.getItem(HEIGHT_KEY)) || null)
+  const [height, setHeight] = useState<number | null>(() => Number(savedItem(HEIGHT_KEY)) || null)
   const [dragging, setDragging] = useState(false)
   const start = (e: ReactMouseEvent<HTMLDivElement>) => {
     e.preventDefault()

@@ -7,11 +7,42 @@
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, State};
 
-static RUNNING: AtomicBool = AtomicBool::new(false);
+/// Who works in the preview kit's folders right now: a preview run, a kit install or removal, or the PC check. One at a
+/// time, so an install never replaces files a render or the check is using, and two installs never share a side folder.
+static OWNER: Mutex<Option<&'static str>> = Mutex::new(None);
+
+/// The reservation: whoever holds it owns the kit's folders until it is dropped (on every path, panics included).
+pub struct Hold(());
+impl Drop for Hold {
+    fn drop(&mut self) {
+        *OWNER.lock().unwrap_or_else(|e| e.into_inner()) = None;
+    }
+}
+
+/// Reserves the kit's folders for `who` ("previews", "kit" or "doctor"); Err names who has them.
+pub fn reserve(who: &'static str) -> Result<Hold, &'static str> {
+    let mut owner = OWNER.lock().unwrap_or_else(|e| e.into_inner());
+    match *owner {
+        Some(other) => Err(other),
+        None => {
+            *owner = Some(who);
+            Ok(Hold(()))
+        }
+    }
+}
+
+/// Why the kit's folders are busy, for whoever asked.
+pub fn busy_text(who: &str) -> String {
+    match who {
+        "previews" => "Previews are generating. Stop them or wait, then try again.",
+        "kit" => "The preview kit is installing or being removed. Wait for it to finish.",
+        _ => "This PC is being checked for previews. Try again in a moment.",
+    }
+    .into()
+}
 
 fn previews_dir() -> PathBuf {
     crate::app_dir().join("previews")
@@ -38,9 +69,6 @@ fn generator() -> Option<(PathBuf, PathBuf, PathBuf, bool)> {
     dev_generator().map(|(root, python, script)| (root, python, script, false))
 }
 
-pub fn is_running() -> bool {
-    RUNNING.load(Ordering::SeqCst)
-}
 
 /// Whether previews can be generated here; without it the app hides its Generate buttons and keeps showing previews it has.
 #[tauri::command]
@@ -137,11 +165,13 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
     if let Some(bad) = jobs.iter().map(|(_, k)| k).chain(set.iter()).find(|k| !valid_key(k)) {
         return Err(format!("Invalid preview key: {bad}"));
     }
+    let hold = match reserve("previews") {
+        Ok(h) => h,
+        Err("previews") => return Ok(false),
+        Err(other) => return Err(busy_text(other)),
+    };
     let paks = state.lock().unwrap().game_path.parent().map(|p| p.to_path_buf());
-    let mut cmd = generator_command(paks)?;
-    if RUNNING.swap(true, Ordering::SeqCst) {
-        return Ok(false);
-    }
+    let mut cmd = generator_command(paks, true)?;
     // One generator run over every folder the mods sit in (a loadout's combined render needs all of them at once)
     cmd.arg("--out").arg(previews_dir());
     if force == Some(true) {
@@ -167,6 +197,7 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
         .unwrap_or_else(|_| Stdio::null());
     cmd.stdout(Stdio::piped()).stderr(log);
     std::thread::spawn(move || {
+        let hold = hold; // the run owns the kit until its generator exits
         let mut ok = false;
         if let Ok(mut child) = cmd.spawn() {
             if let Some(out) = child.stdout.take() {
@@ -184,7 +215,7 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
             }
             ok = child.wait().map(|s| s.success()).unwrap_or(false);
         }
-        RUNNING.store(false, Ordering::SeqCst);
+        drop(hold); // free before "done": the app starts the next queued run on it
         let _ = app.emit("mod-previews-done", ok);
     });
     Ok(true)
@@ -192,11 +223,11 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
 
 /// The generator's command so far (python and its script, run in its folder, with the kit's variables): the kit, or the
 /// developer's own generator. The error says what to install.
-fn generator_command(paks: Option<PathBuf>) -> Result<Command, String> {
+fn generator_command(paks: Option<PathBuf>, need_blender: bool) -> Result<Command, String> {
     let Some((root, python, script, kit)) = generator() else {
         return Err("Previews need the preview kit: install it in Setup.".into());
     };
-    if kit && crate::xtra_kit::blender().is_none() {
+    if need_blender && kit && crate::xtra_kit::blender().is_none() {
         return Err("Previews need Blender: install it in Setup (or from blender.org), or pick blender.exe there.".into());
     }
     let mut cmd = Command::new(&python);
@@ -224,10 +255,12 @@ fn generator_command(paks: Option<PathBuf>) -> Result<Command, String> {
 /// the kit or Blender is installed, so a missing piece is named before the first render fails on it.
 #[tauri::command]
 pub async fn previews_doctor(state: State<'_, Arc<Mutex<crate::AppState>>>) -> Result<serde_json::Value, String> {
+    let hold = reserve("doctor").map_err(busy_text)?;
     let paks = state.lock().unwrap().game_path.parent().map(|p| p.to_path_buf());
-    let mut cmd = generator_command(paks)?;
+    let mut cmd = generator_command(paks, false)?; // without Blender the check itself says it is missing
     cmd.arg("--doctor");
-    let out = tauri::async_runtime::spawn_blocking(move || cmd.output()).await.map_err(|e| e.to_string())?
+    // The hold lives in the worker: it outlasts this future if the app stops waiting
+    let out = tauri::async_runtime::spawn_blocking(move || { let _hold = hold; cmd.output() }).await.map_err(|e| e.to_string())?
         .map_err(|e| format!("The preview generator did not start: {e}"))?;
     doctor_line(&String::from_utf8_lossy(&out.stdout))
         .ok_or_else(|| format!("The preview check gave no answer (exit {}).", out.status.code().unwrap_or(-1)))
@@ -272,6 +305,25 @@ mod tests {
         std::fs::File::options().write(true).open(&webp).unwrap().set_modified(later).unwrap();
         assert_eq!(preview_file(&dir, "A").unwrap().extension().unwrap(), "webp");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_kit_has_one_owner_at_a_time() {
+        let hold = reserve("kit").unwrap();
+        assert_eq!(reserve("previews").err(), Some("kit"));
+        assert_eq!(reserve("doctor").err(), Some("kit"));
+        drop(hold);
+        let hold = reserve("previews").unwrap();
+        assert_eq!(reserve("previews").err(), Some("previews"));
+        drop(hold);
+        // A panic while holding it still frees it
+        let r = std::panic::catch_unwind(|| { let _h = reserve("doctor").unwrap(); panic!("boom") });
+        assert!(r.is_err());
+        drop(reserve("kit").expect("free again after the panic"));
+        // A worker that fails to start (the hold moves into it and drops with it)
+        let hold = reserve("previews").unwrap();
+        std::thread::spawn(move || { let _hold = hold; }).join().unwrap();
+        drop(reserve("previews").expect("free once the worker ended"));
     }
 
     #[test]

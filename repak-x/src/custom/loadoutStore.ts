@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { sweepOrphanMedia } from './loadoutMedia'
+import { savedItem } from './storageCarryOver'
 import { isTyping } from './hotkeys'
 
 export type Mod = { path: string; enabled?: boolean; modified_date?: number }
@@ -29,7 +30,7 @@ const notify = () => listeners.forEach(l => l())
 /** A label that is not a string (a hand-edited or imported file) reads as no group, so grouping never sees an object. */
 const decode = (json: string): Loadout[] =>
   (JSON.parse(json) as Loadout[]).map(l => (typeof l.label === 'string' ? l : { ...l, label: OTHER }))
-export const readLoadouts = (): Loadout[] => decode(localStorage.getItem(STORAGE) || '[]')
+export const readLoadouts = (): Loadout[] => decode(savedItem(STORAGE) || '[]')
 /** Every id written this session: the startup media sweep keeps their media (a deleted one may still come back by Undo). */
 const sessionIds = new Set<string>()
 /** Throws when localStorage is full (large images). */
@@ -57,7 +58,7 @@ export const deleteLoadout = (id: string) => {
 }
 
 export const useLoadouts = (): Loadout[] =>
-  decode(useSyncExternalStore(subscribe, () => localStorage.getItem(STORAGE) || '[]'))
+  decode(useSyncExternalStore(subscribe, () => savedItem(STORAGE) || '[]'))
 
 let swept = false
 /** Once per start, from Home (the main window only): deletes stored media whose loadout no longer exists. The ids are
@@ -67,7 +68,7 @@ export function sweepMediaOnce() {
   if (swept) return
   swept = true
   try {
-    const list: unknown = JSON.parse(localStorage.getItem(STORAGE) || '[]')
+    const list: unknown = JSON.parse(savedItem(STORAGE) || '[]')
     if (!Array.isArray(list) || !list.every(l => typeof l?.id === 'string' && l.id)) return
     list.forEach(l => sessionIds.add(l.id))
   } catch {
@@ -215,7 +216,7 @@ export const groupKey = (label: string) => (label || '').trim().toLowerCase()
  *  place. A loadout's label names its group; OTHER means none and always shows last. */
 export const OTHER = 'Other'
 const GROUPS = 'repakxtra.groups'
-const readGroupList = (): string[] => JSON.parse(localStorage.getItem(GROUPS) || '[]')
+const readGroupList = (): string[] => JSON.parse(savedItem(GROUPS) || '[]')
 const writeGroupList = (groups: string[]) => { localStorage.setItem(GROUPS, JSON.stringify(groups)); notify() }
 
 /** Every group in order: the saved list, then labels on loadouts the list lacks (older loadouts, imports). */
@@ -227,7 +228,7 @@ export const listGroups = (loadouts = readLoadouts()) => {
   return [...out.values()]
 }
 export const useGroups = () => {
-  useSyncExternalStore(subscribe, () => localStorage.getItem(GROUPS) || '')
+  useSyncExternalStore(subscribe, () => savedItem(GROUPS) || '')
   return listGroups(useLoadouts())
 }
 export const inGroup = (l: Loadout, group: string) => groupKey(l.label) === groupKey(group)
@@ -277,7 +278,7 @@ export const setLoadoutGroup = (id: string, group: string) => patchLoadout(id, {
 /** Which main view shows: Home (loadout cards) or Library (the full mod list). Remembered; Home on first start.
  *  Mirrored on <html data-view> so theme.css hides the other view (both stay mounted, keeping their state). */
 export type View = 'home' | 'library'
-let view: View = localStorage.getItem('repakxtra.view') === 'library' ? 'library' : 'home'
+let view: View = savedItem('repakxtra.view') === 'library' ? 'library' : 'home'
 const applyView = () => { document.documentElement.dataset.view = view }
 applyView()
 export const setView = (v: View) => { view = v; localStorage.setItem('repakxtra.view', v); applyView(); notify() }

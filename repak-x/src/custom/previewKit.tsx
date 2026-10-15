@@ -19,6 +19,8 @@ export const isKitZip = (path: string) => /(^|[\\/])repakxtra-preview-kit[^\\/]*
 export const isNewerKit = (latest: string, installed?: string | null) =>
   !installed || (Number.isFinite(+latest) && Number.isFinite(+installed) ? +latest > +installed : latest > installed)
 const mb = (n: number) => `${Math.round(n / 1048576)} MB`
+/** The generator's check of this PC; when it cannot run (no kit, busy, would not start) that is its one problem. */
+const checkPc = () => invoke<Doctor>('previews_doctor').catch((e): Doctor => ({ ok: false, problems: [String(e)] }))
 /** "38 MB of 108 MB", "Unpacking…" */
 export const progressText = (p: KitProgress | null) =>
   !p ? '' : p.stage === 'unpack' ? 'Unpacking…' : p.total ? `${mb(p.done)} of ${mb(p.total)}` : mb(p.done)
@@ -50,7 +52,7 @@ export function usePreviewKit(alert: Alert) {
     return v
   }
   /** A later step's result, then the check of this PC (so a card always says what is missing). */
-  const runDoctorAfter = <T,>(p: Promise<T>, what: string) => run(what, async () => { const r = await p; setDoctor(await invoke<Doctor>('previews_doctor').catch(() => null)); return r })
+  const runDoctorAfter = <T,>(p: Promise<T>, what: string) => run(what, async () => { const r = await p; setDoctor(await checkPc()); return r })
 
   return {
     kit, latest, busy, progress, doctor,
@@ -63,19 +65,19 @@ export function usePreviewKit(alert: Alert) {
       const was = kit?.version
       const v = await installKit(file)
       alert.success('Preview kit', was ? `Updated to v${v}.` : `v${v} installed.`)
-      setDoctor(await invoke<Doctor>('previews_doctor').catch(() => null))
+      setDoctor(await checkPc())
       return v
     }),
     installBlender: () => run('blender', async () => {
       const path = await invoke<string>('preview_kit_install_blender')
       await status()
-      setDoctor(await invoke<Doctor>('previews_doctor').catch(() => null))
+      setDoctor(await checkPc())
       return path
     }),
     pickBlender: (path: string) => run('blender', async () => {
       await invoke('preview_kit_set_blender', { path })
       await status()
-      setDoctor(await invoke<Doctor>('previews_doctor').catch(() => null))
+      setDoctor(await checkPc())
     }),
     remove: () => run('remove', async () => {
       await invoke('preview_kit_remove')
@@ -92,7 +94,7 @@ export function usePreviewKit(alert: Alert) {
       if (!now.version && !now.dev && !release) throw new Error('No preview kit has been published yet. If someone sent you the kit zip, drop it on this window.')
       if (release && (!now.version ? !now.dev : isNewerKit(release.version, now.version))) await installKit()
       if (!now.blender) { await invoke<string>('preview_kit_install_blender'); await status() }
-      const d = await invoke<Doctor>('previews_doctor')
+      const d = await checkPc()
       setDoctor(d)
       if (d.ok) alert.success('Mod previews', 'Ready. Generate previews from a loadout.')
       return d

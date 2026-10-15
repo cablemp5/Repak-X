@@ -7,12 +7,13 @@ import { motion } from 'framer-motion'
 import { Camera, LoaderCircle, RotateCcw } from 'lucide-react'
 import type { LoadoutProps } from './Loadouts'
 import { type Loadout, displayName, modKey } from './loadoutStore'
+import { getAdditionalCategories } from '../utils'
 import './capture.css'
 
 type GameStatus = { running: boolean; width: number; height: number }
 type Phase = 'listening' | 'capturing' | 'idle' | 'done' | 'saving'
 const LISTEN_SECONDS = 600 // then it stops listening; Listen again restarts it
-const VISUAL = new Set(['Mesh', 'Texture'])
+const VISUAL = new Set(['Mesh', 'Static Mesh', 'Texture'])
 
 /** The capture's body (width and height as u32 LE, then RGBA) as a WebP of the same size. */
 function toWebp(buf: ArrayBuffer): Promise<Blob> {
@@ -27,7 +28,7 @@ function toWebp(buf: ArrayBuffer): Promise<Blob> {
 }
 
 function CaptureDialog({ p, l, hero, onUse, onClose }: {
-  p: LoadoutProps; l: Loadout; hero?: string; onUse: (blob: Blob) => void | Promise<void>; onClose: () => void
+  p: LoadoutProps; l: Loadout; hero?: string; onUse: (blob: Blob) => Promise<boolean>; onClose: () => void
 }) {
   const [phase, setPhase] = useState<Phase>('listening')
   const [shot, setShot] = useState<{ blob: Blob; url: string } | null>(null)
@@ -67,16 +68,12 @@ function CaptureDialog({ p, l, hero, onUse, onClose }: {
   })
 
   const retake = () => { setShot(null); take('capture_game_hotkey') }
+  /** Closes once the picture is saved; a failed save (onUse says why) keeps the shot here to try again. */
   const use = async () => {
     if (!shot) return
     setPhase('saving')
-    try {
-      await onUse(shot.blob)
-      onClose()
-    } catch (e) {
-      p.alert.warning('Capture', e instanceof Error ? e.message : String(e))
-      setPhase('done')
-    }
+    if (await onUse(shot.blob).catch(() => false)) onClose()
+    else setPhase('done')
   }
 
   return (
@@ -125,10 +122,10 @@ function CaptureDialog({ p, l, hero, onUse, onClose }: {
 }
 
 /** The loadout page's button: shown for loadouts with a Mesh or Texture mod, usable while Marvel Rivals runs. */
-export function CaptureButton({ p, l, onUse }: { p: LoadoutProps; l: Loadout; onUse: (blob: Blob) => void | Promise<void> }) {
+export function CaptureButton({ p, l, onUse }: { p: LoadoutProps; l: Loadout; onUse: (blob: Blob) => Promise<boolean> }) {
   const byKey = new Map(p.mods.map(m => [modKey(m.path), m]))
   const details = [...new Set(l.on.map(displayName))].map(k => byKey.get(k)).map(m => (m ? p.modDetails?.[m.path] : undefined))
-  const visual = details.filter(d => VISUAL.has(d?.category ?? ''))
+  const visual = details.filter(d => [d?.category, ...getAdditionalCategories(d)].some(c => VISUAL.has(c ?? '')))
   // "Black Panther - Skin" -> "Black Panther", from a skin mod first
   const hero = [...visual, ...details].map(d => d?.character_name?.split(' - ')[0].trim()).find(n => n && !n.startsWith('Multiple'))
   const show = visual.length > 0

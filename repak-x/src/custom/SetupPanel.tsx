@@ -9,6 +9,7 @@ import { type Doctor, type KitProgress, isNewerKit, progressShare, progressText,
 import Checkbox from '../components/ui/Checkbox'
 import CustomDropdown from '../components/CustomDropdown'
 import type { useAlert } from '../components/AlertHandler'
+import { savedItem } from './storageCarryOver'
 
 type Alert = ReturnType<typeof useAlert>
 type FileCheck = { name: string; place: string; size: number; sha256: string; found: 'missing' | 'same' | 'other' }
@@ -16,7 +17,7 @@ type Bypass = { state: 'installed' | 'disabled' | 'partial' | 'other' | 'missing
 type Galacta = { installed: string | null; disabled: boolean; latest: string | null; published: string | null; notes: string | null; url: string | null; up_to_date: boolean | null }
 
 const AUTO_KEY = 'repakxtra.setup.autoCheck'
-const autoCheck = () => localStorage.getItem(AUTO_KEY) !== '0'
+const autoCheck = () => savedItem(AUTO_KEY) !== '0'
 const FOLDER_KEY = 'repakxtra.setup.galactaFolder'
 const HERE = '__here'   // install where Galacta already is, or the mods folder itself
 const NEXUS = 'https://www.nexusmods.com/marvelrivals/mods/2940'
@@ -149,7 +150,7 @@ export function SetupPanel({ alert, onClose, start }: { alert: Alert; onClose: (
   const [bypass, setBypass] = useState<Bypass | null>(null)
   const [galacta, setGalacta] = useState<Galacta | null>(start ?? null)
   const [folders, setFolders] = useState<string[]>([])
-  const [folder, setFolder] = useState(localStorage.getItem(FOLDER_KEY) || HERE)
+  const [folder, setFolder] = useState(savedItem(FOLDER_KEY) || HERE)
   const [auto, setAuto] = useState(autoCheck())
   const [busy, setBusy] = useState<string | null>(null)
   const [confirmOff, setConfirmOff] = useState<'disable' | 'remove' | null>(null)

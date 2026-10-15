@@ -9,6 +9,7 @@ import type { useAlert } from '../components/AlertHandler'
 import { MotionGlobalConfig } from 'framer-motion'
 import Checkbox from '../components/ui/Checkbox'
 import { setSoundOn, unlockSound } from './sounds'
+import { savedItem } from './storageCarryOver'
 
 const PREFS = [
   { key: 'priority', label: 'Show load priority counter on mods' },
@@ -26,11 +27,11 @@ const MOTION_KEY = 'repakxtra.motion' // on by default: '0' = off
 const storageKey = (key: string) => `repakxtra.show.${key}`
 const listeners = new Set<() => void>()
 
-const isOn = (key: string) => localStorage.getItem(storageKey(key)) === '1'
-const getScale = () => Number(localStorage.getItem(SCALE_KEY)) || 1
-const tagsHidden = () => localStorage.getItem(HIDE_TAGS_KEY) === '1'
-const soundOn = () => localStorage.getItem(SOUND_KEY) !== '0'
-const motionOn = () => localStorage.getItem(MOTION_KEY) !== '0'
+const isOn = (key: string) => savedItem(storageKey(key)) === '1'
+const getScale = () => Number(savedItem(SCALE_KEY)) || 1
+const tagsHidden = () => savedItem(HIDE_TAGS_KEY) === '1'
+const soundOn = () => savedItem(SOUND_KEY) !== '0'
+const motionOn = () => savedItem(MOTION_KEY) !== '0'
 
 const apply = () => {
   PREFS.forEach(({ key }) => document.documentElement.toggleAttribute(`data-show-${key}`, isOn(key)))
