@@ -332,6 +332,7 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
                 <div className="sg-row">
                   <div><b>Stretched resolution</b><small>{stretch <= 1 ? 'Off' : `App scale ${stretch.toFixed(2)}, for stretched res without black bars`}</small></div>
                   <input type="range" min={1} max={2} step={0.05} value={stretch} aria-label="Stretched resolution"
+                    style={{ '--fill': `${Math.round((Math.min(2, Math.max(1, stretch)) - 1) * 100)}%` } as React.CSSProperties}
                     onChange={e => edit(ls => setTop(ls, 'stretched', Number(e.target.value).toFixed(2).replace(/0$/, '')))} />
                 </div>
                 <div className="sg-row">
