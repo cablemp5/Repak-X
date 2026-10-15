@@ -80,6 +80,8 @@ This fork is personal and unofficial: it is not made by the Repak X team, and ne
 ### Building from source
 Windows, with Rust, Node.js and the .NET SDK installed: run `build.ps1` in the repository root. It builds the app into `dist\` the same way the release workflow does.
 
+How changes are made (branches, pull requests, checks and the AI agents that write most of the code): see [WORKFLOW.md](WORKFLOW.md).
+
 ## Credits
 
 - **[Repak X](https://github.com/X-zant/Repak-X)** by Xzant and Saturn, and everyone credited in its Credits panel.
