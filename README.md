@@ -73,7 +73,7 @@ This fork is personal and unofficial: it is not made by the Repak X team, and ne
 ## Getting started
 
 1. Download the newest release from [Releases](https://github.com/cablemp5/repak-xtra/releases) and unzip it anywhere.
-2. Open `REPAK-X.exe`. If Windows SmartScreen warns about an unknown publisher, choose More info, then Run anyway.
+2. Open `repakxtra.exe`. If Windows SmartScreen warns about an unknown publisher, choose More info, then Run anyway.
 3. Set your game's `~mods` folder in Settings (Auto Detect finds a Steam install).
 4. Open **Setup** to install the signature bypass, Project Galacta and, for previews, the preview kit and Blender.
 
