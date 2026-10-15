@@ -1,4 +1,4 @@
-// caleb fork: sidebar list of saved loadouts (state lives in loadoutStore.ts). The dot or check turns a loadout on or
+// repakxtra: sidebar list of saved loadouts (state lives in loadoutStore.ts). The dot or check turns a loadout on or
 // off (as does Ctrl+1..9), the name opens its page on Home; drag rows to reorder them, which also reorders Ctrl+1..9.
 import { type MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from 'react'
 import { ArrowRightLeft, Check, Layers, Plus, Trash2 } from 'lucide-react'
@@ -24,7 +24,7 @@ export type LoadoutProps = {
   selected?: string[]    // paths picked in the Library: + makes a loadout of exactly these
 }
 
-const HEIGHT_KEY = 'caleb.loadoutsHeight'
+const HEIGHT_KEY = 'repakxtra.loadoutsHeight'
 
 /** Drag to set the sidebar list's height (same grip as the filters/folders handle); saved across starts. */
 function useListHeight() {

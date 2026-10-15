@@ -1,4 +1,4 @@
-//! caleb fork: Setup panel backend. Puts in place what Marvel Rivals needs to load mods:
+//! repakxtra: Setup panel backend. Puts in place what Marvel Rivals needs to load mods:
 //! - the UTOC signature bypass, bundled in the exe (resources/utoc-bypass, provenance in its SOURCE.md): dsound.dll (the
 //!   Ultimate ASI Loader) in Binaries\Win64 and MarvelRivalsUTOCSignatureBypass.asi in Binaries\Win64\plugins;
 //! - Project Galacta from its GitHub releases (0xSaturno/ProjectGalacta), checked and updated in one click.

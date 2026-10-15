@@ -1,7 +1,8 @@
-//! caleb fork: generated mod previews. The generator (`mod_previews.py`, with Cue4Export and Blender) comes from the
-//! preview kit (caleb_kit.rs) or, on Caleb's PC, his modding tools, and writes one PNG per mod to
-//! %APPDATA%\Repak-X\previews\<mod key>.png. This module serves those files and runs the generator for the mods you
-//! pick (details panel button, the selection bar's Previews button, a loadout's Generate previews).
+//! repakxtra: generated mod previews. The generator (`mod_previews.py`, with Cue4Export and Blender) comes from the
+//! preview kit (xtra_kit.rs) or, on the developer's PC, the modding tools, and writes one image per mod to
+//! %APPDATA%\Repak-X\previews\<mod key>.png (an animated <mod key>.webp for animation mods). This module serves those
+//! files and runs the generator for the mods you pick (details panel button, the selection bar's Previews button, a
+//! loadout's Generate previews).
 
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -16,12 +17,12 @@ fn previews_dir() -> PathBuf {
     crate::app_dir().join("previews")
 }
 
-/// Caleb's modding folder (the generator, its python and its tools live there).
+/// The developer's modding folder (the generator, its python and its tools live there).
 fn modding_dir() -> PathBuf {
     dirs::home_dir().unwrap_or_default().join(r"Programming\Modding\Claude Assisted Mods")
 }
 
-/// Caleb's own generator: his modding folder's python and script (no kit needed on his PC).
+/// The developer's own generator: the modding folder's python and script (no kit needed on that PC).
 pub fn dev_generator() -> Option<(PathBuf, PathBuf, PathBuf)> {
     let root = modding_dir();
     let python = root.join(r".venv\Scripts\python.exe");
@@ -29,9 +30,9 @@ pub fn dev_generator() -> Option<(PathBuf, PathBuf, PathBuf)> {
     (python.exists() && script.exists()).then_some((root, python, script))
 }
 
-/// (folder to run in, python, script, kit?): an installed preview kit first, else Caleb's own generator.
+/// (folder to run in, python, script, kit?): an installed preview kit first, else the developer's own generator.
 fn generator() -> Option<(PathBuf, PathBuf, PathBuf, bool)> {
-    if let Some(kit) = crate::caleb_kit::installed_kit() {
+    if let Some(kit) = crate::xtra_kit::installed_kit() {
         return Some((kit.clone(), kit.join(r"python\python.exe"), kit.join(r"previews\mod_previews.py"), true));
     }
     dev_generator().map(|(root, python, script)| (root, python, script, false))
@@ -52,14 +53,34 @@ fn valid_key(key: &str) -> bool {
     !key.is_empty() && !key.contains(['/', '\\', ':']) && !key.contains("..")
 }
 
+/// A preview is a PNG, or an animated WebP for animation mods (a clip on a gray model).
+const PREVIEW_EXTS: [&str; 2] = [".png", ".webp"];
+
 #[tauri::command]
 pub fn list_mod_previews() -> Vec<String> {
-    std::fs::read_dir(previews_dir())
+    let mut keys: Vec<String> = std::fs::read_dir(previews_dir())
         .map(|it| {
-            it.filter_map(|e| e.ok()?.file_name().to_str()?.strip_suffix(".png").map(str::to_string))
-                .collect()
+            it.filter_map(|e| {
+                let name = e.ok()?.file_name().to_str()?.to_string();
+                PREVIEW_EXTS.iter().find_map(|x| name.strip_suffix(x).map(str::to_string))
+            })
+            .collect()
         })
-        .unwrap_or_default()
+        .unwrap_or_default();
+    keys.sort();
+    keys.dedup();
+    keys
+}
+
+/// The preview file of a key: the newer of its PNG and WebP (the generator removes the other one, but a run that was
+/// stopped mid-way may leave both).
+fn preview_file(dir: &std::path::Path, key: &str) -> Option<PathBuf> {
+    PREVIEW_EXTS
+        .iter()
+        .map(|x| dir.join(format!("{key}{x}")))
+        .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p)))
+        .max_by_key(|(t, _)| *t)
+        .map(|(_, p)| p)
 }
 
 #[tauri::command]
@@ -67,9 +88,8 @@ pub fn get_mod_preview(key: String) -> Result<tauri::ipc::Response, String> {
     if !valid_key(&key) {
         return Err(format!("Invalid preview key: {key}"));
     }
-    std::fs::read(previews_dir().join(format!("{key}.png")))
-        .map(tauri::ipc::Response::new)
-        .map_err(|e| e.to_string())
+    let file = preview_file(&previews_dir(), &key).ok_or_else(|| format!("No preview for {key}"))?;
+    std::fs::read(file).map(tauri::ipc::Response::new).map_err(|e| e.to_string())
 }
 
 /// A loadout's combined render (`set`), from the generator's <set>.json: `covers`, the mods it shows (empty when there
@@ -117,19 +137,13 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
     if let Some(bad) = jobs.iter().map(|(_, k)| k).chain(set.iter()).find(|k| !valid_key(k)) {
         return Err(format!("Invalid preview key: {bad}"));
     }
-    let Some((root, python, script, kit)) = generator() else {
-        return Err("Previews need the preview kit: install it in Setup.".into());
-    };
-    if kit && crate::caleb_kit::blender().is_none() {
-        return Err("Previews need Blender: install it (blender.org), or pick blender.exe in Setup.".into());
-    }
     let paks = state.lock().unwrap().game_path.parent().map(|p| p.to_path_buf());
+    let mut cmd = generator_command(paks)?;
     if RUNNING.swap(true, Ordering::SeqCst) {
         return Ok(false);
     }
     // One generator run over every folder the mods sit in (a loadout's combined render needs all of them at once)
-    let mut cmd = Command::new(&python);
-    cmd.arg(&script).arg("--out").arg(previews_dir());
+    cmd.arg("--out").arg(previews_dir());
     if force == Some(true) {
         cmd.arg("--force");
     }
@@ -151,23 +165,7 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
         .and_then(|_| std::fs::File::create(previews_dir().join("generator.log")))
         .map(Stdio::from)
         .unwrap_or_else(|_| Stdio::null());
-    cmd.current_dir(&root).env("PYTHONUTF8", "1").stdout(Stdio::piped()).stderr(log);
-    if kit {
-        // The kit's contract (tools\previews\build_kit.py): where the kit is, the game's Paks folder, a writable work
-        // folder for exports, caches and the lock, and Blender
-        cmd.env("REPAKXTRA_KIT", &root).env("REPAKXTRA_WORK", previews_dir().join("work"));
-        if let Some(p) = &paks {
-            cmd.env("REPAKXTRA_PAKS", p);
-        }
-        if let Some(b) = crate::caleb_kit::blender() {
-            cmd.env("REPAKXTRA_BLENDER", b);
-        }
-    }
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-    }
+    cmd.stdout(Stdio::piped()).stderr(log);
     std::thread::spawn(move || {
         let mut ok = false;
         if let Ok(mut child) = cmd.spawn() {
@@ -192,6 +190,54 @@ pub fn generate_mod_previews(app: AppHandle, jobs: Vec<(String, String)>, set: O
     Ok(true)
 }
 
+/// The generator's command so far (python and its script, run in its folder, with the kit's variables): the kit, or the
+/// developer's own generator. The error says what to install.
+fn generator_command(paks: Option<PathBuf>) -> Result<Command, String> {
+    let Some((root, python, script, kit)) = generator() else {
+        return Err("Previews need the preview kit: install it in Setup.".into());
+    };
+    if kit && crate::xtra_kit::blender().is_none() {
+        return Err("Previews need Blender: install it in Setup (or from blender.org), or pick blender.exe there.".into());
+    }
+    let mut cmd = Command::new(&python);
+    cmd.arg(&script).current_dir(&root).env("PYTHONUTF8", "1");
+    if kit {
+        // The kit's contract (tools\previews\build_kit.py): where the kit is, the game's Paks folder, a writable work
+        // folder for exports, caches and the lock, and Blender
+        cmd.env("REPAKXTRA_KIT", &root).env("REPAKXTRA_WORK", previews_dir().join("work"));
+        if let Some(p) = &paks {
+            cmd.env("REPAKXTRA_PAKS", p);
+        }
+        if let Some(b) = crate::xtra_kit::blender() {
+            cmd.env("REPAKXTRA_BLENDER", b);
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    Ok(cmd)
+}
+
+/// The generator's own check of this PC (`--doctor`): `{ ok, problems: [sentences], blender, ... }`. Setup runs it after
+/// the kit or Blender is installed, so a missing piece is named before the first render fails on it.
+#[tauri::command]
+pub async fn previews_doctor(state: State<'_, Arc<Mutex<crate::AppState>>>) -> Result<serde_json::Value, String> {
+    let paks = state.lock().unwrap().game_path.parent().map(|p| p.to_path_buf());
+    let mut cmd = generator_command(paks)?;
+    cmd.arg("--doctor");
+    let out = tauri::async_runtime::spawn_blocking(move || cmd.output()).await.map_err(|e| e.to_string())?
+        .map_err(|e| format!("The preview generator did not start: {e}"))?;
+    doctor_line(&String::from_utf8_lossy(&out.stdout))
+        .ok_or_else(|| format!("The preview check gave no answer (exit {}).", out.status.code().unwrap_or(-1)))
+}
+
+/// The generator's `DOCTOR {json}` line.
+fn doctor_line(stdout: &str) -> Option<serde_json::Value> {
+    stdout.lines().find_map(|l| serde_json::from_str(l.trim().strip_prefix("DOCTOR ")?).ok())
+}
+
 /// Stops a run after the mod it is rendering now (the generator checks for this file between mods).
 #[tauri::command]
 pub fn cancel_mod_previews() -> Result<(), String> {
@@ -210,6 +256,29 @@ mod tests {
         assert!(!valid_key("C:evil"));
         assert!(!valid_key("a/b"));
         assert!(!valid_key(""));
+    }
+
+    #[test]
+    fn the_newer_of_png_and_webp_is_the_preview() {
+        let dir = std::env::temp_dir().join(format!("previews-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        assert!(preview_file(&dir, "A").is_none());
+        std::fs::write(dir.join("A.png"), b"png").unwrap();
+        assert_eq!(preview_file(&dir, "A").unwrap().extension().unwrap(), "png");
+        let webp = dir.join("A.webp");
+        std::fs::write(&webp, b"webp").unwrap();
+        let later = std::time::SystemTime::now() + std::time::Duration::from_secs(5);
+        std::fs::File::options().write(true).open(&webp).unwrap().set_modified(later).unwrap();
+        assert_eq!(preview_file(&dir, "A").unwrap().extension().unwrap(), "webp");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn doctor_answers_are_read() {
+        let v = doctor_line("# a note\nDOCTOR {\"ok\": false, \"problems\": [\"Blender was not found.\"]}\r\n").unwrap();
+        assert_eq!((v["ok"].as_bool(), v["problems"][0].as_str()), (Some(false), Some("Blender was not found.")));
+        assert!(doctor_line("PREVIEW_BUSY").is_none());
     }
 
     #[test]

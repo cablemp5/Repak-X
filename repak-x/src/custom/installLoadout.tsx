@@ -1,4 +1,4 @@
-// caleb fork: "Save as a loadout" in the install panel (2+ mods). The panel's options are a draft until Install is
+// repakxtra: "Save as a loadout" in the install panel (2+ mods). The panel's options are a draft until Install is
 // pressed (commitInstallLoadout); App's install flow calls finishInstallLoadout once the files are in place, which
 // creates the loadout from the mods that actually landed and, if asked, queues its previews.
 import { useEffect, useState } from 'react'

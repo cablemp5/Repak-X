@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { motion } from 'framer-motion'
 import Switch from './ui/Switch'
 import Checkbox from './ui/Checkbox'
-import { InstallAsLoadout, commitInstallLoadout } from '../custom/installLoadout' // caleb fork
+import { InstallAsLoadout, commitInstallLoadout } from '../custom/installLoadout' // repakxtra
 import { FaTag } from "react-icons/fa6"
 import { VscFolder, VscFolderOpened, VscChevronRight, VscChevronDown, VscNewFolder } from 'react-icons/vsc'
 import { MdCreateNewFolder } from 'react-icons/md'
@@ -302,7 +302,7 @@ export default function InstallModPanel({ mods, allTags, folders = [], currentFo
         }
       })
       .filter(m => m.enabled !== false)
-    commitInstallLoadout() // caleb fork
+    commitInstallLoadout() // repakxtra
     onInstall(modsToInstall)
   }
 
@@ -683,7 +683,7 @@ export default function InstallModPanel({ mods, allTags, folders = [], currentFo
 
         {/* Action Buttons */}
         <div className="install-actions">
-          <InstallAsLoadout count={enabledCount} />{/* caleb fork */}
+          <InstallAsLoadout count={enabledCount} />{/* repakxtra */}
           <button onClick={onCancel} className="btn-cancel">
             Cancel
           </button>

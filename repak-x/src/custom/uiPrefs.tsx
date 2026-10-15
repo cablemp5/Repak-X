@@ -1,5 +1,5 @@
-// caleb fork: UI scale and show/hide switches for optional UI, saved in localStorage and applied
-// instantly in every window. Show/hide prefs set a data-show-* attribute on <html>; caleb.css hides
+// repakxtra: UI scale and show/hide switches for optional UI, saved in localStorage and applied
+// instantly in every window. Show/hide prefs set a data-show-* attribute on <html>; theme.css hides
 // the element when it is absent. UI scale uses the webview zoom, like Ctrl + in a browser.
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { getCurrentWebview } from '@tauri-apps/api/webview'
@@ -18,12 +18,12 @@ const PREFS = [
 ] as const
 
 const SCALES = [0.9, 1, 1.1, 1.25, 1.4, 1.5]
-const SCALE_KEY = 'caleb.uiScale'
-const HIDE_TAGS_KEY = 'caleb.hideTags' // tags show by default, so this one stores the hidden state
-const SOUND_KEY = 'caleb.sound'   // on by default: '0' = off
-const MOTION_KEY = 'caleb.motion' // on by default: '0' = off
+const SCALE_KEY = 'repakxtra.uiScale'
+const HIDE_TAGS_KEY = 'repakxtra.hideTags' // tags show by default, so this one stores the hidden state
+const SOUND_KEY = 'repakxtra.sound'   // on by default: '0' = off
+const MOTION_KEY = 'repakxtra.motion' // on by default: '0' = off
 
-const storageKey = (key: string) => `caleb.show.${key}`
+const storageKey = (key: string) => `repakxtra.show.${key}`
 const listeners = new Set<() => void>()
 
 const isOn = (key: string) => localStorage.getItem(storageKey(key)) === '1'
@@ -35,7 +35,7 @@ const motionOn = () => localStorage.getItem(MOTION_KEY) !== '0'
 const apply = () => {
   PREFS.forEach(({ key }) => document.documentElement.toggleAttribute(`data-show-${key}`, isOn(key)))
   document.documentElement.toggleAttribute('data-hide-tags', tagsHidden())
-  // Motion off: caleb.css zeroes every CSS transition and animation, framer-motion jumps to the end state
+  // Motion off: theme.css zeroes every CSS transition and animation, framer-motion jumps to the end state
   document.documentElement.setAttribute('data-motion', motionOn() ? 'on' : 'off')
   MotionGlobalConfig.skipAnimations = !motionOn()
   setSoundOn(soundOn())
@@ -53,7 +53,7 @@ window.addEventListener('keydown', e => {
   update(SCALE_KEY, String(next))
 })
 // Other windows (Asset Explorer, VFX Updater) pick up changes made in Settings
-window.addEventListener('storage', e => { if (e.key?.startsWith('caleb.')) { apply(); listeners.forEach(l => l()) } })
+window.addEventListener('storage', e => { if (e.key?.startsWith('repakxtra.')) { apply(); listeners.forEach(l => l()) } })
 
 const update = (key: string, value: string) => {
   localStorage.setItem(key, value)
@@ -146,7 +146,7 @@ export function TagsToggle({ tags, mods, onChanged, alert }: {
   )
 }
 
-export default function CalebUiSettings() {
+export default function UiSettings() {
   const snapshot = useSyncExternalStore(subscribe, () => PREFS.map(p => (isOn(p.key) ? 1 : 0)).join('') + '|' + getScale() + '|' + soundOn() + motionOn())
   const scale = getScale()
   return (

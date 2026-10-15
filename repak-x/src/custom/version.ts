@@ -1,4 +1,4 @@
-// caleb fork: repakxtra's own version, bumped for each repakxtra release. The Repak X version it is built on still comes
+// repakxtra: repakxtra's own version, bumped for each repakxtra release. The Repak X version it is built on still comes
 // from Cargo (get_app_version).
 export const REPAKXTRA_VERSION = '0.2.0'
 

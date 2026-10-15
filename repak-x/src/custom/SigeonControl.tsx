@@ -1,4 +1,4 @@
-// caleb fork: header switch for Sigeon V2 (backend: caleb_sigeon.rs). Shows the live state and
+// repakxtra: header switch for Sigeon V2 (backend: xtra_sigeon.rs). Shows the live state and
 // switches between Off and each SigeonLoader.<preset>.ini found in Desktop\Sigeon V2. Until that folder has
 // SigeonLoader.asi it reads "not configured" and opens the setup instead.
 import { useEffect, useRef, useState } from 'react'

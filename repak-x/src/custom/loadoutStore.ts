@@ -1,4 +1,4 @@
-// caleb fork: saved loadouts, shared by the sidebar list (Loadouts.tsx) and the cards screen
+// repakxtra: saved loadouts, shared by the sidebar list (Loadouts.tsx) and the cards screen
 // (LoadoutsScreen.tsx). A loadout is a set of mods: On switches them on, Off switches them off, nothing else is touched.
 // It also remembers the mods shown when it was saved (its scope), unused for now. Stored in localStorage.
 import { useSyncExternalStore } from 'react'
@@ -18,7 +18,7 @@ export type Loadout = {
   mediaRev?: number       // set when a file is stored in IndexedDB (loadoutMedia.ts); bumps on change
 }
 
-const STORAGE = 'caleb.loadouts'
+const STORAGE = 'repakxtra.loadouts'
 const listeners = new Set<() => void>()
 const subscribe = (l: () => void) => {
   listeners.add(l)
@@ -84,7 +84,7 @@ export const modKey = (path: string) =>
   normKey((path.split(/[/\\]/).pop() || path).replace(/(\.pak)?(\.bak_repak|\.pak_disabled)?$/i, '').replace(/_disabled$/i, ''))
 
 /** Mods a loadout may hold: not the Project Galacta loader, which every Galacta mod needs on (a loadout switching it
- *  off would break all the others; Caleb, 2026-10-14). */
+ *  off would break all the others). */
 export const loadoutable = (key: string) => !/^!?projectgalacta$/i.test(normKey(key))
 
 /** Stored keys normalized, so loadouts saved before the suffix was dropped still match. */
@@ -98,7 +98,7 @@ export const snapshotLoadout = (base: Pick<Loadout, 'id' | 'name'> & Partial<Loa
 })
 
 /** Mods to switch so the loadout is on: its own mods that are off. Nothing else changes: other mods and other loadouts
- *  stay as they are (Caleb, 2026-10-14; the scope is still saved, unused while loadouts are independent). */
+ *  stay as they are (the scope is still saved, unused while loadouts are independent). */
 export const changesToTurnOn = (l: Loadout, mods: Mod[]) => {
   const on = keySet(l.on)
   return mods.filter(m => on.has(modKey(m.path)) && loadoutable(modKey(m.path)) && !m.enabled)
@@ -211,10 +211,10 @@ export const duplicateLoadout = (l: Loadout) => {
 /** Groups match without regard to case or spaces, so "Panther looks" and "panther looks " are one group. */
 export const groupKey = (label: string) => (label || '').trim().toLowerCase()
 
-/** Loadout groups are their own ordered list (caleb.groups), so a group exists before it holds a loadout and keeps its
+/** Loadout groups are their own ordered list (repakxtra.groups), so a group exists before it holds a loadout and keeps its
  *  place. A loadout's label names its group; OTHER means none and always shows last. */
 export const OTHER = 'Other'
-const GROUPS = 'caleb.groups'
+const GROUPS = 'repakxtra.groups'
 const readGroupList = (): string[] => JSON.parse(localStorage.getItem(GROUPS) || '[]')
 const writeGroupList = (groups: string[]) => { localStorage.setItem(GROUPS, JSON.stringify(groups)); notify() }
 
@@ -275,12 +275,12 @@ export const moveGroup = (name: string, by: -1 | 1) => {
 export const setLoadoutGroup = (id: string, group: string) => patchLoadout(id, { label: group.trim() || OTHER })
 
 /** Which main view shows: Home (loadout cards) or Library (the full mod list). Remembered; Home on first start.
- *  Mirrored on <html data-view> so caleb.css hides the other view (both stay mounted, keeping their state). */
+ *  Mirrored on <html data-view> so theme.css hides the other view (both stay mounted, keeping their state). */
 export type View = 'home' | 'library'
-let view: View = localStorage.getItem('caleb.view') === 'library' ? 'library' : 'home'
+let view: View = localStorage.getItem('repakxtra.view') === 'library' ? 'library' : 'home'
 const applyView = () => { document.documentElement.dataset.view = view }
 applyView()
-export const setView = (v: View) => { view = v; localStorage.setItem('caleb.view', v); applyView(); notify() }
+export const setView = (v: View) => { view = v; localStorage.setItem('repakxtra.view', v); applyView(); notify() }
 export const useView = () => useSyncExternalStore(subscribe, () => view)
 
 /** The loadout page open on Home (null = the cards). Shared so the Library sidebar can open one too. */

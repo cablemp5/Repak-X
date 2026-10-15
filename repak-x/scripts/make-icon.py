@@ -36,7 +36,7 @@ if __name__ == "__main__":
     render(tint=GREEN).save(HERE / "icons" / "RepakIconTest.ico", sizes=[(s, s) for s in (16, 20, 24, 32, 40, 48, 64, 128, 256)])
     # The same x inside the app: the splash image and ModularLogo's two masks (its accent-colored R layer draws the x
     # in the title's blue; the theme-colored X layer is left empty). RepakIcon-x256.png stays Repak X's own logo: the
-    # Discord widget shows the original (Caleb, 2026-10-14)
+    # Discord widget shows the original
     art = HERE / "src" / "assets" / "app-icons"
     big.resize((512, 512), Image.LANCZOS).save(art / "RepakIcon-x512.png")
     mask = Image.new("RGBA", big.size, (255, 255, 255, 0))

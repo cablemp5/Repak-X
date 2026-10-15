@@ -1,4 +1,4 @@
-// caleb fork: Home, the app's first view. Loadouts as cards (image, on/off switch), grouped by saved group or hero, with
+// repakxtra: Home, the app's first view. Loadouts as cards (image, on/off switch), grouped by saved group or hero, with
 // the "New this week" strip below them; a card opens its page (LoadoutPage.tsx). The full mod list is the Library
 // view (header tabs, or L). On = its mods on, Off = its mods off; other mods and loadouts are never touched.
 import { useEffect, useRef, useState } from 'react'
@@ -20,7 +20,7 @@ import {
 } from './loadoutStore'
 
 type GroupBy = 'group' | 'hero'
-const GROUP_BY_KEY = 'caleb.loadoutGroupBy'
+const GROUP_BY_KEY = 'repakxtra.loadoutGroupBy'
 const NO_HERO = 'No Hero'
 
 /** The hero most of the given mods belong to, or undefined when none has a detected hero. */
@@ -87,7 +87,7 @@ function GroupHead({ p, name, count, at, total, editing, setEditing }: {
 export function ViewTabs() {
   const view = useView()
   return (
-    <div className="view-tabs" role="tablist" aria-label="View">
+    <div className="view-tabs" role="tablist" aria-label="View" data-tour="view-tabs">
       <button type="button" role="tab" aria-selected={view === 'home'} onClick={() => setView('home')} title="Loadouts and new mods (L)">Loadouts</button>
       <button type="button" role="tab" aria-selected={view === 'library'} onClick={() => setView('library')} title="Every mod, with filters and folders (L)">Library</button>
     </div>
@@ -135,7 +135,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
     ;(edit || newRef.current)?.focus()
   })
 
-  const setMedia = async (id: string, file: File) => {
+  const setMedia = async (id: string, file: Blob) => {
     try {
       const { blob, type } = await prepareMedia(file)
       await putMedia(id, blob)
@@ -242,7 +242,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
         {hidden}
         <div className="lo-body">
           <LoadoutPage p={p} l={open} busy={busy === open.id} onToggle={on => toggle(open, on)} onBack={closePage}
-            onPickMedia={() => pickMedia(open.id)} />
+            onPickMedia={() => pickMedia(open.id)} onSetMedia={image => setMedia(open.id, image)} />
         </div>
       </div>
     )
@@ -257,7 +257,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
           {loadouts.length < 3 && <p>Switch a set of mods on or off together. Other mods stay as they are.</p>}
         </div>
         <div className="lo-head-tools">
-          <button type="button" ref={newRef} className="lo-text-btn" onClick={createEmpty} title="A new empty loadout, opened to add mods to it">
+          <button type="button" ref={newRef} className="lo-text-btn" data-tour="new-loadout" onClick={createEmpty} title="A new empty loadout, opened to add mods to it">
             <Plus size={14} /> New loadout
           </button>
           <button type="button" className="lo-text-btn" onClick={newGroup} title="A new group to sort loadouts into (drag cards onto it)">
