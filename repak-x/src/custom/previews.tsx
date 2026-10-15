@@ -305,9 +305,9 @@ const unqueue = (id: string) => {
   if (i >= 0) { queue.splice(i, 1); notify() }
 }
 
-/** "Electric Blue · mod 2 of 9", shimmering while it works. */
-const progressText = () => `${run.name} · mod ${doneOf()} of ${run.total}`
-const Shimmer = ({ text }: { text: string }) => <span className="t-shimmer" data-text={text}>{text}</span>
+/** "Electric Blue · preview 2 of 9", shimmering while it works. */
+const progressText = () => `${run.name} · preview ${doneOf()} of ${run.total}`
+const Shimmer = ({ text }: { text: string }) => <span className="t-shimmer">{text}</span>
 
 /** Starts or queues a job from a button and shows why when it could not start. */
 const ask = async (alert: ReturnType<typeof useAlert>, job: Job) => {
@@ -366,7 +366,7 @@ export function GeneratePreviewsButton({ paths, set, name, className = 'btn-ghos
         title={queue.length ? `Stop after the mod that is rendering now, and clear the ${queue.length} queued` : 'Stop after the mod that is rendering now'}>
         {/* a spinner while it works; pointing at it shows Stop */}
         <span className="run-icon" aria-hidden="true"><LoaderCircle size={14} className="run-spin" /><CircleStop size={14} className="run-stop" /></span>
-        {run.stopping ? 'Stopping…' : <Shimmer text={`Generating mod ${doneOf()} of ${run.total}`} />}
+        {run.stopping ? 'Stopping…' : <Shimmer text={`Generating preview ${doneOf()} of ${run.total}`} />}
       </button>
     )
   }
@@ -383,7 +383,6 @@ export function GeneratePreviewsButton({ paths, set, name, className = 'btn-ghos
               <ListPlus size={16} /><span className="bulk-btn-label">Queue previews</span>
               {n > 0 && <span className="bulk-num">{n}</span>}
             </button>}
-        <span className="preview-run-note" title="Another preview run is going">Generating <Shimmer text={progressText()} /></span>
       </>
     )
   }

@@ -1,6 +1,6 @@
 // repakxtra: small pieces shared by Home (LoadoutsScreen.tsx), the loadout page and the New strip.
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ImagePlus, LoaderCircle } from 'lucide-react'
 import Switch from '../components/ui/Switch'
 import type { LoadoutProps } from './Loadouts'
 import { useMediaUrl } from './loadoutMedia'
@@ -62,7 +62,7 @@ export function CardMedia({ p, l, className = '', title, onClick, emptyText = 'C
         <span className="lo-skel" role="status">
           <span className="lo-skel-label">
             {state.kind === 'running'
-              ? <>Generating previews<span className="lo-dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></>
+              ? <><LoaderCircle size={12} className="run-spin" aria-hidden="true" />Generating previews</>
               : state.at === 1 ? 'Queued, up next' : `Queued, ${state.at} in line`}
           </span>
         </span>

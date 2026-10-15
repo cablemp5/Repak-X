@@ -262,11 +262,11 @@ type AppSettings = {
 
 function App() {
   const isAprilFools = useAprilFools();
-  const [hideSuffix, setHideSuffix] = useState(false);
-  const [autoOpenDetails, setAutoOpenDetails] = useState(false);
-  const [showHeroIcons, setShowHeroIcons] = useState(false);
-  const [showHeroBg, setShowHeroBg] = useState(false);
-  const [showModType, setShowModType] = useState(false);
+  const [hideSuffix, setHideSuffix] = useState(true); // repakxtra: on by default
+  const [autoOpenDetails, setAutoOpenDetails] = useState(true);
+  const [showHeroIcons, setShowHeroIcons] = useState(true);
+  const [showHeroBg, setShowHeroBg] = useState(true);
+  const [showModType, setShowModType] = useState(true);
   const [showExperimental, setShowExperimental] = useState(false);
   const [showSubfolderMods, setShowSubfolderMods] = useState(true);
   const [autoCheckUpdates, setAutoCheckUpdates] = useState(true);
@@ -3845,7 +3845,7 @@ function App() {
         >
           <ModularLogo size={50} className="repak-icon" />
           <div className="header-title-group">
-            <h1 className="font-logo">repak<span className="title-x">x</span>tra</h1>{/* repakxtra */}
+            <h1 className="font-logo">repak<span className="title-x">xtra</span></h1>{/* repakxtra */}
             <span className="version">{versionTag(version)}</span>{/* repakxtra */}
           </div>
         </div>

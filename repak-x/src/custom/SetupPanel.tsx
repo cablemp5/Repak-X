@@ -146,9 +146,16 @@ function PreviewKitCard({ alert }: { alert: Alert }) {
   )
 }
 
-export function SetupPanel({ alert, onClose, start }: { alert: Alert; onClose: () => void; start?: Galacta }) {
+let lastCheck: Galacta | null = null // the newest online Galacta check this run: Setup opens knowing it
+const remember = (g: Galacta) => { if (g.latest) lastCheck = g; return g }
+/** The offline status with the last online check's release info, while Galacta is still where that check found it. */
+const withLastCheck = (g: Galacta): Galacta => lastCheck && !g.latest && lastCheck.installed === g.installed
+  ? { ...g, latest: lastCheck.latest, published: lastCheck.published, notes: lastCheck.notes, url: lastCheck.url, up_to_date: lastCheck.up_to_date }
+  : g
+
+export function SetupPanel({ alert, onClose }: { alert: Alert; onClose: () => void }) {
   const [bypass, setBypass] = useState<Bypass | null>(null)
-  const [galacta, setGalacta] = useState<Galacta | null>(start ?? null)
+  const [galacta, setGalacta] = useState<Galacta | null>(lastCheck)
   const [folders, setFolders] = useState<string[]>([])
   const [folder, setFolder] = useState(savedItem(FOLDER_KEY) || HERE)
   const [auto, setAuto] = useState(autoCheck())
@@ -159,7 +166,7 @@ export function SetupPanel({ alert, onClose, start }: { alert: Alert; onClose: (
 
   useEffect(() => {
     invoke<Bypass>('setup_bypass_status').then(setBypass).catch(e => alert.warning('Setup', String(e)))
-    if (!start) invoke<Galacta>('setup_galacta_status', { online: false }).then(setGalacta).catch(() => {})
+    invoke<Galacta>('setup_galacta_status', { online: false }).then(g => setGalacta(withLastCheck(g))).catch(() => {})
     invoke<{ id: string; depth: number }[]>('get_folders')   // subfolders by their path below ~mods ("A/B")
       .then(fs => setFolders((fs ?? []).filter(f => f.depth > 0).map(f => f.id))).catch(() => {})
   }, [])
@@ -185,13 +192,13 @@ export function SetupPanel({ alert, onClose, start }: { alert: Alert; onClose: (
       disable: 'Off. Mods that need it will not load.', remove: 'Removed.' }[action])
   })
   const check = () => run('check', async () => {
-    const g = await invoke<Galacta>('setup_galacta_status', { online: true })
+    const g = remember(await invoke<Galacta>('setup_galacta_status', { online: true }))
     setGalacta(g)
     if (g.up_to_date === true) alert.success('Project Galacta', `Up to date (${g.latest}).`)
   })
   const install = () => run('install-galacta', async () => {
     const wasInstalled = Boolean(galacta?.installed)
-    const g = await invoke<Galacta>('setup_galacta_install', { folder: folder === HERE ? null : folder })
+    const g = remember(await invoke<Galacta>('setup_galacta_install', { folder: folder === HERE ? null : folder }))
     setGalacta(g)
     setNotes(wasInstalled ? `Updated to ${g.latest}` : `Installed ${g.latest}`)   // what changed, right away
   })
@@ -319,7 +326,6 @@ let startupChecked = false
 export default function SetupButton({ alert }: { alert: Alert }) {
   const [open, setOpen] = useState(false)
   const [attention, setAttention] = useState(false)
-  const [start, setStart] = useState<Galacta | undefined>()
 
   const recheck = () => invoke<Bypass>('setup_bypass_status').then(b => setAttention(b.state !== 'installed')).catch(() => {})
   useEffect(() => {   // the Sigeon setup installs the bypass too
@@ -331,11 +337,12 @@ export default function SetupButton({ alert }: { alert: Alert }) {
     if (!autoCheck() || startupChecked) return
     startupChecked = true   // once per app start, even when React mounts this twice
     invoke<Galacta>('setup_galacta_status', { online: true }).then(g => {
+      remember(g)
       if (!g.installed || g.up_to_date !== false) return
       setAttention(true)
       const id = alert.info('Project Galacta update', `${g.latest} is out.`, {
         duration: 12000,
-        action: { label: 'Update', onClick: () => { alert.dismissAlert(id); setStart(g); setOpen(true) } },
+        action: { label: 'Update', onClick: () => { alert.dismissAlert(id); setOpen(true) } },
       })
     }).catch(() => {})   // offline: no update check, no noise
     // An installed preview kit with a newer release: the same kind of toast, opening Setup at its card
@@ -344,17 +351,17 @@ export default function SetupButton({ alert }: { alert: Alert }) {
       setAttention(true)
       const id = alert.info('Preview kit update', `Kit v${r.version} is out (you have v${k.version}).`, {
         duration: 12000,
-        action: { label: 'Update', onClick: () => { alert.dismissAlert(id); setStart(undefined); setOpen(true) } },
+        action: { label: 'Update', onClick: () => { alert.dismissAlert(id); setOpen(true) } },
       })
     }).catch(() => {})
   }, [])
 
   return (
     <>
-      <button type="button" className="btn-settings su-btn" data-tour="setup-btn" onClick={() => { setStart(undefined); setOpen(true) }} title="What the game needs to load mods">
+      <button type="button" className="btn-settings su-btn" data-tour="setup-btn" onClick={() => setOpen(true)} title="What the game needs to load mods">
         <Wrench size={16} /> Setup {attention && <i className="su-dot" aria-label="Needs attention" />}
       </button>
-      {open && <SetupPanel alert={alert} start={start} onClose={() => { setOpen(false); recheck() }} />}
+      {open && <SetupPanel alert={alert} onClose={() => { setOpen(false); recheck() }} />}
     </>
   )
 }

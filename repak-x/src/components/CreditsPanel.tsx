@@ -148,7 +148,7 @@ export default function CreditsPanel({ onClose, version }: CreditsPanelProps) {
                         {/* App Branding */}
                         <div className="credits-branding">
                             {/* repakxtra: repakxtra wordmark; the people below made Repak X, which this fork builds on */}
-                            <h1 className="credits-app-name font-logo">repak<span className="title-x">x</span>tra</h1>
+                            <h1 className="credits-app-name font-logo">repak<span className="title-x">xtra</span></h1>
                             <p className="credits-version">{versionTag(version)}</p>
                             <p className="credits-tagline">A fork of Repak X, the mod manager and modding tool for Marvel Rivals, made by the people below.</p>
                         </div>

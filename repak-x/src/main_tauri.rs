@@ -136,15 +136,15 @@ struct AppState {
     accent_color: String,
     #[serde(default = "default_view_mode")]
     view_mode: String,
-    #[serde(default)]
+    #[serde(default = "default_true")] // repakxtra: on by default
     hide_suffix: bool,
-    #[serde(default)]
+    #[serde(default = "default_true")]
     auto_open_details: bool,
-    #[serde(default)]
+    #[serde(default = "default_true")]
     show_hero_icons: bool,
-    #[serde(default)]
+    #[serde(default = "default_true")]
     show_hero_bg: bool,
-    #[serde(default)]
+    #[serde(default = "default_true")]
     show_mod_type: bool,
     #[serde(default)]
     show_experimental: bool,
@@ -203,11 +203,11 @@ impl Default for AppState {
             theme: default_theme(),
             accent_color: default_accent(),
             view_mode: default_view_mode(),
-            hide_suffix: false,
-            auto_open_details: false,
-            show_hero_icons: false,
-            show_hero_bg: false,
-            show_mod_type: false,
+            hide_suffix: default_true(),
+            auto_open_details: default_true(),
+            show_hero_icons: default_true(),
+            show_hero_bg: default_true(),
+            show_mod_type: default_true(),
             show_experimental: false,
             auto_check_updates: default_true(),
             parallel_processing: false,

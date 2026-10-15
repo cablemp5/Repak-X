@@ -294,7 +294,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
       {batch && (
         <div className="lo-batch" role="status">
           <LoaderCircle size={14} className="run-spin" />
-          <span className="lo-batch-what"><span className="t-shimmer" data-text="Generating">Generating</span> <b>{batch.name}</b></span>
+          <span className="lo-batch-what t-shimmer">Generating <b>{batch.name}</b></span>
           {batch.left > 0 && <span className="lo-batch-left">{batch.left} queued</span>}
           <button type="button" className="lo-text-btn lo-batch-stop" onClick={stopPreviews} disabled={batch.stopping}
             title="Stop after the mod rendering now and clear the queue">

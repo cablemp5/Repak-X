@@ -23,6 +23,7 @@ const SCALE_KEY = 'repakxtra.uiScale'
 const HIDE_TAGS_KEY = 'repakxtra.hideTags' // tags show by default, so this one stores the hidden state
 const SOUND_KEY = 'repakxtra.sound'   // on by default: '0' = off
 const MOTION_KEY = 'repakxtra.motion' // on by default: '0' = off
+const MINIMAL_TOASTS_KEY = 'repakxtra.minimalToasts' // off by default: '1' = on
 
 const storageKey = (key: string) => `repakxtra.show.${key}`
 const listeners = new Set<() => void>()
@@ -32,6 +33,12 @@ const getScale = () => Number(savedItem(SCALE_KEY)) || 1
 const tagsHidden = () => savedItem(HIDE_TAGS_KEY) === '1'
 const soundOn = () => savedItem(SOUND_KEY) !== '0'
 const motionOn = () => savedItem(MOTION_KEY) !== '0'
+const minimalToasts = () => savedItem(MINIMAL_TOASTS_KEY) === '1'
+
+/** Minimal toasts: an everyday confirmation (success or info with nothing to click, not a progress toast) is skipped.
+ *  Errors, warnings, crash reports, update offers and deletions (they carry Undo) still show. */
+export const quietToast = (t: { color?: string; action?: unknown; isLoading?: boolean }) =>
+  minimalToasts() && (!t.color || t.color === 'success' || t.color === 'primary' || t.color === 'default') && !t.action && !t.isLoading
 
 const apply = () => {
   PREFS.forEach(({ key }) => document.documentElement.toggleAttribute(`data-show-${key}`, isOn(key)))
@@ -148,13 +155,13 @@ export function TagsToggle({ tags, mods, onChanged, alert }: {
 }
 
 export default function UiSettings() {
-  const snapshot = useSyncExternalStore(subscribe, () => PREFS.map(p => (isOn(p.key) ? 1 : 0)).join('') + '|' + getScale() + '|' + soundOn() + motionOn())
+  const snapshot = useSyncExternalStore(subscribe, () => PREFS.map(p => (isOn(p.key) ? 1 : 0)).join('') + '|' + getScale() + '|' + soundOn() + motionOn() + minimalToasts())
   const scale = getScale()
   return (
     <>
       <div className="setting-section">
         <h3>UI scale</h3>
-        <p className="setting-subtext">UI scale, sound and motion, and optional controls apply right away; Save and Cancel cover the rest.</p>
+        <p className="setting-subtext">UI scale, sound, motion, toasts and optional controls apply right away; Save and Cancel cover the rest.</p>
         <div className="setting-group">
           <div className="mod-state-filter ui-scale" role="group" aria-label="UI scale">
             {SCALES.map(s => (
@@ -166,7 +173,7 @@ export default function UiSettings() {
         </div>
       </div>
       <div className="setting-section">
-        <h3>Sound and motion</h3>
+        <h3>Sound, motion and toasts</h3>
         <div className="setting-group">
           <div className="setting-item">
             <Checkbox checked={soundOn()} onChange={(checked: boolean) => { update(SOUND_KEY, checked ? '1' : '0'); if (checked) unlockSound() }}>
@@ -179,6 +186,12 @@ export default function UiSettings() {
               <span>Animations</span>
             </Checkbox>
             <p className="setting-subtext">Page slides, menus, switches and toasts. Off stops every animation in the app, including the extra animations below.</p>
+          </div>
+          <div className="setting-item">
+            <Checkbox checked={minimalToasts()} onChange={(checked: boolean) => update(MINIMAL_TOASTS_KEY, checked ? '1' : '0')}>
+              <span>Minimal toasts</span>
+            </Checkbox>
+            <p className="setting-subtext">No toasts for everyday actions like switching loadouts, installing mods or generating previews. Errors, warnings, updates and deletions you can undo still show.</p>
           </div>
         </div>
       </div>

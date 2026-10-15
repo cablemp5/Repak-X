@@ -1,5 +1,5 @@
-// repakxtra: the first-launch setup. One screen, top to bottom: the game folder, the signature bypass (all most people
-// need), Project Galacta and mod previews (optional), then the first mods. It opens once on a fresh install, and again
+// repakxtra: the first-launch setup. One screen, top to bottom: the game folder, the signature bypass, Project Galacta,
+// mod previews (optional), then the first mods. It opens once on a fresh install, and again
 // from Setup > Guided setup. Closing it, or dropping mods on the window, marks it seen; the tour is offered at the end.
 import { useEffect, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
@@ -119,8 +119,8 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
         <div className="modal-header fr-head">
           <div>
-            <h2>Welcome to repak<span className="title-x">x</span>tra</h2>
-            <p className="su-sub">Get Marvel Rivals ready for mods. Steps 1 and 2 are all most people need; close the game first.</p>
+            <h2>Welcome to repak<span className="title-x">xtra</span></h2>
+            <p className="su-sub">Get Marvel Rivals ready for mods. Steps 1 to 3 make mods work; close the game first.</p>
           </div>
           <button className="modal-close" onClick={close} aria-label="Close">×</button>
         </div>
@@ -143,10 +143,10 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
             <p>{bypassError ? `Could not check it: ${bypassError}` : bypassText}</p>
           </Step>
 
-          <Step n={3} done={galactaOn} optional title="Project Galacta"
-            action={!galacta?.installed && <button type="button" className="lo-text-btn" disabled={noGame || Boolean(busy)} onClick={installGalacta}
+          <Step n={3} done={galactaOn} title="Install Project Galacta"
+            action={!galacta?.installed && <button type="button" className="btn-primary" disabled={noGame || Boolean(busy)} onClick={installGalacta}
               title={noGame ? 'Find the game first' : 'Downloads the newest release from GitHub'}>{busy === 'galacta' ? 'Installing…' : 'Install'}</button>}>
-            <p>{galactaOn ? 'Installed.' : galacta?.installed ? 'Installed but switched off. Turn it on in the Library.' : 'The loader Galacta skin mods need. Skip it if you have none.'}</p>
+            <p>{galactaOn ? 'Installed.' : galacta?.installed ? 'Installed but switched off. Turn it on in the Library.' : 'The mod loader for skin mods. Downloads the newest release from GitHub.'}</p>
           </Step>
 
           <Step n={4} done={kitReady && kit.doctor?.ok !== false} optional title="Mod previews"

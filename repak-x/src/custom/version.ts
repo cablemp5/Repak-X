@@ -2,6 +2,6 @@
 // from Cargo (get_app_version).
 export const REPAKXTRA_VERSION = '0.2.0'
 
-/** The header's and Credits' version line: "v0.2.0 (Repak X v2.0.1, forked by cable)" */
+/** The header's and Credits' version line: "v0.2.0 (RepakX v2.0.1, forked by cable)" */
 export const versionTag = (repakx?: string) =>
-  repakx ? `v${REPAKXTRA_VERSION} (Repak X v${repakx}, forked by cable)` : `v${REPAKXTRA_VERSION} (forked by cable)`
+  repakx ? `v${REPAKXTRA_VERSION} (RepakX v${repakx}, forked by cable)` : `v${REPAKXTRA_VERSION} (forked by cable)`

@@ -228,16 +228,13 @@ function OnboardingTour({ isOpen, onClose }: OnboardingTourProps) {
                         <p className="onboarding-tooltip-desc">{step.description}</p>
                     </div>
 
-                    <div className="onboarding-step-counter">
-                        {currentStep + 1} of {TOUR_STEPS.length}
-                    </div>
-
                     <div className="onboarding-tooltip-footer">
                         <div className="onboarding-dots">
                             {TOUR_STEPS.map((_, i) => (
                                 <button
                                     key={i}
                                     className={`onboarding-dot ${i === currentStep ? 'active' : ''}`}
+                                    aria-label={`Step ${i + 1} of ${TOUR_STEPS.length}`} aria-current={i === currentStep ? 'step' : undefined} // repakxtra: the dots are the step count
                                     onClick={() => setCurrentStep(i)}
                                 />
                             ))}

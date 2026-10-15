@@ -115,7 +115,7 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       case 'setup_bypass':
         mockBypass = ({ install: 'installed', enable: 'installed', disable: 'disabled', remove: 'missing' } as any)[args?.action] ?? mockBypass
         return setupBypass()
-      case 'setup_galacta_status': return { ...mockGalacta, ...(args?.online ? galactaRelease : {}) }
+      case 'setup_galacta_status': return args?.online ? { ...mockGalacta, ...galactaRelease } : { ...mockGalacta, up_to_date: null } // offline: no release info, like the backend
       case 'setup_galacta_install':
         mockGalacta = { installed: 'C:/Game/~mods', disabled: false, up_to_date: true }
         return { ...mockGalacta, ...galactaRelease }

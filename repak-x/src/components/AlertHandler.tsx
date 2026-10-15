@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X } from 'lucide-react'; // repakxtra: a plain check for success, X for Clear all
 import './ui/Alert.css';
 import { alertSound } from '../custom/sounds' // repakxtra
+import { quietToast } from '../custom/uiPrefs' // repakxtra
 
 // Toast Icons
 type ToastColor = 'success' | 'danger' | 'warning' | 'info' | 'default' | 'crash' | 'primary' | 'secondary';
@@ -127,6 +128,7 @@ export function AlertProvider({ children, placement = DEFAULT_CONFIG.placement }
 
     // Add a new toast
     const showAlert = useCallback((alertConfig: AlertOptions) => {
+        if (quietToast(alertConfig)) return -1; // repakxtra: Minimal toasts skips everyday confirmations
         const id = Date.now() + Math.random();
         const toast: Toast = {
             id,
@@ -156,6 +158,8 @@ export function AlertProvider({ children, placement = DEFAULT_CONFIG.placement }
 
     // Update an existing toast
     const updateToast = useCallback((id: number, updates: AlertOptions) => {
+        // repakxtra: Minimal toasts: a progress toast that finished as an everyday success goes away instead
+        if (updates.color && quietToast(updates)) { setToasts(prev => prev.filter(toast => toast.id !== id)); return; }
         if (updates.color) alertSound(updates.color, updates.isLoading); // repakxtra: a loading toast that finished
         setToasts(prev => prev.map(toast =>
             toast.id === id ? { ...toast, ...updates } : toast

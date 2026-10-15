@@ -1161,20 +1161,19 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
   scroll-behavior: auto !important;
 }
 
-/* transitions.dev: Shimmer text (preview runs while they generate) */
-:root { --shimmer-dur: 2000ms; --shimmer-band: 400%; --shimmer-ease: linear; }
-.t-shimmer { position: relative; display: inline-block; color: var(--text-secondary); }
-.t-shimmer::before {
-  content: attr(data-text); position: absolute; inset: 0; pointer-events: none; white-space: nowrap;
-  background-image: linear-gradient(90deg, transparent 0%, transparent 40%, var(--text-primary) 50%, transparent 60%, transparent 100%);
-  background-size: var(--shimmer-band) 100%; background-repeat: no-repeat;
-  -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent;
+/* Shimmer text (preview runs while they generate): one layer, the text itself is the gradient, so a light band crosses
+   it left to right with nothing drawn twice (an overlay copy of the text never lines up exactly). Children (a bold
+   name) shimmer with it. */
+:root { --shimmer-dur: 2000ms; --shimmer-ease: linear; }
+.t-shimmer {
+  display: inline-block; color: var(--text-secondary);
+  background: linear-gradient(90deg, var(--text-secondary) 0%, var(--text-secondary) 38%, var(--text-primary) 50%,
+    var(--text-secondary) 62%, var(--text-secondary) 100%) 0 0 / 250% 100% no-repeat;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   animation: t-shimmer var(--shimmer-dur) var(--shimmer-ease) infinite;
 }
 @keyframes t-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0% 0; } }
-@media (prefers-reduced-motion: reduce) { .t-shimmer::before { animation: none !important; } }
-/* Another preview run is going: say whose, next to the Queue button */
-.preview-run-note { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .t-shimmer { animation: none !important; background-position: 50% 0; } }
 .is-queued { color: var(--text-primary) !important; border-color: color-mix(in srgb, var(--accent-primary), transparent 50%) !important; }
 
 /* ---------- more motion from transitions.dev (free library). html[data-motion="off"] stops all of it. ---------- */
@@ -1237,6 +1236,11 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 .install-loadout-name { height: 32px; width: 200px; padding: 0 10px; border-radius: 8px; font-size: 13px;
   background: var(--bg-dark); color: var(--text-primary); border: 1px solid var(--panel-border); outline: none; }
 .install-loadout-name:focus-visible { border-color: var(--accent-primary); }
+/* Per mod: Add to loadout (in place of tags) */
+.install-loadout-menu button.dropdown-item { width: 100%; background: none; border: 0; font: inherit; }
+.install-loadout-menu button.dropdown-item:hover, .install-loadout-menu button.dropdown-item:focus-visible { background: var(--accent-primary); color: #fff; outline: none; }
+.install-loadout-menu .dropdown-item.is-empty { cursor: default; color: var(--text-secondary); }
+.install-loadout-menu .dropdown-item.is-empty:hover { background: none; color: var(--text-secondary); }
 
 /* ---------- critique fixes (2026-10-14) ---------- */
 /* Contrast: secondary text at full strength (the version line, group counts and Ctrl+N numbers fell under 4.5:1) */
@@ -1346,21 +1350,16 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 @keyframes t-skel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
 /* Running: a light band sweeps across, so it reads as working; queued only pulses */
 .lo-media.is-running .lo-skel { animation: none; }
-/* The sweep is its own band moving from fully off the left edge to fully off the right one, so every pass crosses the
-   whole card (moving a background-position wrapped part of the band back around halfway through) */
-.lo-media.is-running .lo-skel::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 60%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.08) 50%, transparent);
-  transform: translateX(-100%); animation: lo-skel-sweep 1.8s linear infinite; }
-@keyframes lo-skel-sweep { from { transform: translateX(-100%); } to { transform: translateX(calc(100% / 0.6)); } }
-/* Generating previews... with the dots stepping in */
-.lo-dots i { font-style: normal; animation: lo-dot 1.2s steps(1, end) infinite; opacity: 0; }
-.lo-dots i:nth-child(2) { animation-delay: 0.3s; }
-.lo-dots i:nth-child(3) { animation-delay: 0.6s; }
-@keyframes lo-dot { 0% { opacity: 0; } 25%, 75% { opacity: 1; } 100% { opacity: 0; } }
-.lo-skel-label { position: relative; z-index: 1; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-variant-numeric: tabular-nums;
-  background: rgba(10, 11, 14, 0.7); color: var(--text-primary); }
+/* The sweep is its own band, as wide as the card, moving from fully off the left edge to fully off the right one. Its
+   gradient runs straight across (90deg), so both edges of the band are fully clear and only the soft middle shows. */
+.lo-media.is-running .lo-skel::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.07) 50%, transparent 100%);
+  transform: translateX(-100%); animation: lo-skel-sweep 1.6s ease-in-out infinite; }
+@keyframes lo-skel-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.lo-skel-label { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-variant-numeric: tabular-nums; background: rgba(10, 11, 14, 0.7); color: var(--text-primary); }
 .lo-media.is-running .lo-skel-label { color: #fff; background: color-mix(in srgb, var(--accent-primary), transparent 25%); }
-@media (prefers-reduced-motion: reduce) { .lo-skel, .lo-media.is-running .lo-skel::after, .lo-dots i { animation: none !important; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .lo-skel, .lo-media.is-running .lo-skel::after, .lo-skel-label .run-spin { animation: none !important; } }
 
 /* ---------- Sigeon config editor (SigeonEditor.tsx): configs on the left, one config's settings on the right ---------- */
 .sigeon-edit { border-top: 1px solid var(--panel-border) !important; margin-top: 4px !important; border-radius: 0 0 6px 6px !important; }
@@ -1592,9 +1591,8 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
   background: var(--accent-primary) !important; border: none !important; box-shadow: none !important; }
 .sg-row input[type="range"]:focus-visible::-webkit-slider-thumb { outline: none; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary), transparent 70%) !important; }
 
-/* Batch line: "Generating" quiet, the loadout's name bright, the queue as its own count chip */
-.lo-batch-what { color: var(--text-secondary); }
-.lo-batch-what b { color: var(--text-primary); font-weight: 600; }
+/* Batch line: "Generating <name>" all one shimmer (the name bold), the queue as its own count chip */
+.lo-batch-what b { font-weight: 600; }
 .lo-batch .lo-batch-left { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-variant-numeric: tabular-nums;
   color: var(--text-primary); background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.08); }
 
@@ -1602,8 +1600,9 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 .fr-modal { width: min(720px, 94vw) !important; max-width: none !important; max-height: 90vh; display: flex; flex-direction: column; padding: 0 !important; }
 .fr-head { padding: 18px 22px !important; border-bottom: 1px solid var(--panel-border); align-items: flex-start; }
 .fr-head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-.fr-steps { list-style: none; margin: 0; overflow-y: auto; padding: 8px 22px !important; display: flex; flex-direction: column; }
-.fr-step { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 14px 0; border-bottom: 1px solid var(--panel-border); }
+.fr-steps { list-style: none; margin: 0; overflow-y: auto; padding: 4px 22px !important; display: flex; flex-direction: column; }
+.fr-modal .fr-steps { gap: 0; }   /* .modal-body's 2rem section gap stacked on every step's padding */
+.fr-step { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 14px; align-items: start; padding: 16px 0; border-bottom: 1px solid var(--panel-border); }
 .fr-step:last-child { border-bottom: none; }
 .fr-num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700;
   color: var(--text-primary); border: 1px solid var(--panel-border); background: var(--bg-lighter); font-variant-numeric: tabular-nums; }
@@ -1637,4 +1636,8 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 .su-problems li { font-size: 12.5px; line-height: 1.5; color: var(--text-primary); padding-left: 14px; position: relative; }
 .su-problems li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: #e3a008; }
 .su-note.is-ok { color: var(--text-primary); }
-.su-guided { margin-left: auto; margin-right: 8px; }
+.su-guided { margin-left: auto; margin-right: 4px; }
+/* Setup header: the title block, Guided setup and the close button share one center line */
+.su-modal .modal-header { align-items: center; gap: 12px; padding: 18px 22px !important; }
+.su-modal .modal-header h2 { margin: 0; }
+.su-modal .modal-close, .fr-modal .modal-close, .cp-modal .modal-close { display: grid; place-items: center; width: 32px; height: 32px; line-height: 1; flex: none; }

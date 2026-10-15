@@ -36,7 +36,7 @@ repakxtra would not exist without **[Repak X](https://github.com/X-zant/Repak-X)
 | --- | --- |
 | Game folder | Finds your Marvel Rivals folder. |
 | Signature bypass | Installs in one click. Every mod needs it. |
-| Project Galacta | Optional. The mod loader for Galacta skin mods. |
+| Project Galacta | Installs in one click. The mod loader for skin mods. |
 | Mod previews | Optional. Installs the preview kit and finds or installs Blender. |
 | First mods | Adds your first mods. |
 
@@ -58,7 +58,7 @@ repakxtra would not exist without **[Repak X](https://github.com/X-zant/Repak-X)
 | One switch per look | Turns a whole loadout on or off. Loadouts are independent: switching one never touches mods outside it. A warning appears when two loadouts that are on change the same hero. |
 | Groups | Sort loadouts into named groups (create, rename, reorder, delete with Undo, drag cards between them), or view them by hero. |
 | Loadout pages | Name, group, picture or video, every mod in the loadout with its own switch, and a searchable list to add more by type. |
-| Make loadouts anywhere | From the Library's selection, the right-click menu (`Add to loadout`), the sidebar's `+`, or while installing several mods at once. |
+| Make loadouts anywhere | From the Library's selection, the right-click menu (`Add to loadout`), the sidebar's `+`, or while installing. The install panel adds each mod to the loadouts you pick, or saves the install as a new loadout. |
 | Undo everywhere | Removing mods, replacing a loadout, deleting a group or a loadout. |
 | New this week | Recently installed mods, with one click to add them to a loadout or swap in a newer version. |
 
@@ -69,7 +69,7 @@ repakxtra would not exist without **[Repak X](https://github.com/X-zant/Repak-X)
 | Rendered previews | Character mods are rendered on the hero in the lobby pose with the game's toon outline. Previews read the mods' real materials: inherited textures and colors, cosmic galaxies, glassy "jelly" skins, chrome and gold, Human Torch's burning body and flame shells, and Damisa-style eyes. |
 | Combined loadout renders | A loadout's mesh, textures and its VFX eye and body-light colors render together on one character. |
 | Animation previews | Animation mods get a looping clip of the animation on a gray model, shown with the loadout's other previews. |
-| Cards for every kind of mod | VFX mods get a palette of the colors they actually change, UI mods a sheet of their icons (a whole emote wheel), and sound mods a list of the sounds they replace. |
+| Cards for every kind of mod | VFX mods get a palette of the colors they actually change, UI mods a sheet of their icons (a whole emote wheel), and sound mods a list of the sounds they replace, with emotes by their in-game names. |
 | Carousel | Each card pages through the loadout's pictures in a fixed order: mesh, texture, material, animation, VFX, UI, text, audio. |
 | Generate all previews | A queue, a progress line, Stop, and the choice to redo only loadouts without a preview. Unchanged mods are not rendered again. |
 | Capture in game | Takes the loadout's image from the game itself (steps below). |
@@ -119,8 +119,9 @@ The screenshot is cropped to the character at any resolution and becomes the loa
 
 | Feature | What it does |
 | --- | --- |
-| Theme | A quiet dark interface with one blue accent, the Geist typeface, and a lowercase `x` logo. |
+| Theme | A quiet dark interface with one blue accent, the Geist typeface, and a lowercase logo with `xtra` in blue. |
 | Sound and motion | Optional sound effects ([cuelume](https://cuelume-site.pages.dev/), mechanical theme) and motion ([transitions.dev](https://transitions.dev/) recipes), each with an off switch in Settings. |
+| Minimal toasts | Off by default. Skips the toasts for everyday actions (switching loadouts, installs, previews) and keeps errors, warnings, updates and deletions you can undo. |
 | UI scale | From 90% to 150%. |
 
 ## Keyboard shortcuts
