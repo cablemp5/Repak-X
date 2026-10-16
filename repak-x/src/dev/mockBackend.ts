@@ -203,7 +203,8 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       }
       case 'get_skip_launcher_status':
       case 'check_for_previous_crash': return false
-      case 'check_mod_clashes': return []
+      // localStorage 'mock.clashes': a JSON list of { file_path, mod_paths } to show conflicts (custom/conflicts.ts)
+      case 'check_mod_clashes': return JSON.parse(localStorage.getItem('mock.clashes') || '[]')
       // Installing: the file picker returns two fake paks, install adds them to the library and reports done. A folder
       // pick (the Sigeon folder) returns an unzipped Sigeon download.
       case 'plugin:dialog|open':

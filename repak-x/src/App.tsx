@@ -60,6 +60,7 @@ import Loadouts, { AddToLoadoutField, LoadoutMenuItems } from './custom/Loadouts
 import LoadoutsScreen, { ViewTabs } from './custom/LoadoutsScreen'
 import { modKey, renameModKey } from './custom/loadoutStore' // repakxtra
 import { TagsToggle } from './custom/uiPrefs'
+import { useConflictCount, useConflictWatch } from './custom/conflicts' // repakxtra: red conflict dot and badges
 import { GeneratePreviewsButton } from './custom/previews'
 import { finishInstallLoadout } from './custom/installLoadout'
 import SigeonControl from './custom/SigeonControl'
@@ -392,6 +393,21 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('list') // 'grid', 'compact', 'list'
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null) // { x, y, mod }
   const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false)
+  useConflictWatch(mods) // repakxtra
+  const conflictCount = useConflictCount() // repakxtra
+  useEffect(() => { // repakxtra: the Library tab lands on its home view (custom/LoadoutsScreen.tsx ViewTabs)
+    const home = () => {
+      setSelectedFolderId('all'); setSelectedCharacters(new Set()); setSelectedCategories(new Set()); setFilterTag(''); setModState('all')
+      setLocalSearch(''); debouncedSetSearch(''); setSearchQuery(''); setSelectedMod(null)
+      setSelectedMods(new Set()); lastSelectedModIndex.current = null
+      if (isRightPanelOpen) { setLastPanelWidth(leftPanelWidth); setLeftPanelWidth(100); setIsRightPanelOpen(false) } // as its own close does
+      let list = document.querySelector<HTMLElement>('.mod-list-grid')
+      while (list && list.scrollHeight <= list.clientHeight) list = list.parentElement
+      list?.scrollTo({ top: 0 })
+    }
+    window.addEventListener('repakxtra-library-home', home)
+    return () => window.removeEventListener('repakxtra-library-home', home)
+  }, [debouncedSetSearch, isRightPanelOpen, leftPanelWidth])
   useEffect(() => { // repakxtra: a preview failure toast's Open logs
     const open = () => setIsLogDrawerOpen(true)
     window.addEventListener('repakxtra-open-logs', open)
@@ -4162,9 +4178,11 @@ function App() {
                     <span className="btn-label">Asset Explorer</span>
                   </button>
                   <div className="divider-vertical" />
-                  <button onClick={handleCheckClashes} className="btn-ghost btn-check-conflicts" title="Check for conflicts">
+                  <button onClick={handleCheckClashes} className="btn-ghost btn-check-conflicts"
+                    title={conflictCount ? `${conflictCount} enabled mods conflict: check which` : 'Check for conflicts'}>
                     <IoLayersSharp className="warning-icon" style={{ color: 'var(--accent-primary)', width: '18px', height: '18px' }} />
                     <span className="btn-label">Check Conflicts</span>
+                    {conflictCount > 0 && <i className="conflict-dot" aria-label={`${conflictCount} enabled mods conflict`} />}{/* repakxtra */}
                   </button>
                   <div className="divider-vertical" />
                   <div className="view-switcher">

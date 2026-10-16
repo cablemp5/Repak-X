@@ -16,6 +16,7 @@ const PREFS = [
   { key: 'asset-explorer', label: 'Show Asset Explorer button' },
   { key: 'share', label: 'Show Share button' },
   { key: 'tools', label: 'Show Tools button' },
+  { key: 'mod-size', label: 'Show mod file sizes in the Library' },
 ] as const
 
 const SCALES = [0.9, 1, 1.1, 1.25, 1.4, 1.5]

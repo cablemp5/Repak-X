@@ -7721,15 +7721,20 @@ struct SingleModConflict {
 
 #[tauri::command]
 async fn check_mod_clashes(
+    quiet: Option<bool>,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<Vec<ModClash>, String> {
     use std::collections::HashMap;
+    let quiet = quiet == Some(true); // repakxtra: the background check (custom/conflicts.ts) stays out of Logs
 
     let started = std::time::Instant::now();
-    let state = state.lock().unwrap();
-    let game_path = &state.game_path;
+    // repakxtra: only the path under the lock: the scan below no longer holds every other command up (it runs by itself
+    // in the background whenever enabled mods change)
+    let game_path = &state.lock().unwrap().game_path.clone();
 
+    if !quiet { // repakxtra
     ui_log::info("Conflicts", "Checking enabled mods for file conflicts...");
+    }
 
     if !game_path.exists() {
         ui_log::error("Conflicts", "Mods folder does not exist - cannot check conflicts");
@@ -7802,14 +7807,14 @@ async fn check_mod_clashes(
             ) {
                 Ok(f) => f,
                 Err(e) => {
-                    ui_log::warn(
+                    if !quiet { ui_log::warn( // repakxtra
                         "Conflicts",
                         format!(
                             "Skipped unreadable PAK {}: {}",
                             path.file_name().unwrap_or_default().to_string_lossy(),
                             e
                         ),
-                    );
+                    ); }
                     continue;
                 }
             }
@@ -7823,7 +7828,7 @@ async fn check_mod_clashes(
     }
 
     let analyzed = mods_info.len();
-    ui_log::debug("Conflicts", format!("Analyzed {} enabled mod(s)", analyzed));
+    if !quiet { ui_log::debug("Conflicts", format!("Analyzed {} enabled mod(s)", analyzed)); } // repakxtra
 
     // Don't group by character - instead, compare all mods at the same priority level
     // Group by priority first
@@ -7921,7 +7926,8 @@ async fn check_mod_clashes(
             }
         }
     }
-    if clashes.is_empty() {
+    if quiet { // repakxtra
+    } else if clashes.is_empty() {
         ui_log::success(
             "Conflicts",
             format!(

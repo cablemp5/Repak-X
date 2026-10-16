@@ -87,13 +87,16 @@ function GroupHead({ p, name, count, at, total, editing, setEditing }: {
   )
 }
 
-/** Home | Library switch for the app header. Its own class: the 1/2/3 hotkeys click the first .mod-state-filter. */
+/** Home | Library switch for the app header. Its own class: the 1/2/3 hotkeys click the first .mod-state-filter. A tab
+ *  always lands on its home: Loadouts on the cards (not a loadout page left open), Library on every mod with no folder,
+ *  filter, search or details panel (App.tsx listens). L flips between the two and keeps where each was. */
 export function ViewTabs() {
   const view = useView()
   return (
     <div className="view-tabs" role="tablist" aria-label="View" data-tour="view-tabs">
-      <button type="button" role="tab" aria-selected={view === 'home'} onClick={() => setView('home')} title="Loadouts and new mods (L)">Loadouts</button>
-      <button type="button" role="tab" aria-selected={view === 'library'} onClick={() => setView('library')} title="Every mod, with filters and folders (L)">Library</button>
+      <button type="button" role="tab" aria-selected={view === 'home'} onClick={() => { openLoadout(null); setView('home') }} title="Loadouts and new mods (L)">Loadouts</button>
+      <button type="button" role="tab" aria-selected={view === 'library'} onClick={() => { setView('library'); window.dispatchEvent(new Event('repakxtra-library-home')) }}
+        title="Every mod, with filters and folders (L)">Library</button>
     </div>
   )
 }

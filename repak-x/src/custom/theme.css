@@ -1803,3 +1803,67 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 /* Details panel: a hero with forms shows each form's preview side by side */
 .mod-preview-frame.has-forms { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; width: 100%; aspect-ratio: auto; }
 .mod-preview-frame.has-forms img { width: 100%; min-width: 0; }
+
+/* ---------- Library: a quiet search (no blue box inside the field), file sizes only when asked for, conflicts in red
+   (cable asked: a dot on Check conflicts, a badge on each clashing mod that is on) ---------- */
+.app .main-search-input:focus-visible { outline: none !important; }
+.main-action-bar .search-wrapper { background: var(--field-bg) !important; border-color: var(--panel-border) !important; }
+.main-action-bar .search-wrapper:focus-within { border-color: rgba(255, 255, 255, 0.16) !important; }
+.main-action-bar .search-wrapper > svg { width: 16px !important; height: 16px !important; color: var(--text-secondary) !important; opacity: 0.8; }
+.main-search-input { font-size: 13.5px !important; }
+.main-search-input::placeholder { color: var(--text-secondary) !important; opacity: 0.8; }
+html:not([data-show-mod-size]) .mod-size { display: none !important; }
+html[data-show-mod-size] .mod-list-grid .mod-size { display: inline !important; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.btn-check-conflicts { position: relative; }
+.conflict-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #f2555a;
+  box-shadow: 0 0 0 2px var(--bg-darkest); pointer-events: none; }
+.mod-type-badge.conflict-badge { background: color-mix(in srgb, #f2555a, transparent 85%) !important; border: 1px solid color-mix(in srgb, #f2555a, transparent 55%) !important;
+  color: #ff8a8e !important; font-size: 11px !important; font-weight: 600 !important; }
+
+/* ---------- Install panel: the app's quiet surfaces. Same parts and options as before: neutral cards instead of
+   blue-tinted ones, option tiles with a hairline instead of four colors (on = a lighter tile), the folder picker and
+   buttons in the app's style ---------- */
+.install-mod-panel { background: var(--bg-darker) !important; border: 1px solid var(--panel-border); border-radius: 14px !important; max-width: 1100px; }
+.install-header { padding: 18px 24px !important; }
+.install-header h2 { font-size: 18px !important; font-weight: 700 !important; letter-spacing: -0.01em; }
+.install-mod-panel .close-btn { font-size: 22px !important; color: var(--text-secondary) !important; border-radius: 8px !important; }
+.install-mod-panel .close-btn:hover { color: var(--text-primary) !important; background: var(--quiet-hover) !important; }
+.imp-mods-section { padding: 16px 24px !important; }
+.install-mod-grid { gap: 12px !important; padding: 0 !important; }
+.install-mod-card { background: transparent !important; border: 1px solid var(--panel-border) !important; border-radius: 12px !important; box-shadow: none !important; }
+.install-mod-card__left { padding: 16px 18px !important; gap: 14px !important; }
+.install-mod-card__divider { background: var(--panel-border) !important; }
+.install-mod-card__right { background: transparent !important; padding: 14px !important; }
+.install-mod-card__pill { background: transparent !important; border: 1px solid var(--panel-border) !important; color: var(--text-secondary) !important; font-weight: 500 !important; }
+.install-mod-card .mod-name-input { background: var(--field-bg) !important; border: 1px solid var(--panel-border) !important; border-radius: var(--quiet-radius) !important;
+  height: 32px; padding: 0 10px !important; max-width: 260px; outline: none !important; box-shadow: none !important; }
+.install-mod-card .mod-name-input:focus { border-color: rgba(255, 255, 255, 0.16) !important; }
+.install-mod-card__tags { border-top: 1px solid var(--panel-border) !important; padding-top: 12px !important; }
+.install-mod-card__footer { border-top: 1px solid var(--panel-border) !important; padding-top: 12px !important; gap: 8px !important;
+  align-items: stretch !important; justify-content: stretch !important; }
+.install-mod-card__footer > .install-toggle { flex: 1 1 0; min-width: 0; margin: 0 !important; }   /* four equal tiles, one height */
+.install-mod-card .install-toggle,
+.install-mod-card .obfuscate-toggle, .install-mod-card .hybrid-toggle, .install-mod-card .legacy-toggle, .install-mod-card .repak-toggle {
+  background: transparent !important; border: 1px solid var(--panel-border) !important; border-radius: 10px !important; padding: 8px 10px !important; }
+.install-mod-card .install-toggle:hover:not(.locked) { background: var(--quiet-hover) !important; border-color: rgba(255, 255, 255, 0.12) !important; }
+.install-mod-card .install-toggle.active { background: var(--quiet-active) !important; border-color: rgba(255, 255, 255, 0.16) !important; }
+.install-mod-card .install-toggle .install-toggle__label { color: var(--text-primary) !important; font-weight: 600 !important; }
+.install-mod-card .install-toggle .install-toggle__hint, .legacy-toggle.locked.active .install-toggle__hint { color: var(--text-secondary) !important; }
+.install-mod-card .install-toggle.locked { opacity: 0.45; }
+.imp-section-header { color: var(--text-secondary) !important; font-size: 12px !important; font-weight: 500 !important; }
+.imp-btn-new-folder { background: transparent !important; border: 1px solid var(--panel-border) !important; color: var(--text-secondary) !important; border-radius: 8px !important; }
+.imp-btn-new-folder:hover:not(:disabled) { background: var(--quiet-hover) !important; color: var(--text-primary) !important; }
+.imp-folder-tree-container { background: transparent !important; border: 1px solid var(--panel-border) !important; border-radius: 10px !important; }
+.imp-folder-item.selected { background: var(--quiet-active) !important; color: var(--text-primary) !important; border-color: transparent !important; }
+.imp-folder-item.selected .folder-icon, .imp-folder-item.selected .folder-name { color: var(--text-primary) !important; }
+.install-actions { padding: 14px 24px !important; gap: 10px !important; align-items: center; }
+.install-actions .btn-cancel { padding: 0 18px !important; height: 36px; background: transparent !important; border: 1px solid var(--panel-border) !important;
+  border-radius: var(--quiet-radius) !important; font-size: 13px !important; font-weight: 500; flex: none; }
+.install-actions .btn-cancel:hover { background: var(--quiet-hover) !important; }
+.install-actions .btn-install { padding: 0 22px !important; height: 36px; border-radius: var(--quiet-radius) !important; font-size: 13px !important; font-weight: 600 !important; flex: none; }
+.imp-folder-item.selected { box-shadow: none !important; }
+.imp-section-header svg, .imp-btn-new-folder svg, .imp-folder-item .folder-icon { color: var(--text-secondary) !important; }
+.install-mod-card .install-toggle__label { white-space: normal !important; }
+.install-mod-card { max-height: none !important; }   /* each card shows all its parts: no scrollbar inside a card */
+/* A switch clicked in a tile: a quiet ring, not the app's blue one (keyboard focus still shows it) */
+.app .install-mod-card .install-toggle :focus-visible { outline-color: rgba(255, 255, 255, 0.35) !important; }
