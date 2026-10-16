@@ -14,6 +14,7 @@ mod xtra_capture; // repakxtra: capture preview in game
 mod xtra_update; // repakxtra: updates from repakxtra's own releases
 mod xtra_storage; // repakxtra: saved loadouts and settings shared with the dev copy
 mod xtra_buildmark; // repakxtra: test and dev copies color their taskbar icon
+mod xtra_export; // repakxtra: export a loadout as a zip
 mod character_data;
 mod crash_monitor;
 mod discord_presence;
@@ -4060,6 +4061,10 @@ async fn rename_mod(
     };
     let new_path = parent.join(&new_file_name);
 
+    if let Some(error_msg) = xtra_export::name_taken(parent, &old_stem, &new_stem) { // repakxtra: on, off and .utoc/.ucas names too
+        toast_events::emit_rename_failed(&window, &error_msg);
+        return Err(error_msg);
+    }
     if new_path.exists() && !is_case_only_rename(&old_path_buf, &new_path) {
         let error_msg = format!("A file with name '{}' already exists", new_file_name);
         toast_events::emit_rename_failed(&window, &error_msg);
@@ -8707,6 +8712,7 @@ fn main() {
             xtra_storage::xtra_storage_snapshot_read,
             xtra_storage::xtra_storage_backup_write,
             xtra_buildmark::xtra_buildmark_tint,
+            xtra_export::export_loadout_zip, // repakxtra: export a loadout as a zip
             xtra_kit::preview_kit_install_blender, // repakxtra: Blender with winget
             xtra_previews::previews_doctor, // repakxtra: can this PC make previews
             xtra_previews::cancel_mod_previews,

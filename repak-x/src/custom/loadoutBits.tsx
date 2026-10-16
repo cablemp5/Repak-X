@@ -1,6 +1,6 @@
 // repakxtra: small pieces shared by Home (LoadoutsScreen.tsx), the loadout page and the New strip.
-import { useState } from 'react'
-import { ChevronLeft, ChevronRight, ImagePlus } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight, ImagePlus, Pencil, X } from 'lucide-react'
 import Switch from '../components/ui/Switch'
 import type { LoadoutProps } from './Loadouts'
 import { useMediaUrl } from './loadoutMedia'
@@ -46,9 +46,10 @@ function usePreviewSlides(p: LoadoutProps, l: Loadout) {
   return slides
 }
 
-/** The loadout's image: its own image or video, then its generated previews, paged with arrows. */
-export function CardMedia({ p, l, className = '', title, onClick, emptyText = 'Click to add an image, or paste one' }: {
-  p: LoadoutProps; l: Loadout; className?: string; title: string; onClick: () => void; emptyText?: string
+/** The loadout's image: its own image or video, then its generated previews, paged with arrows. With onRemoveImage,
+ *  its own image shows an X that removes it. */
+export function CardMedia({ p, l, className = '', title, onClick, onRemoveImage, emptyText = 'Click to add an image, or paste one' }: {
+  p: LoadoutProps; l: Loadout; className?: string; title: string; onClick: () => void; onRemoveImage?: () => void; emptyText?: string
 }) {
   const url = useMediaUrl(l.id, l.mediaRev)
   const own = url ?? l.image
@@ -99,6 +100,11 @@ export function CardMedia({ p, l, className = '', title, onClick, emptyText = 'C
         </>
       )}
       {slides.length === 1 && slide.older && <span className="lo-media-label">{slide.label}</span>}
+      {onRemoveImage && own && slide && !slide.key && (
+        <button type="button" className="lo-media-remove" title="Remove this image" aria-label="Remove this image" onClick={onRemoveImage}>
+          <X size={14} />
+        </button>
+      )}
       {!state && setNote && <span className="lo-media-note" title={setNote}>{setNote}</span>}
     </div>
   )
@@ -127,17 +133,33 @@ export async function toggleMod(p: LoadoutProps, mod: Mod) {
   await p.reload()
 }
 
-/** One mod row: name (slug + tags + version), type, then the optional on/off switch (on the right, like the Library) and
- *  any trailing actions. */
-export function ModRow({ p, k, mod, onToggle, children }: {
-  p: LoadoutProps; k: string; mod?: Mod; onToggle?: boolean; children?: React.ReactNode
+/** One mod row: name, type, then the optional on/off switch (on the right, like the Library) and any trailing actions.
+ *  With onRename, the pencil (or a double-click on the name) renames the mod's files. */
+export function ModRow({ p, k, mod, onToggle, onRename, children }: {
+  p: LoadoutProps; k: string; mod?: Mod; onToggle?: boolean; onRename?: (mod: Mod, name: string) => void; children?: React.ReactNode
 }) {
   const category = mod && p.modDetails?.[mod.path]?.category
+  const [draft, setDraft] = useState<string | null>(null)
+  const cancelled = useRef(false) // Esc: the blur that follows must not rename
+  const canRename = Boolean(mod && onRename)
+  const begin = () => { cancelled.current = false; setDraft(k) }
+  const finish = () => { if (!cancelled.current && draft !== null && mod && onRename) onRename(mod, draft); setDraft(null) }
   return (
     <li className={`mod-row ${mod ? (mod.enabled ? 'is-on' : '') : 'is-missing'}`}
-      title={mod ? `${category ?? 'Unknown type'} · ${mod.enabled ? 'on now' : 'off now'}` : 'Not installed anymore'}>
-      <span className="mod-row-name"><ModName name={k} /></span>
-      {!onToggle && mod?.enabled && <span className="mod-row-on" title="This mod is on now">on</span>}
+      title={draft !== null ? undefined : mod ? `${category ?? 'Unknown type'} · ${mod.enabled ? 'on now' : 'off now'}` : 'Not installed anymore'}>
+      {draft !== null
+        ? <input className="mod-row-rename" autoFocus value={draft} aria-label={`New name for ${k}`} onFocus={e => e.target.select()}
+            onChange={e => setDraft(e.target.value)} onBlur={finish}
+            onKeyDown={e => { e.stopPropagation(); if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { cancelled.current = true; e.currentTarget.blur() } }} />
+        : <span className="mod-row-main">
+            <span className="mod-row-name" onDoubleClick={canRename ? begin : undefined}><ModName name={k} /></span>
+            {canRename && (
+              <button type="button" className="lo-icon row-rename" title={`Rename ${k} (renames its files)`} aria-label={`Rename ${k}`} onClick={begin}>
+                <Pencil size={13} />
+              </button>
+            )}
+          </span>}
+      {!onToggle && mod?.enabled && <span className="mod-row-on" title="On now" aria-label="On now" role="img" />}
       <span className={`mod-type-badge category-badge ${typeClass(category)}`}>{category ?? 'Unknown'}</span>
       {onToggle && (mod
         ? <Switch size="sm" color="primary" checked={Boolean(mod.enabled)} title={mod.enabled ? `Turn ${k} off` : `Turn ${k} on`}

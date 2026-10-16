@@ -77,7 +77,7 @@ export function AddToLoadoutField({ paths, alert }: { paths: string[]; alert: Lo
         onAddNew={() => {
           const l = createFromMods(paths)
           const id = alert.success(`${l.name} created`, `With the ${plural(l.on.length, 'selected mod')}. Rename it on its page.`, {
-            action: { label: 'Open', onClick: () => { alert.dismissAlert(id); openLoadout(l.id) } },
+            action: { label: 'Open', onClick: () => { alert.dismissAlert(id); openLoadout(l.id, true) } },
           })
         }}
         onChange={(id: string) => {
@@ -104,7 +104,7 @@ export function LoadoutMenuItems({ paths, alert, close }: { paths: string[]; ale
   const create = () => {
     const l = createFromMods(paths)
     const id = alert.success(`${l.name} created`, `With ${plural(l.on.length, 'mod')}. Rename it on its page.`, {
-      action: { label: 'Open', onClick: () => { alert.dismissAlert(id); openLoadout(l.id) } },
+      action: { label: 'Open', onClick: () => { alert.dismissAlert(id); openLoadout(l.id, true) } },
     })
     close()
   }

@@ -233,10 +233,11 @@ export const useGroups = () => {
 }
 export const inGroup = (l: Loadout, group: string) => groupKey(l.label) === groupKey(group)
 
-/** A new empty group at the end ("New group", "New group 2", ...); returns its name. */
-export const addGroup = (name = 'New group') => {
+/** A new empty group at the end ("New collection", "New collection 2", ...); returns its name. Groups are called
+ *  collections in the interface. */
+export const addGroup = (name = 'New collection') => {
   const groups = listGroups()
-  let n = name.trim() || 'New group'
+  let n = name.trim() || 'New collection'
   for (let i = 2; groups.some(g => groupKey(g) === groupKey(n)); i++) n = `${name} ${i}`
   writeGroupList([...groups, n])
   return n
@@ -284,9 +285,17 @@ applyView()
 export const setView = (v: View) => { view = v; localStorage.setItem('repakxtra.view', v); applyView(); notify() }
 export const useView = () => useSyncExternalStore(subscribe, () => view)
 
-/** The loadout page open on Home (null = the cards). Shared so the Library sidebar can open one too. */
+/** The loadout page open on Home (null = the cards). Shared so the Library sidebar can open one too. `fresh`: a loadout
+ *  just made, whose page starts with its name selected for typing. */
 let openId: string | null = null
-export const openLoadout = (id: string | null) => { openId = id; if (id && view !== 'home') setView('home'); else notify() }
+let freshId: string | null = null
+export const openLoadout = (id: string | null, fresh = false) => {
+  openId = id
+  freshId = fresh ? id : null
+  if (id && view !== 'home') setView('home'); else notify()
+}
+/** True once for a loadout opened as fresh. */
+export const takeFresh = (id: string) => { const was = freshId === id; if (was) freshId = null; return was }
 export const useOpenLoadout = () => useSyncExternalStore(subscribe, () => openId)
 
 // L switches between Home and Library. This module also loads in the Asset Explorer and VFX Updater windows, which
