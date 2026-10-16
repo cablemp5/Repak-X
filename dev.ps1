@@ -2,10 +2,9 @@
 #   .\dev.ps1    starts it; interface edits show about a second after a save, Rust edits rebuild and reopen the app.
 #                Stop it with Ctrl+C in this window (or close the app window).
 # The first start compiles a debug build (several minutes); later starts reuse it. It marks itself (amber "xtra", "dev
-# build" in the version line) and starts each session with a copy of the loadouts and settings the stable or test copy
-# saved last (custom/devStorage.ts); what it changes there stays in the dev copy. Mods, Setup and %APPDATA%\Repak-X are
-# shared with the stable copy, and the app runs one copy at a time: close the stable repakxtra first. Before a PR, a
-# real .\build.ps1 -Test is still the final check.
+# build" in the version line). It is the real app: mods, Setup and %APPDATA%\Repak-X are the stable copy's, and loadouts
+# and settings are shared both ways with it, the newest save winning (custom/devStorage.ts). The app runs one copy at a
+# time: close the stable repakxtra first. Before a PR, a real .\build.ps1 -Test is still the final check.
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 # vswhere: the .NET NativeAOT linker step calls it to find MSVC
