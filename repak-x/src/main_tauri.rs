@@ -8706,6 +8706,7 @@ fn main() {
             xtra_storage::xtra_storage_snapshot_write,
             xtra_storage::xtra_storage_snapshot_read,
             xtra_storage::xtra_storage_backup_write,
+            xtra_buildmark::xtra_buildmark_tint,
             xtra_kit::preview_kit_install_blender, // repakxtra: Blender with winget
             xtra_previews::previews_doctor, // repakxtra: can this PC make previews
             xtra_previews::cancel_mod_previews,

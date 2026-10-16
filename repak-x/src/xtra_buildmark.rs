@@ -18,13 +18,28 @@ fn recolor(rgba: &[u8], [r, g, b]: [u8; 3]) -> Vec<u8> {
     rgba.chunks_exact(4).flat_map(|px| [r, g, b, px[3]]).collect()
 }
 
-/// Called once at startup; the stable copy keeps its blue icon. Secondary windows opened later keep the default icon.
+/// The app's icon in this copy's color, or None for the stable copy.
+fn tinted(icon: Option<&tauri::image::Image<'_>>) -> Option<tauri::image::Image<'static>> {
+    let (color, icon) = (mark()?, icon?);
+    Some(tauri::image::Image::new_owned(recolor(icon.rgba(), color), icon.width(), icon.height()))
+}
+
+/// At startup, for the windows that exist then (the main one), before its page loads; the stable copy keeps its blue icon.
 pub fn tint_window_icon(app: &tauri::App) {
     use tauri::Manager;
-    let (Some(color), Some(icon)) = (mark(), app.default_window_icon()) else { return };
-    let tinted = tauri::image::Image::new_owned(recolor(icon.rgba(), color), icon.width(), icon.height());
+    let Some(icon) = tinted(app.default_window_icon()) else { return };
     for window in app.webview_windows().values() {
-        let _ = window.set_icon(tinted.clone());
+        let _ = window.set_icon(icon.clone());
+    }
+}
+
+/// Each window asks for its own when it loads (custom/buildMark.ts), so the VFX Updater and Asset Explorer, opened
+/// later, get it too.
+#[tauri::command]
+pub fn xtra_buildmark_tint(window: tauri::WebviewWindow) {
+    use tauri::Manager;
+    if let Some(icon) = tinted(window.app_handle().default_window_icon()) {
+        let _ = window.set_icon(icon);
     }
 }
 
