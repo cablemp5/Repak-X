@@ -1812,8 +1812,8 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 .main-action-bar .search-wrapper > svg { width: 16px !important; height: 16px !important; color: var(--text-secondary) !important; opacity: 0.8; }
 .main-search-input { font-size: 13.5px !important; }
 .main-search-input::placeholder { color: var(--text-secondary) !important; opacity: 0.8; }
-html:not([data-show-mod-size]) .mod-size { display: none !important; }
-html[data-show-mod-size] .mod-list-grid .mod-size { display: inline !important; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+/* Mod file size: in the tags row, left of the type tag (ModsList.tsx sizeTag); the actions row's own size stays hidden */
+.mod-actions-row .mod-size { display: none !important; }
 .btn-check-conflicts { position: relative; }
 .conflict-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #f2555a;
   box-shadow: 0 0 0 2px var(--bg-darkest); pointer-events: none; }
@@ -1897,7 +1897,7 @@ html[data-show-mod-size] .mod-list-grid .mod-size { display: inline !important; 
 .sg-folder-label { text-transform: none !important; letter-spacing: 0 !important; font-size: 12.5px !important; font-weight: 600 !important; color: var(--text-primary) !important; }
 
 /* VFX Updater title: its first span is the "repak" + "xtra" word (white, like the main window); "VFX Updater" stays gray */
-.vfx-header h1 > span:first-child { color: var(--text-primary) !important; }
+.vfx-header h1 > span:first-child { color: var(--text-primary) !important; }   /* "VFX Updater" white, "(WIP)" gray */
 /* Animations off: the Saved note stays shown instead of fading (a 0 s fade ended invisible) */
 html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !important; }
 /* Home: renaming a collection edits in a field its own size, lined up with the header */
@@ -1980,3 +1980,74 @@ html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !impo
 .install-mod-card .add-tag-btn, .imp-btn-new-folder { min-height: 0 !important; padding: 0 !important; }
 /* Setup card descriptions: no single word left alone on the last line */
 .su-card p { text-wrap: pretty; }
+
+/* ---------- batch 2, group 3: the conflicts screen (custom/ConflictsPanel.tsx), built like Setup ---------- */
+.cf-modal { width: min(720px, 92vw) !important; max-width: none !important; max-height: 86vh; display: flex; flex-direction: column; padding: 0 !important; }
+.cf-modal .modal-header { padding: 16px 20px !important; border-bottom: 1px solid var(--panel-border); align-items: flex-start; }
+.cf-modal .modal-header h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px !important; font-weight: 700; }
+.cf-count { padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--bg-lighter); color: var(--text-secondary); }
+.cf-sub { margin: 4px 0 0; max-width: 62ch; font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+.cf-body { overflow-y: auto; padding: 16px 20px !important; display: flex; flex-direction: column; gap: 12px !important; }
+.cf-group { border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.cf-head { display: flex; align-items: center; gap: 12px; }
+.cf-hero { flex: none; width: 36px; height: 36px; border-radius: 8px; object-fit: cover; background: var(--bg-dark); }
+.cf-what { min-width: 0; }
+.cf-what h3 { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--text-primary); }
+.cf-what p { margin: 2px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.cf-files-btn { display: inline-flex; align-items: center; gap: 2px; height: auto !important; min-height: 0 !important; padding: 0 !important;
+  border: none !important; background: none !important; font: inherit !important; color: inherit !important; cursor: pointer; }
+.cf-files-btn:hover { color: var(--text-primary) !important; }
+.cf-caret { transition: transform 150ms ease; }
+.cf-files-btn[aria-expanded="true"] .cf-caret { transform: rotate(90deg); }
+.cf-files { margin: 0; padding: 8px 10px; list-style: none; max-height: 160px; overflow: auto; border-radius: 8px; background: var(--bg-dark);
+  font: 11.5px/1.6 var(--font-mono); color: var(--text-secondary); }
+.cf-files li { white-space: nowrap; }
+.cf-mods { margin: 0; padding: 0; list-style: none; border: 1px solid var(--panel-border); border-radius: 10px; }
+.cf-mod { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 6px 12px; }
+.cf-mod + .cf-mod { border-top: 1px solid var(--panel-border); }
+.cf-mod-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-primary); }
+.cf-mod.is-off .cf-mod-name { color: var(--text-secondary); }
+.cf-priority { flex: none; }
+.cf-empty { margin: 0; padding: 28px 0; text-align: center; font-size: 13px; color: var(--text-secondary); }
+.cf-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px !important; border-top: 1px solid var(--panel-border); }
+.cf-modal .btn-primary { height: 32px !important; min-height: 0 !important; padding: 0 18px !important; font-size: 13px !important; width: auto !important; flex: none;
+  border-radius: var(--quiet-radius) !important; }
+
+/* ---------- batch 2, group 3: Library, Recently deleted, Settings type scale, VFX Updater title ---------- */
+/* File size: plain text at the type tag's 11px, just left of it */
+.mod-size-tag { flex: none; font-size: 11px; font-weight: 500; line-height: 1; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* VFX Updater (WIP): the WIP in gray beside the white title */
+.vfx-header h1 .vfx-wip { color: var(--text-secondary) !important; font-weight: 600 !important; }
+/* Settings, one type scale: section titles 14px; every row label, field, choice and button 13px; notes 12.5px gray
+   lined up under their label; icons 16px; buttons in the app's quiet style instead of gray text that reads as disabled */
+.settings-content .repakx-checkbox-label, .settings-content .repakx-checkbox-label > span,
+.settings-content .setting-toggle-label { font-size: 13px !important; font-weight: 450 !important; color: var(--text-primary) !important; }
+.settings-content .setting-subtext { font-size: 12.5px !important; line-height: 1.5 !important; }
+.settings-content .integrated-input, .settings-content .integrated-input input { font-size: 12.5px !important; font-family: var(--font-mono) !important; }
+.settings-content .segment-btn { font-size: 13px !important; height: 34px !important; min-height: 0 !important; gap: 8px !important; }
+.settings-content .segment-btn svg { width: 16px !important; height: 16px !important; }
+.settings-content .action-btn { height: 32px !important; min-height: 0 !important; min-width: 0 !important; padding: 0 12px !important; gap: 6px !important;
+  font-size: 13px !important; font-weight: 500 !important; color: var(--text-primary) !important; background: transparent !important;
+  border: 1px solid var(--panel-border) !important; border-radius: var(--quiet-radius) !important; }
+.settings-content .action-btn:hover:not(:disabled) { background: var(--quiet-hover) !important; }
+.settings-content .action-btn.icon-only { width: 32px !important; padding: 0 !important; justify-content: center; }
+.settings-content .action-btn svg { width: 15px !important; height: 15px !important; flex: none; color: var(--text-secondary) !important; }
+/* A switch row's icon sits in the checkbox's 22px column, so its words and note line up with the checkbox rows' */
+.settings-content .setting-toggle-label { display: inline-flex !important; align-items: center; gap: 8px !important; }
+.settings-content .setting-toggle-label svg { width: 16px !important; height: 16px !important; margin: 0 3px; flex: none; color: var(--text-secondary) !important; }
+.settings-content .setting-toggle-actions > span { font-size: 12px !important; font-weight: 500 !important; font-style: normal !important;
+  text-shadow: none !important; opacity: 1 !important; color: var(--text-secondary) !important; }
+.settings-content .setting-item:has(.setting-toggle-label) > .setting-subtext { padding-left: 30px !important; }
+/* Settings > Recently deleted */
+.rd-empty { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.rd-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--panel-border); border-radius: 10px; }
+.rd-row { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px 8px 8px 14px; }
+.rd-row + .rd-row { border-top: 1px solid var(--panel-border); }
+.rd-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rd-name { font-size: 13px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rd-meta { font-size: 12.5px; color: var(--text-secondary); }
+.rd-empty-btn { align-self: flex-start; margin-top: 4px; }
+.rd-confirm { display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; color: var(--text-primary);
+  background: var(--quiet-hover); border: 1px solid var(--panel-border); }
+.rd-confirm span { margin-right: auto; }
+.cf-modal:focus { outline: none; }   /* the dialog itself takes focus when it opens; its controls show the ring */

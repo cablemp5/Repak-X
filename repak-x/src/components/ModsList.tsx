@@ -13,6 +13,7 @@ import { useIsConflicting } from '../custom/conflicts' // repakxtra
 import { detectHeroesWithData } from '../utils/heroes'
 import { useHoverTextReveal } from '../hooks/useHoverTextReveal'
 import { FALLBACK_HERO_ID, resolveHeroImage, useHeroImages } from '../utils/heroImages'
+import { useUiPref } from '../custom/uiPrefs' // repakxtra: file sizes beside the type tag
 import './ModsList.css'
 import './ModDetailsPanel.css'
 
@@ -279,6 +280,8 @@ const ModItem = memo(function ModItem({
     // Get hero image for background/badge (only if either icons or bg are enabled)
     const heroImage = (showHeroIcons || showHeroBg) ? getHeroImage(characterName, characterData, modDetails?.character_id) : null
     const isCardView = viewMode === 'grid' || viewMode === 'compact'
+    const showSize = useUiPref('mod-size') // repakxtra
+    const sizeTag = showSize && <span className="mod-size-tag">{formatFileSize(mod.file_size ?? 0)}</span> // repakxtra
 
     // Detect heroes for multi-hero mods - check both characterName and mod_type
     const isMultiHero = (
@@ -406,7 +409,7 @@ const ModItem = memo(function ModItem({
             </div>
 
             {/* Hero icon + Mod Type Badge + Tags row */}
-            {((heroImage && showHeroIcons && isCardView) || (showModType && category) || tags.length > 0 || conflicting) ? (
+            {((heroImage && showHeroIcons && isCardView) || (showModType && category) || tags.length > 0 || conflicting || showSize) ? (
                 <div className="mod-tags-row">
                     {heroImage && showHeroIcons && isCardView && (
                         isMultiHero && heroesList.length > 0 ? (
@@ -443,6 +446,7 @@ const ModItem = memo(function ModItem({
                         )
                     )}
                     {/* Type badge at start for card views */}
+                    {isCardView && sizeTag}
                     {showModType && category && isCardView && (
                         <span className={`mod-type-badge category-badge ${category.toLowerCase().replace(/\s+/g, '-')}-badge`}>
                             {category}
@@ -498,6 +502,7 @@ const ModItem = memo(function ModItem({
                         <span className="mod-type-badge pg-badge" title="Project Galacta compatible: pick it per skin in the Galacta Companion App">Galacta</span>
                     )}
                     {/* Type badge at end for list view */}
+                    {!isCardView && sizeTag}
                     {showModType && category && !isCardView && (
                         <span className={`mod-type-badge category-badge ${category.toLowerCase().replace(/\s+/g, '-')}-badge`}>
                             {category}

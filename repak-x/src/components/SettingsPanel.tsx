@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatedThemeToggler } from './ui/AnimatedThemeToggler'
 import Switch from './ui/Switch'
 import Checkbox from './ui/Checkbox'
-import UiSettings from '../custom/uiPrefs' // repakxtra
+import UiSettings, { ModSizeSetting } from '../custom/uiPrefs' // repakxtra
+import RecentlyDeleted from '../custom/RecentlyDeleted' // repakxtra: Settings > Recently deleted
 import TailInput from './ui/TailInput'
 import { LuFolderInput } from "react-icons/lu"
 import { RiSparkling2Fill } from "react-icons/ri"
@@ -13,7 +14,8 @@ import {
   MdTune,
   MdPalette,
   MdExtension,
-  MdHelpOutline
+  MdHelpOutline,
+  MdRestoreFromTrash
 } from "react-icons/md"
 import { FaDiscord, FaSteam } from "react-icons/fa"
 import { SiEpicgames } from "react-icons/si"
@@ -40,6 +42,7 @@ const CATEGORIES = [
   { id: 'general', label: 'General', icon: MdTune },
   { id: 'interface', label: 'Interface', icon: MdPalette },
   { id: 'integrations', label: 'Integrations', icon: MdExtension },
+  { id: 'trash', label: 'Recently deleted', icon: MdRestoreFromTrash }, // repakxtra
   { id: 'help', label: 'Help & Community', icon: MdHelpOutline }
 ] as const;
 
@@ -418,6 +421,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                         <span>Compact list view</span>
                       </Checkbox>
                     </div>
+                    <ModSizeSetting />{/* repakxtra: off by default */}
                   </div>
                 </div>
 
@@ -433,7 +437,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                       </Checkbox>
                       <p className={`setting-subtext ${!holdToDelete ? 'is-danger' : ''}`}>
                         {!holdToDelete
-                          ? 'Deletes happen on click. Deleted mods stay in the trash for 7 days, and an Undo button appears after each delete.'
+                          ? 'Deletes happen on click. Deleted mods stay in Recently deleted for 7 days, and an Undo button appears after each delete.'
                           : 'Hold the delete button for 2 seconds to confirm deletion.'}
                       </p>
                     </div>
@@ -454,6 +458,8 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                 </div>
               </>
             )}
+
+            {activeCategory === 'trash' && <RecentlyDeleted />}{/* repakxtra */}
 
             {activeCategory === 'integrations' && (
               <div className="setting-section">

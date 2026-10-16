@@ -7728,6 +7728,9 @@ async fn get_asset_explorer_index(
 struct ModClash {
     file_path: String,
     mod_paths: Vec<String>,
+    // repakxtra: the files both mods change, so the conflicts screen can say what they replace (custom/ConflictsPanel.tsx)
+    #[serde(default)]
+    files: Vec<String>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -7941,6 +7944,7 @@ async fn check_mod_clashes(
                     clashes.push(ModClash {
                         file_path: clash_description,
                         mod_paths,
+                        files: overlapping_files, // repakxtra
                     });
                 }
             }
@@ -8726,6 +8730,8 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             xtra_trash::restore_trashed_mods,
+            xtra_trash::list_trashed_mods,
+            xtra_trash::empty_trashed_mods,
             xtra_previews::list_mod_previews,
             xtra_previews::get_mod_preview,
             xtra_previews::get_preview_covers,

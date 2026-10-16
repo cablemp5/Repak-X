@@ -129,7 +129,7 @@ import SettingsPanel from './components/SettingsPanel'
 import CreditsPanel from './components/CreditsPanel'
 import ToolsPanel from './components/ToolsPanel'
 import SharingPanel from './components/SharingPanel'
-import ClashPanel from './components/ClashPanel'
+import ConflictsPanel from './custom/ConflictsPanel' // repakxtra: in place of Repak X's ClashPanel (grouped, in words)
 
 type ModRecord = {
   path: string
@@ -527,7 +527,7 @@ function App() {
 
       const vfxWindow = new WebviewWindow('vfx-updater', {
         url: '/vfx-updater',
-        title: 'repakxtra VFX Updater',
+        title: 'VFX Updater (WIP)', // repakxtra: the window's title bar matches its heading
         width: 650,
         height: 750,
         center: true,
@@ -3652,9 +3652,10 @@ function App() {
       )}
 
       {panels.clash && (
-        <ClashPanel
+        <ConflictsPanel
           clashes={clashes}
           mods={mods}
+          characterData={characterData}
           onSetPriority={handleSetPriority}
           onToggleMod={stableToggleMod}
           onClose={() => setPanel('clash', false)}

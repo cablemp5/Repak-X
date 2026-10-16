@@ -199,6 +199,10 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
         if (i >= 0) trash.set(args?.trashId, data.mods.splice(i, 1)[0])
         return null
       }
+      // Recently deleted: what delete_mod put in the trash, newest first
+      case 'list_trashed_mods': return [...trash.entries()].reverse().map(([id, m]) => ({ id, paths: [m.path], size: m.file_size ?? 1048576,
+        deleted: Math.floor(Date.now() / 1000) - 120, expires: Math.floor(Date.now() / 1000) + 7 * 86400 - 120 }))
+      case 'empty_trashed_mods': { let n = 0; for (const id of args?.ids ?? []) if (trash.delete(id)) n++; return n }
       case 'restore_trashed_mods': {
         let restored = 0
         const failed: string[] = []
