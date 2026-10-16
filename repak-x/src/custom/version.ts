@@ -2,9 +2,16 @@
 // from Cargo (get_app_version).
 export const REPAKXTRA_VERSION = '0.3.1'
 
-/** The header's and Credits' version line: "v0.3.0 (RepakX v2.0.1, forked by cable)" */
-export const versionTag = (repakx?: string) =>
-  repakx ? `v${REPAKXTRA_VERSION} (RepakX v${repakx}, forked by cable)` : `v${REPAKXTRA_VERSION} (forked by cable)`
+/** A copy made with `build.ps1 -Test` (it sets VITE_REPAKXTRA_TEST for the frontend build). It marks itself: the
+ *  "xtra" in the app name turns green (theme.css, :root[data-build="test"]) and the version line says "test build". */
+export const TEST_BUILD = import.meta.env.VITE_REPAKXTRA_TEST === '1'
+if (TEST_BUILD) document.documentElement.dataset.build = 'test'
+
+/** The header's and Credits' version line: "v0.3.1 (RepakX v2.0.1, forked by cable)", "v0.3.1 test build (...)" */
+export const versionTag = (repakx?: string) => {
+  const v = `v${REPAKXTRA_VERSION}${TEST_BUILD ? ' test build' : ''}`
+  return repakx ? `${v} (RepakX v${repakx}, forked by cable)` : `${v} (forked by cable)`
+}
 
 /** repakxtra's newest app release (tag v<semver>) from GitHub, or null. Pre-releases count: GitHub's releases/latest
  *  skips them, so the list is read (xtra_update.rs picks the same one). */

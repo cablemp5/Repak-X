@@ -176,8 +176,9 @@ pub enum Line {
     Raw { text: String },
 }
 
+/// A setting name, with UE's array prefixes: `+TextureLODGroups` adds a line, `-Key` removes one, `!Key` clears.
 fn is_key(k: &str) -> bool {
-    !k.is_empty() && k.len() <= 128 && k.chars().all(|c| c.is_ascii_alphanumeric() || "!._-/:".contains(c))
+    !k.is_empty() && k.len() <= 128 && k.chars().all(|c| c.is_ascii_alphanumeric() || "!._-/:+".contains(c))
 }
 
 fn is_license(line: &str) -> bool {
@@ -200,7 +201,7 @@ fn parse(text: &str) -> Vec<Line> {
             }
             // ";gamma=0" is a switched-off setting; ";   r.Fog=0" (spaced, the file's own examples) stays a comment
             let (body, on) = match t.strip_prefix(';') {
-                Some(rest) if rest.starts_with(|c: char| c.is_ascii_alphanumeric() || c == '!') => (rest, false),
+                Some(rest) if rest.starts_with(|c: char| c.is_ascii_alphanumeric() || "!+-".contains(c)) => (rest, false),
                 Some(rest) => return Line::Comment { text: rest.to_string() },
                 None => (t, true),
             };
@@ -597,6 +598,17 @@ mod tests {
         assert!(!plugins.join(ASI).exists());
         assert!(apply(&storage, &plugins, Some("missing")).is_err());
         let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn device_profile_texture_lines_are_settings() {
+        let text = "[Overrides]\r\nr.Fog=0\r\n\r\n[Windows DeviceProfile]\r\n+TextureLODGroups=(Group=TEXTUREGROUP_Character,LODBias=0,MaxLODSize=4096)\r\n;+TextureLODGroups=(Group=TEXTUREGROUP_CharacterNormalMap,LODBias=0,MaxLODSize=4096)\r\n;   +TextureLODGroups=(an example)\r\n";
+        let lines = parse(text);
+        assert_eq!(lines[4], Line::Entry {
+            key: "+TextureLODGroups".into(), value: "(Group=TEXTUREGROUP_Character,LODBias=0,MaxLODSize=4096)".into(), on: true });
+        assert!(matches!(&lines[5], Line::Entry { key, on: false, .. } if key == "+TextureLODGroups"), "a switched-off texture line stays a setting");
+        assert!(matches!(&lines[6], Line::Comment { .. }), "spaced examples stay comments");
+        assert_eq!(render(&lines, &[], true).unwrap(), text, "byte for byte");
     }
 
     #[test]
