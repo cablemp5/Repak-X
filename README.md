@@ -106,7 +106,7 @@ Build:
 # The stable build: only from a clean main. Open it as dist\repakxtra\repakxtra.exe (always the newest stable build)
 .\build.ps1
 
-# A release: builds main into dist\repakxtra-v<version>-windows.zip and prints the gh command that publishes it
+# A release: builds main into dist\repak-xtra-v<version>-windows.zip and copies the gh command that publishes it
 .\build.ps1 -Release
 ```
 
