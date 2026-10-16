@@ -1,7 +1,7 @@
 //! repakxtra: the preview kit, what another PC needs to generate mod previews (Python, the generator, Cue4Export,
 //! UAssetTool, repak, mappings; built by the modding tools' previews\build_kit.py). It lives in %APPDATA%\Repak-X\preview-kit,
-//! comes from a GitHub release (tag preview-kit-v<N>, a repakxtra-preview-kit*.zip asset) or a zip picked by hand, and
-//! needs Blender (installed from Setup with winget, found in Program Files, or picked once).
+//! comes from a GitHub release (tag preview-kit-v<N>, a repakxtra-preview-kit*.zip asset) or a zip picked by hand (its
+//! source.json says which), and needs Blender (installed from Setup with winget, found in Program Files, or picked once).
 
 use serde::Serialize;
 use std::fs;
@@ -56,20 +56,32 @@ fn version_of(exe: &Path) -> Vec<u32> {
     exe.parent().and_then(|d| d.file_name()).map(|n| n.to_string_lossy().split(|c: char| !c.is_ascii_digit()).filter_map(|x| x.parse().ok()).collect()).unwrap_or_default()
 }
 
+/// Where the installed kit came from: "github" or "file" (None for a kit installed before this was recorded).
+fn source(dir: &Path) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(&fs::read_to_string(dir.join("source.json")).ok()?).ok()?;
+    v["from"].as_str().filter(|s| matches!(*s, "github" | "file")).map(str::to_string)
+}
+
+/// Records where a kit came from ("github" or "file") in its folder.
+fn record_source(dir: &Path, from: &str) -> Result<(), String> {
+    fs::write(dir.join("source.json"), serde_json::json!({ "from": from }).to_string()).map_err(|e| format!("Could not record where the kit came from: {e}"))
+}
+
 #[derive(Serialize)]
 pub struct KitStatus {
     /// Installed kit version
     version: Option<String>,
-    /// The developer's own generator is on this PC (no kit needed)
-    dev: bool,
+    /// Where it came from: "github" or "file"
+    source: Option<String>,
     blender: Option<String>,
 }
 
 #[tauri::command]
 pub fn preview_kit_status() -> KitStatus {
+    let version = installed(&kit_dir());
     KitStatus {
-        version: installed(&kit_dir()),
-        dev: crate::xtra_previews::dev_generator().is_some(),
+        source: version.as_ref().and_then(|_| source(&kit_dir())),
+        version,
         blender: blender().map(|p| p.display().to_string()),
     }
 }
@@ -113,8 +125,9 @@ pub async fn preview_kit_latest() -> Result<Option<KitRelease>, String> {
     Ok(pick_release(&list))
 }
 
-/// Unpacks a kit zip into `dir` (replacing what is there) through a side folder, so a bad zip leaves the old kit.
-fn unpack(zip: &[u8], dir: &Path) -> Result<String, String> {
+/// Unpacks a kit zip into `dir` (replacing what is there) through a side folder, so a bad zip leaves the old kit, and
+/// records where it came from (`from`) in the side folder first: a kit in place always says its source.
+fn unpack(zip: &[u8], dir: &Path, from: &str) -> Result<String, String> {
     let mut archive = zip::ZipArchive::new(Cursor::new(zip)).map_err(|e| format!("Not a zip: {e}"))?;
     let side = dir.with_extension("new");
     let _ = fs::remove_dir_all(&side);
@@ -137,6 +150,10 @@ fn unpack(zip: &[u8], dir: &Path) -> Result<String, String> {
         let _ = fs::remove_dir_all(&side);
         return Err("That zip is not a repakxtra preview kit (no kit.json, python or generator in it).".into());
     };
+    if let Err(e) = record_source(&side, from) {
+        let _ = fs::remove_dir_all(&side);
+        return Err(e);
+    }
     let _ = fs::remove_dir_all(dir);
     fs::rename(&side, dir).map_err(|e| format!("Could not put the kit in place: {e}"))?;
     Ok(version)
@@ -176,6 +193,7 @@ async fn download(app: &AppHandle, url: &str) -> Result<Vec<u8>, String> {
 pub async fn preview_kit_install(app: AppHandle, file: Option<String>) -> Result<String, String> {
     // Owned from before the download until the kit is in place: no render, check or second install meanwhile
     let hold = crate::xtra_previews::reserve("kit").map_err(crate::xtra_previews::busy_text)?;
+    let from = if file.is_some() { "file" } else { "github" };
     let zip = match file {
         Some(f) => fs::read(&f).map_err(|e| format!("Could not read {f}: {e}"))?,
         None => {
@@ -186,7 +204,7 @@ pub async fn preview_kit_install(app: AppHandle, file: Option<String>) -> Result
     let _ = app.emit("preview-kit-progress", Progress { stage: "unpack", done: 0, total: 0, text: None });
     fs::create_dir_all(crate::app_dir()).map_err(|e| e.to_string())?;
     // Thousands of files: off the async runtime
-    tauri::async_runtime::spawn_blocking(move || { let _hold = hold; unpack(&zip, &kit_dir()) }).await.map_err(|e| e.to_string())?
+    tauri::async_runtime::spawn_blocking(move || { let _hold = hold; unpack(&zip, &kit_dir(), from) }).await.map_err(|e| e.to_string())?
 }
 
 /// Installs Blender with winget (Windows' package manager: the official BlenderFoundation.Blender package; Blender's own
@@ -340,15 +358,25 @@ mod tests {
     fn kits_unpack_in_place_and_bad_zips_keep_the_old_one() {
         let dir = std::env::temp_dir().join(format!("kit-test-{}", std::process::id())).join("preview-kit");
         let _ = fs::remove_dir_all(dir.parent().unwrap());
-        assert_eq!(unpack(&kit_zip(&[]), &dir).unwrap(), "2");
+        assert_eq!(unpack(&kit_zip(&[]), &dir, "github").unwrap(), "2");
+        assert_eq!(source(&dir).as_deref(), Some("github"), "an install records its source");
         assert!(dir.join(r"python\python.exe").exists());
-        assert!(unpack(b"not a zip", &dir).is_err());
+        assert!(unpack(b"not a zip", &dir, "file").is_err());
         let mut w = zip::ZipWriter::new(Cursor::new(Vec::new()));
         w.start_file("readme.txt", zip::write::SimpleFileOptions::default()).unwrap();
-        assert!(unpack(&w.finish().unwrap().into_inner(), &dir).is_err(), "a zip without a kit is refused");
+        assert!(unpack(&w.finish().unwrap().into_inner(), &dir, "file").is_err(), "a zip without a kit is refused");
         assert_eq!(installed(&dir).as_deref(), Some("2"), "the old kit stays after a refused zip");
+        assert_eq!(source(&dir).as_deref(), Some("github"), "and keeps its source");
+        // A source that cannot be written (a folder named source.json in the zip) fails the install and keeps the old kit
+        assert!(unpack(&kit_zip(&[("source.json/x", b"x")]), &dir, "file").is_err());
+        assert_eq!(source(&dir).as_deref(), Some("github"), "the old kit stays when its source cannot be recorded");
+        assert!(!dir.with_extension("new").exists(), "no side folder is left behind");
+        record_source(&dir, "file").unwrap();
+        assert_eq!(source(&dir).as_deref(), Some("file"));
+        fs::write(dir.join("source.json"), r#"{"from": "elsewhere"}"#).unwrap();
+        assert_eq!(source(&dir), None, "only github or file");
         assert!(!dir.parent().unwrap().join("evil.txt").exists());
-        let _ = unpack(&kit_zip(&[("../evil.txt", b"x")]), &dir);
+        let _ = unpack(&kit_zip(&[("../evil.txt", b"x")]), &dir, "file");
         assert!(!dir.parent().unwrap().join("evil.txt").exists(), "nothing lands outside the kit folder");
         for (json, want) in [(&br#"{"version": 3}"#[..], Some("3")), (br#"{"version": " 4 "}"#, Some("4")), (br#"{"version": null}"#, None),
                              (br#"{"version": ""}"#, None), (br#"{"version": [1]}"#, None), (br#"{}"#, None)] {

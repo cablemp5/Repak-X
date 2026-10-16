@@ -101,6 +101,11 @@ export function DoctorProblems({ d }: { d: Doctor | null }) {
   return <ul className="su-problems">{d.problems.map(x => <li key={x}>{x}</li>)}</ul>
 }
 
+/** A part's state beside its name: a green check when it is there, an empty ring when not. */
+const PartMark = ({ ok }: { ok: boolean }) => (
+  <span className={`su-part-mark${ok ? ' is-ok' : ''}`} role="img" aria-label={ok ? 'Installed' : 'Not installed'}>{ok && <Check size={14} strokeWidth={2.5} />}</span>
+)
+
 /** The preview kit: what this PC needs to render mod previews (xtra_kit.rs, shared logic in previewKit.tsx). Its two
  *  parts, the kit and Blender, are one row each with their state and links; one main button sets up what is missing. */
 function PreviewKitCard({ alert }: { alert: Alert }) {
@@ -116,10 +121,11 @@ function PreviewKitCard({ alert }: { alert: Alert }) {
     const f = await pickFile({ title: 'blender.exe', filters: [{ name: 'Blender', extensions: ['exe'] }] }).catch(() => null)
     if (typeof f === 'string') k.pickBlender(f)
   }
-  const ready = Boolean((kit?.version || kit?.dev) && kit?.blender)
+  const ready = Boolean(kit?.version && kit?.blender)
   const chip = !kit ? 'Checking…' : ready ? (update ? 'Update available' : 'Ready') : 'Not set up'
   const missing = kit && !ready
-  const kitOk = Boolean(kit?.version || kit?.dev)
+  const kitOk = Boolean(kit?.version)
+  const from = kit?.source === 'github' ? 'Pulled from GitHub' : kit?.source === 'file' ? 'Loaded from a file' : null
   const size = latest?.size ? Math.round(latest.size / 1048576) : null
   const blenderName = kit?.blender?.replace(/^.*[\\/](Blender[^\\/]*)[\\/]blender\.exe$/i, '$1')
   const installingBlender = busy === 'blender' || k.progress?.stage === 'blender'
@@ -128,27 +134,32 @@ function PreviewKitCard({ alert }: { alert: Alert }) {
       <div className="su-card-head">
         <div>
           <h3>Mod previews</h3>
-          <p>Pictures of each mod and loadout, made on this PC. Needs two free parts: the preview kit and Blender.</p>
+          <p>Renders of each mod and loadout, made on this PC. Needs two free parts: the preview kit and Blender.</p>
         </div>
         <span className={`su-chip ${update ? 'is-update' : ready ? 'is-installed' : 'is-missing'}`}>{chip}</span>
       </div>
       <ul className="su-parts">
         <li className="su-part">
-          <span className={`su-part-mark${kitOk ? ' is-ok' : ''}`} aria-hidden="true">{kitOk && <Check size={12} />}</span>
+          <PartMark ok={kitOk} />
           <div className="su-part-text">
             <b>Preview kit</b>
             <span>
-              {!kit ? 'Checking…' : kit.version ? `v${kit.version}` : kit.dev ? 'Built into this PC' : `Not installed${size ? ` · ${size} MB download` : ''}`}
-              {latest && <> · <button type="button" className="su-link" onClick={() => setNotes("What's new")}>What's new in v{latest.version}</button></>}
+              {!kit ? 'Checking…' : kit.version ? [`v${kit.version}`, from].filter(Boolean).join(' · ') : `Not installed${size ? ` · ${size} MB on GitHub` : ''}`}
+              {latest && <> · <button type="button" className="su-link" onClick={() => setNotes("What's new")}>{update ? `v${latest.version} on GitHub` : `What's new in v${latest.version}`}</button></>}
+              {/* After Check for updates: what GitHub has, here rather than in a toast (Minimal toasts would hide that) */}
+              {k.checked && busy !== 'check' && (latest === null ? ' · No kit on GitHub yet' : kit?.version && latest && !update ? <> · <span className="su-ok">Up to date</span></> : null)}
             </span>
           </div>
           <span className="su-part-links">
+            <button type="button" className="su-link" disabled={Boolean(busy)} onClick={() => k.check()} title="Ask GitHub for the newest preview kit">
+              {busy === 'check' ? 'Checking…' : 'Check for updates'}
+            </button>
             <button type="button" className="su-link" disabled={Boolean(busy)} onClick={fromFile} title="Install a preview kit zip (or drop one on the window)">From file…</button>
             {kit?.version && <button type="button" className="su-link" disabled={Boolean(busy)} onClick={() => k.remove()}>Remove</button>}
           </span>
         </li>
         <li className="su-part">
-          <span className={`su-part-mark${kit?.blender ? ' is-ok' : ''}`} aria-hidden="true">{kit?.blender && <Check size={12} />}</span>
+          <PartMark ok={Boolean(kit?.blender)} />
           <div className="su-part-text">
             <b>Blender</b>
             <span>{kit?.blender ? blenderName : 'Not installed'}</span>
@@ -166,7 +177,7 @@ function PreviewKitCard({ alert }: { alert: Alert }) {
         <p className="su-meta">{k.doctor?.ok && !busy && <span className="su-ok">This PC can make previews</span>}</p>
         <div className="su-actions">
           {(missing || update) && (
-            <button type="button" className="btn-primary su-main" disabled={Boolean(busy) || (!kit?.version && !kit?.dev && latest === null)} onClick={() => k.setUp()}
+            <button type="button" className="btn-primary su-main" disabled={Boolean(busy) || (!kit?.version && latest === null)} onClick={() => k.setUp()}
               title={update ? 'Downloads the newest kit from GitHub' : 'Installs what is missing: the kit (from GitHub) and Blender (with winget), then checks this PC'}>
               {busy === 'setup' ? (installingBlender ? 'Installing Blender…' : k.progress ? 'Installing kit…' : 'Setting up…') : busy === 'blender' ? 'Installing Blender…' : update ? `Update to v${latest!.version}` : 'Set up previews'}
             </button>
@@ -320,15 +331,20 @@ export function SetupPanel({ alert, onClose, focus }: { alert: Alert; onClose: (
             <div className="su-card-head">
               <div>
                 <h3>Project Galacta</h3>
-                <p>Loads Galacta skin mods. By <a onClick={() => open(GALACTA)}>0xSaturno</a>.</p>
+                <p>Loads more types of mods and lets you toggle mods in game. By <a onClick={() => open(GALACTA)}>0xSaturno</a>.</p>
               </div>
               <span className={`su-chip ${g?.up_to_date === false ? 'is-update' : g?.installed ? 'is-installed' : 'is-missing'}`}>{g ? galactaState : 'Checking…'}</span>
             </div>
             <div className="su-row">
-            <p className="su-meta">
-              {g?.installed ? <>In <code>{where}</code>{g.disabled ? ' (off in the Library)' : ''}</> : 'Not installed'}
-              {g?.latest && <> · Latest {g.latest} · <a onClick={() => setNotes("What's new")}>What's new</a></>}
-            </p>
+            {/* Where it is and what the newest release is, one labelled line each */}
+            <dl className="su-dl">
+              <dt>Location</dt>
+              <dd>{!g ? 'Checking…' : g.installed ? <><code>{where}</code>{g.disabled ? ', off in the Library' : ''}</> : 'Not installed'}</dd>
+              <dt>Latest</dt>
+              <dd>{g?.latest
+                ? <>{g.latest}{g.published ? `, ${date(g.published)}` : ''} · <button type="button" className="su-link" onClick={() => setNotes("What's new")}>What's new</button></>
+                : 'Not checked yet'}</dd>
+            </dl>
             <div className="su-actions">
               {(!g?.installed || g.up_to_date === false) && (
                 <button type="button" className="btn-primary su-main" disabled={Boolean(busy)} onClick={install}>

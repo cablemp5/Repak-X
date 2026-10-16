@@ -3635,6 +3635,7 @@ function App() {
       <TitleBar title="repakxtra" />
       {panels.install && (
         <InstallModPanel
+          characterData={characterData} // repakxtra: hero portraits for heroes newer than the bundled list
           mods={modsToInstall}
           allTags={allTags}
           folders={folders}

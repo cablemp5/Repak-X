@@ -1,5 +1,5 @@
 //! repakxtra: generated mod previews. The generator (`mod_previews.py`, with Cue4Export and Blender) comes from the
-//! preview kit (xtra_kit.rs) or, on the developer's PC, the modding tools, and writes one image per mod to
+//! preview kit (xtra_kit.rs), on every PC, and writes one image per mod to
 //! %APPDATA%\Repak-X\previews\<mod key>.png (an animated <mod key>.webp for animation mods). This module serves those
 //! files and runs the generator for the mods you pick (details panel button, the selection bar's Previews button, a
 //! loadout's Generate previews).
@@ -48,25 +48,11 @@ fn previews_dir() -> PathBuf {
     crate::app_dir().join("previews")
 }
 
-/// The developer's modding folder (the generator, its python and its tools live there).
-fn modding_dir() -> PathBuf {
-    dirs::home_dir().unwrap_or_default().join(r"Programming\Modding\Claude Assisted Mods")
-}
-
-/// The developer's own generator: the modding folder's python and script (no kit needed on that PC).
-pub fn dev_generator() -> Option<(PathBuf, PathBuf, PathBuf)> {
-    let root = modding_dir();
-    let python = root.join(r".venv\Scripts\python.exe");
-    let script = root.join(r"tools\previews\mod_previews.py");
-    (python.exists() && script.exists()).then_some((root, python, script))
-}
-
-/// (folder to run in, python, script, kit?): an installed preview kit first, else the developer's own generator.
-fn generator() -> Option<(PathBuf, PathBuf, PathBuf, bool)> {
-    if let Some(kit) = crate::xtra_kit::installed_kit() {
-        return Some((kit.clone(), kit.join(r"python\python.exe"), kit.join(r"previews\mod_previews.py"), true));
-    }
-    dev_generator().map(|(root, python, script)| (root, python, script, false))
+/// (kit folder to run in, python, script): the installed preview kit. Without one a PC makes no previews; the
+/// developer's PC too, so Setup always says where its kit came from (a file or GitHub).
+fn generator() -> Option<(PathBuf, PathBuf, PathBuf)> {
+    let kit = crate::xtra_kit::installed_kit()?;
+    Some((kit.clone(), kit.join(r"python\python.exe"), kit.join(r"previews\mod_previews.py")))
 }
 
 
@@ -275,30 +261,28 @@ fn generator_error(text: &str) -> bool {
     t.contains(": error") || t.contains("export failed") || t.starts_with("error") || t.contains("exception") || exit
 }
 
-/// The generator's command so far (python and its script, run in its folder, with the kit's variables): the kit, or the
-/// developer's own generator. The error says what to install.
+/// The generator's command so far (the kit's python and script, run in its folder, with the kit's variables). The error
+/// says what to install.
 fn generator_command(paks: Option<PathBuf>, need_blender: bool) -> Result<Command, String> {
-    let Some((root, python, script, kit)) = generator() else {
+    let Some((root, python, script)) = generator() else {
         return Err("Previews need the preview kit: install it in Setup.".into());
     };
-    if need_blender && kit && crate::xtra_kit::blender().is_none() {
+    if need_blender && crate::xtra_kit::blender().is_none() {
         return Err("Previews need Blender: install it in Setup (or from blender.org), or pick blender.exe there.".into());
     }
     let mut cmd = Command::new(&python);
     cmd.arg(&script).current_dir(&root).env("PYTHONUTF8", "1");
-    if kit {
-        // The kit's contract (tools\previews\build_kit.py): where the kit is, the game's Paks folder, a writable work
-        // folder for exports, caches and the lock, and Blender
-        cmd.env("REPAKXTRA_KIT", &root).env("REPAKXTRA_WORK", previews_dir().join("work"));
-        if let Some(p) = &paks {
-            cmd.env("REPAKXTRA_PAKS", p);
-        }
-        if let Some(b) = crate::xtra_kit::blender() {
-            cmd.env("REPAKXTRA_BLENDER", b);
-        }
-        // The game's key comes from the app (the same one it installs mods with), so the kit carries none
-        cmd.env("REPAKXTRA_AES", format!("0x{}", crate::install_mod::AES_KEY_HEX.trim_start_matches("0x")));
+    // The kit's contract (tools\previews\build_kit.py): where the kit is, the game's Paks folder, a writable work folder
+    // for exports, caches and the lock, and Blender
+    cmd.env("REPAKXTRA_KIT", &root).env("REPAKXTRA_WORK", previews_dir().join("work"));
+    if let Some(p) = &paks {
+        cmd.env("REPAKXTRA_PAKS", p);
     }
+    if let Some(b) = crate::xtra_kit::blender() {
+        cmd.env("REPAKXTRA_BLENDER", b);
+    }
+    // The game's key comes from the app (the same one it installs mods with), so the kit carries none
+    cmd.env("REPAKXTRA_AES", format!("0x{}", crate::install_mod::AES_KEY_HEX.trim_start_matches("0x")));
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

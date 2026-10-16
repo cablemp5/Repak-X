@@ -110,7 +110,7 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
     : bypass?.state === 'other' ? 'A different loader or bypass is installed. Installing keeps it next to the new one as a .repakxtra-backup file.'
     : bypass?.state === 'partial' ? 'Part of it is missing. Repair puts the missing files back.'
     : 'Lets the game load mods that replace its files. Every mod needs it. It comes with repakxtra; Setup shows why it is safe.'
-  const kitReady = Boolean((kit.kit?.version || kit.kit?.dev) && kit.kit?.blender)
+  const kitReady = Boolean(kit.kit?.version && kit.kit?.blender)
   const noGame = !gamePath
 
   return (
@@ -147,15 +147,15 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
             action={!galacta?.installed && <button type="button" className="btn-primary" disabled={noGame || Boolean(busy)} onClick={installGalacta}
               title={noGame ? 'Find the game first' : 'Downloads the newest release from GitHub'}>{busy === 'galacta' ? 'Installing…' : 'Install'}</button>}>
             <p>{galacta?.installed && !galactaOn ? 'Installed but switched off. Turn it on in the Library.'
-              : galactaOn ? 'Installed. Loads more mod types and swaps mesh mods live in game.'
-              : 'Needed by most skin mods: loads more mod types and swaps mesh mods live in game.'}</p>
+              : galactaOn ? 'Installed. Loads more types of mods and lets you toggle mods in game.'
+              : 'Needed by most skin mods: loads more types of mods and lets you toggle mods in game.'}</p>
           </Step>
 
           <Step n={4} done={kitReady && kit.doctor?.ok !== false} optional title="Mod previews"
-            action={!kitReady && <button type="button" className="lo-text-btn" disabled={Boolean(kit.busy) || (kit.latest === null && !kit.kit?.dev)} onClick={() => kit.setUp()}
+            action={!kitReady && <button type="button" className="lo-text-btn" disabled={Boolean(kit.busy) || (kit.latest === null && !kit.kit?.version)} onClick={() => kit.setUp()}
               title={kit.latest === null ? 'No kit published yet: drop a kit zip on the window' : 'Downloads the preview kit and installs Blender if it is missing (Windows asks for admin rights once)'}>
               {kit.busy === 'setup' ? 'Setting up…' : 'Set up previews'}</button>}>
-            <p>{kitReady ? 'Ready. A loadout page renders its preview.' : `Pictures of your mods and loadouts, and clips of animation mods. Downloads the preview kit${kit.latest?.size ? ` (${Math.round(kit.latest.size / 1048576)} MB)` : ''} and uses Blender (installed for you if missing).`}</p>
+            <p>{kitReady ? 'Ready. A loadout page renders its preview.' : `Renders of your mods and loadouts, and clips of animation mods. Downloads the preview kit${kit.latest?.size ? ` (${Math.round(kit.latest.size / 1048576)} MB)` : ''} and uses Blender (installed for you if missing).`}</p>
             {!kitReady && kit.kit && !kit.kit.blender && <BlenderTrust />}
             <KitProgressBar p={kit.progress} />
             <DoctorProblems d={kit.doctor} />
