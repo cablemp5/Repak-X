@@ -20,20 +20,39 @@ type Status = { state: string; presets: string[]; game_running: boolean; problem
 type Storage = { path: string; default: boolean; loader: boolean }
 type Alert = ReturnType<typeof useAlert>
 
+// The configs and switches of SigeonLoader.ini (the format with hideUID, 2026-10)
 const VARIANTS = [
   { value: 'base', label: 'Base', note: 'The standard Sigeon V2 config' },
-  { value: 'high', label: 'High', note: 'Highest quality that still gains FPS' },
-  { value: 'mid', label: 'Mid', note: 'A balance of looks and performance' },
-  { value: 'low', label: 'Low', note: 'Lowest quality for the most FPS (gray heroes)' },
+  { value: 'high', label: 'High', note: 'Highest quality while keeping a performance boost' },
+  { value: 'mid', label: 'Mid', note: 'A balance of visuals and high performance' },
+  { value: 'low', label: 'Low', note: 'Lowest quality for max FPS (gray heroes, only for the lowest-end PCs)' },
   { value: 'n64', label: 'N64', note: 'Pixelated, N64-style textures' },
 ]
 const TOGGLES = [
-  { key: 'lowLatency', label: 'Low latency', note: 'Lower input latency for a little FPS' },
-  { key: 'fixDarkMaps', label: 'Brighter maps', note: 'Stops the light culling that makes maps too dark' },
+  { key: 'lowLatency', label: 'Low latency', note: 'Lower input latency, costs some FPS' },
+  { key: 'fixDarkMaps', label: 'Brighter maps', note: 'Removes the light distance culling that makes maps look too dark' },
   { key: 'darkHair', label: 'Darker hair', note: 'Slightly darker hair, small FPS gain' },
   { key: 'fontAA', label: 'Smooth text', note: 'Font anti-aliasing (off is sharper)' },
+  { key: 'hideUID', label: 'Hide UID', note: 'Hides the UID, version and time overlay' },
 ]
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/** How a [Section] reads in the editor: a plain title, what it is for, and an example to add. Unknown sections show
+ *  their own name. `wide`: values are long (texture lines), so the value column takes the room. */
+type SectionInfo = { title: string; hint: string; empty: string; key: string; value: string; wide?: boolean }
+const SECTION_INFO: Record<string, SectionInfo> = {
+  overrides: { title: '', hint: '', empty: 'No overrides yet. Add a console setting, like r.Fog = 0.', key: 'r.SettingName', value: 'value' },
+  'windows deviceprofile': {
+    title: 'Texture detail', hint: 'Each +TextureLODGroups line replaces one texture group and leaves the rest alone.',
+    empty: 'No texture lines yet.', key: '+TextureLODGroups', value: '(Group=TEXTUREGROUP_Character,LODBias=0,MaxLODSize=4096)', wide: true,
+  },
+  '/script/engine.userinterfacesettings': {
+    title: 'Interface', hint: 'Engine settings that are not console commands, like the app scale.', empty: 'No interface settings yet.',
+    key: 'ApplicationScale', value: '1.4',
+  },
+}
+const sectionInfo = (name: string): SectionInfo =>
+  SECTION_INFO[name.toLowerCase()] ?? { title: name, hint: '', empty: 'Nothing in this section yet.', key: 'Setting', value: 'value' }
 
 // ---------- the ini as lines: top settings live before the first [Section], overrides inside sections ----------
 const firstSection = (ls: Line[]) => { const i = ls.findIndex(l => l.kind === 'section'); return i < 0 ? ls.length : i }
@@ -81,7 +100,7 @@ export const addEntry = (ls: Line[], sectionAt: number, key: string, value: stri
 }
 
 const same = (a?: Line[], b?: Line[]) => JSON.stringify(a) === JSON.stringify(b)
-const KEY_OK = /^[A-Za-z0-9!._\-/:]{1,128}$/
+const KEY_OK = /^[A-Za-z0-9!._\-/:+]{1,128}$/ // + and - are UE's add and remove-line prefixes (+TextureLODGroups)
 const NAME_OK = /^[A-Za-z0-9_-]{1,32}$/
 
 if (import.meta.env.DEV) {
@@ -370,11 +389,20 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
                 {sections(lines).map(s => {
                   const add = adding[s.at] ?? { key: '', value: '' }
                   const addOk = KEY_OK.test(add.key.trim()) && !/^licensekey$/i.test(add.key.trim())
+                  const info = sectionInfo(s.name)
+                  const empty = !lines.slice(s.at + 1, s.end).some(l => l.kind === 'entry' || l.kind === 'comment')
                   return (
-                    <div className={`sg-block${lines.slice(s.at + 1, s.end).some(l => l.kind === 'entry' || l.kind === 'comment') ? '' : ' is-empty'}`} key={s.at}>
-                      {s.name !== 'Overrides' && <div className="sg-block-name">[{s.name}]</div>}
-                      {!lines.slice(s.at + 1, s.end).some(l => l.kind === 'entry' || l.kind === 'comment') &&
-                        <p className="sg-none">No overrides yet. Add a console setting below, like r.Fog = 0.</p>}
+                    <div className={`sg-block${empty ? ' is-empty' : ''}${info.wide ? ' is-wide' : ''}`} key={s.at}>
+                      {s.name !== 'Overrides' && (
+                        <div className="sg-block-head">
+                          <div className="sg-block-title">
+                            {info.title !== s.name && <b>{info.title}</b>}
+                            <code>[{s.name}]</code>
+                          </div>
+                          {info.hint && <small>{info.hint}</small>}
+                        </div>
+                      )}
+                      {empty && <p className="sg-none">{info.empty}</p>}
                       {lines.slice(s.at + 1, s.end).map((l, j) => {
                         const i = s.at + 1 + j
                         if (l.kind === 'comment' && !q) return <p key={i} className="sg-note">{l.text.trim()}</p>
@@ -397,12 +425,12 @@ export default function SigeonEditor({ alert, onClose }: { alert: Alert; onClose
                         edit(ls => addEntry(ls, s.at, add.key.trim(), add.value.trim()))
                         setAdding(a => ({ ...a, [s.at]: { key: '', value: '' } }))
                       }}>
-                        <Plus size={14} className="sg-add-icon" />
-                        <input list="sg-keys" value={add.key} placeholder="r.SettingName" aria-label="New setting name" onKeyDown={e => e.stopPropagation()}
+                        <span aria-hidden="true" />
+                        <input list="sg-keys" value={add.key} placeholder={info.key} aria-label="New setting name" onKeyDown={e => e.stopPropagation()}
                           onChange={e => setAdding(a => ({ ...a, [s.at]: { ...add, key: e.target.value } }))} />
-                        <input value={add.value} placeholder="value" aria-label="New setting value" onKeyDown={e => e.stopPropagation()}
+                        <input value={add.value} placeholder={info.value} aria-label="New setting value" onKeyDown={e => e.stopPropagation()}
                           onChange={e => setAdding(a => ({ ...a, [s.at]: { ...add, value: e.target.value } }))} />
-                        <button type="submit" className="lo-text-btn" disabled={!addOk}>Add</button>
+                        <button type="submit" className="lo-text-btn" disabled={!addOk}><Plus size={14} /> Add</button>
                       </form>
                     </div>
                   )
