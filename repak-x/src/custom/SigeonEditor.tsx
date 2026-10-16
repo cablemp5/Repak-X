@@ -20,18 +20,20 @@ type Status = { state: string; presets: string[]; game_running: boolean; problem
 type Storage = { path: string; default: boolean; loader: boolean }
 type Alert = ReturnType<typeof useAlert>
 
+// The configs and switches of SigeonLoader.ini (the format with hideUID, 2026-10)
 const VARIANTS = [
   { value: 'base', label: 'Base', note: 'The standard Sigeon V2 config' },
-  { value: 'high', label: 'High', note: 'Highest quality that still gains FPS' },
-  { value: 'mid', label: 'Mid', note: 'A balance of looks and performance' },
-  { value: 'low', label: 'Low', note: 'Lowest quality for the most FPS (gray heroes)' },
+  { value: 'high', label: 'High', note: 'Highest quality while keeping a performance boost' },
+  { value: 'mid', label: 'Mid', note: 'A balance of visuals and high performance' },
+  { value: 'low', label: 'Low', note: 'Lowest quality for max FPS (gray heroes, only for the lowest-end PCs)' },
   { value: 'n64', label: 'N64', note: 'Pixelated, N64-style textures' },
 ]
 const TOGGLES = [
-  { key: 'lowLatency', label: 'Low latency', note: 'Lower input latency for a little FPS' },
-  { key: 'fixDarkMaps', label: 'Brighter maps', note: 'Stops the light culling that makes maps too dark' },
+  { key: 'lowLatency', label: 'Low latency', note: 'Lower input latency, costs some FPS' },
+  { key: 'fixDarkMaps', label: 'Brighter maps', note: 'Removes the light distance culling that makes maps look too dark' },
   { key: 'darkHair', label: 'Darker hair', note: 'Slightly darker hair, small FPS gain' },
   { key: 'fontAA', label: 'Smooth text', note: 'Font anti-aliasing (off is sharper)' },
+  { key: 'hideUID', label: 'Hide UID', note: 'Hides the UID, version and time overlay' },
 ]
 const label = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 

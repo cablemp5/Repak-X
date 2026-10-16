@@ -279,30 +279,80 @@ fn save_preset(storage: &Path, name: &str, lines: &[Line]) -> Result<(), String>
     fs::rename(&tmp, &file).map_err(|e| format!("Could not save: {e}"))
 }
 
-/// A new config: Sigeon's defaults (base, every switch off, stretched 1.0, gamma and sharpening left to the config, no
-/// overrides) and an empty licenseKey line, which the user fills in the file itself.
-const NEW_CONFIG: &str = "; SigeonLoader configuration.\r
-; Paste your license key after licenseKey= below (in Notepad), save, then launch the game.\r
-; Lines starting with ';' are comments.\r
-\r
-licenseKey=\r
-\r
-; Which config to load (base = default): base, n64, low, mid or high\r
-variant=base\r
-\r
-; Optional switches (0 = off, 1 = on). stretched: 1.0 = off, up to 2.0 for stretched res.\r
-; gamma and enableCAS stay commented out to keep the config's own look.\r
-lowLatency=0\r
-stretched=1.0\r
-darkHair=0\r
-fontAA=0\r
-fixDarkMaps=0\r
-;gamma=0\r
-;enableCAS=1\r
-\r
-; ADVANCED: lines below [Overrides] merge on top of the config, one key=value per line, and win over everything.\r
-[Overrides]\r
-";
+/// A new config: SigeonLoader.ini as Sigeon ships it (the format with hideUID, 2026-10): base, every switch off,
+/// stretched 1.0, gamma and sharpening left to the config, no overrides, and an empty licenseKey line, which the user
+/// fills in the file itself. Written with CRLF line ends, like the shipped file.
+const NEW_CONFIG: &str = r#"; SigeonLoader configuration.
+; Place this file next to the DLL (the game's ...\Binaries\Win64 folder).
+;
+; Paste your license key below, pick a config, save, then launch the game.
+; Lines starting with ';' are comments.
+
+licenseKey=
+
+; Which config to load (base = default). This sets the quality baseline:
+;   base   - the standard Sigeon V2 config
+;   n64    - pixelated, N64-style textures
+;   low    - lowest quality for max FPS (gray heros, only for lowest end systems)
+;   mid    - a balance of quality (visuals) and high performance
+;   high   - highest quality while maintaining a performance boost
+variant=base
+
+; Optional switches (0 = off, 1 = on unless noted), mix and match with any config above:
+;   lowLatency   - lower input latency, costs some FPS
+;   stretched    - app scale for stretched res, no black bars. 1.0 = off, 1.1 to 2.0 = more stretch
+;   darkHair     - slightly darker hair, small FPS gain
+;   fontAA       - smoother text (off = sharper text)
+;   fixDarkMaps  - removes the light distance culling that makes maps look too dark
+;   hideUID      - hides the UID / version / time overlay
+;   gamma        - remove the ';' to override the config's gamma: 0 = game default, up to 5.0,
+;                  higher = darker (2.2 suits most screens)
+;   enableCAS    - remove the ';' to override sharpening: 1 = on, 0 = off (only "low" ships it off)
+lowLatency=0
+stretched=1.0
+darkHair=0
+fontAA=0
+fixDarkMaps=0
+hideUID=0
+;gamma=2.2
+;enableCAS=1
+
+; ---------------------------------------------------------------------------
+; ADVANCED. Everything in this box is an EXAMPLE: the ';' at the start
+; of a line makes it a comment, so none of it does anything. To use a line, copy
+; it WITHOUT the ';' to below the real [Overrides] line at the very bottom of this
+; file. Section headers like [Windows DeviceProfile] go down there too, after
+; your cvar lines, e.g.:
+;
+;   [Overrides]
+;   r.ScreenPercentage=80
+;
+;   [Windows DeviceProfile]
+;   +TextureLODGroups=(Group=TEXTUREGROUP_Character,LODBias=0,MaxLODSize=4096)
+;
+; Lines under [Overrides] merge on top of the config and win over everything,
+; switches included.
+;
+; A [Section] header reaches non-cvar settings:
+;   [/Script/Engine.UserInterfaceSettings]
+;   ApplicationScale=1.4
+;
+; A '!' in front drops the config's value so the game's own applies. Keep the
+; '=' at the end, or the line is ignored:
+;   !r.BloomQuality=
+;
+; [Windows DeviceProfile] reaches texture detail. Each line replaces one texture
+; group and leaves the rest alone, e.g. sharp characters on any config:
+;   [Windows DeviceProfile]
+;   +TextureLODGroups=(Group=TEXTUREGROUP_Character,LODBias=0,MaxLODSize=4096)
+;   +TextureLODGroups=(Group=TEXTUREGROUP_CharacterNormalMap,LODBias=0,MaxLODSize=4096)
+;
+; Settings that can remove smoke or other effects are ignored.
+; ---------------------------------------------------------------------------
+
+; Your own override lines go BELOW this line, with no ';' in front:
+[Overrides]
+"#;
 
 /// `from`: a copy of that config (its key included); None: a new one from the defaults above.
 fn create_preset(storage: &Path, name: &str, from: Option<&str>) -> Result<(), String> {
@@ -313,7 +363,7 @@ fn create_preset(storage: &Path, name: &str, from: Option<&str>) -> Result<(), S
     fs::create_dir_all(storage).map_err(|e| format!("Could not make the folder: {e}"))?;
     match from {
         Some(from) => fs::copy(preset_file(storage, from)?, &dst).map(|_| ()).map_err(|e| format!("Could not copy {from}: {e}")),
-        None => fs::write(&dst, NEW_CONFIG).map_err(|e| format!("Could not create it: {e}")),
+        None => fs::write(&dst, NEW_CONFIG.replace('\n', "\r\n")).map_err(|e| format!("Could not create it: {e}")),
     }
 }
 
@@ -502,7 +552,14 @@ mod tests {
         let fresh = read_preset(&storage, "fresh").unwrap();
         assert!(fresh.contains(&Line::License { set: false }), "a new config waits for its key");
         assert!(fresh.contains(&Line::Entry { key: "variant".into(), value: "base".into(), on: true }));
-        assert!(fresh.contains(&Line::Entry { key: "gamma".into(), value: "0".into(), on: false }));
+        assert!(fresh.contains(&Line::Entry { key: "gamma".into(), value: "2.2".into(), on: false }));
+        assert!(fresh.contains(&Line::Entry { key: "hideUID".into(), value: "0".into(), on: true }));
+        assert!(fresh.contains(&Line::Entry { key: "enableCAS".into(), value: "1".into(), on: false }));
+        let raw = fs::read_to_string(storage.join("SigeonLoader.fresh.ini")).unwrap();
+        assert!(raw.contains("licenseKey=\r\n") && !raw.replace("\r\n", "").contains('\n'), "CRLF, like the shipped file");
+        assert!(!fresh.iter().any(|l| matches!(l, Line::Entry { key, .. } if key.contains("ScreenPercentage") || key.contains("TextureLODGroups"))),
+            "the ADVANCED examples stay comments");
+        assert_eq!(render(&fresh, &license_lines(&raw), true).unwrap(), raw, "an unedited save of the new format is byte for byte");
         assert!(fresh.contains(&Line::Entry { key: "fontAA".into(), value: "0".into(), on: true }));
         assert_eq!(fresh.last(), Some(&Line::Section { name: "Overrides".into() }), "no overrides");
         fs::remove_file(storage.join("SigeonLoader.fresh.ini")).unwrap();
