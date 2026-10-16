@@ -169,6 +169,9 @@ cd repak-xtra
 Build:
 
 ```powershell
+# Live dev copy: the real app from the folder as it is, interface edits reloading on save (the first start compiles a debug build)
+.\dev.ps1
+
 # Builds the folder as it is, uncommitted edits included, into dist\Repak-X-Test\repakxtra.exe
 .\build.ps1 -Test
 
