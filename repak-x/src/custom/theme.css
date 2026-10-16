@@ -2051,3 +2051,17 @@ html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !impo
   background: var(--quiet-hover); border: 1px solid var(--panel-border); }
 .rd-confirm span { margin-right: auto; }
 .cf-modal:focus { outline: none; }   /* the dialog itself takes focus when it opens; its controls show the ring */
+
+/* ---------- batch 2, last round ---------- */
+/* Settings footer: Cancel and Save at the scale's 13px and one height */
+.settings-modal .modal-footer button { font-size: 13px !important; height: 34px !important; min-height: 0 !important; padding: 0 16px !important; }
+/* The scale's last 12px stragglers in Settings: UI scale presets 13px like the other choices, notes and values 12.5px */
+.settings-content .mod-state-filter.ui-scale button { font-size: 13px !important; }
+.settings-content .setting-toggle-actions > span { font-size: 12.5px !important; }
+.settings-content .cd-meta { font-size: 12.5px !important; }
+/* The mods folder field shows the path's end; its cut-off start fades instead of slicing a letter */
+.settings-content .integrated-input { -webkit-mask-image: linear-gradient(to right, transparent, #000 18px); mask-image: linear-gradient(to right, transparent, #000 18px); }
+/* Install panel: a switch's keyboard ring in its tile's color, close to the switch */
+.app .install-mod-card .install-toggle :focus-visible { outline: 2px solid color-mix(in srgb, var(--tile, #888), white 25%) !important; outline-offset: 2px !important; }
+/* Recently deleted: the row's own yes/no before deleting one mod for good */
+.rd-ask { font-size: 12.5px; color: var(--text-primary); white-space: nowrap; }

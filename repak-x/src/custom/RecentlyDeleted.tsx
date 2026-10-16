@@ -25,6 +25,7 @@ export default function RecentlyDeleted() {
   const [items, setItems] = useState<Trashed[] | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [confirm, setConfirm] = useState(false)
+  const [asking, setAsking] = useState<string | null>(null) // the row whose delete-for-good waits for a yes
   const load = () => invoke<Trashed[]>('list_trashed_mods').then(setItems).catch(e => { setItems([]); alert.warning('Recently deleted', String(e)) })
   useEffect(() => { load() }, [])
   const name = (t: Trashed) => modKey(t.paths[0])
@@ -45,6 +46,7 @@ export default function RecentlyDeleted() {
   const remove = async (ids: string[]) => {
     setBusy(ids.length === 1 ? ids[0] : 'all')
     setConfirm(false)
+    setAsking(null)
     try {
       await invoke('empty_trashed_mods', { ids })
     } catch (e) {
@@ -74,13 +76,21 @@ export default function RecentlyDeleted() {
                         Deleted {relative(t.deleted)} · {formatFileSize(t.size)}{t.paths.length > 1 ? ` · ${plural(t.paths.length, 'file')}` : ''} · gone {relative(t.expires)}
                       </span>
                     </div>
-                    <button type="button" className="lo-text-btn" disabled={Boolean(busy)} onClick={() => restore(t)}>
-                      <RotateCcw size={14} /> {busy === t.id ? 'Restoring…' : 'Restore'}
-                    </button>
-                    <button type="button" className="lo-icon" disabled={Boolean(busy)} onClick={() => remove([t.id])}
-                      title={`Delete ${name(t)} for good`} aria-label={`Delete ${name(t)} for good`}>
-                      <Trash2 size={14} />
-                    </button>
+                    {asking === t.id
+                      ? <>
+                          <span className="rd-ask" role="alert">Delete for good?</span>
+                          <button type="button" className="lo-text-btn" onClick={() => setAsking(null)}>Keep</button>
+                          <button type="button" className="lo-text-btn" disabled={Boolean(busy)} onClick={() => remove([t.id])}>Delete</button>
+                        </>
+                      : <>
+                          <button type="button" className="lo-text-btn" disabled={Boolean(busy)} onClick={() => restore(t)}>
+                            <RotateCcw size={14} /> {busy === t.id ? 'Restoring…' : 'Restore'}
+                          </button>
+                          <button type="button" className="lo-icon" disabled={Boolean(busy)} onClick={() => setAsking(t.id)}
+                            title={`Delete ${name(t)} for good`} aria-label={`Delete ${name(t)} for good`}>
+                            <Trash2 size={14} />
+                          </button>
+                        </>}
                   </li>
                 ))}
               </ul>
@@ -90,7 +100,7 @@ export default function RecentlyDeleted() {
             ? (
               <div className="rd-confirm" role="alert">
                 <span>Delete all {plural(items.length, 'mod')} in the trash for good? This cannot be undone.</span>
-                <button type="button" className="lo-text-btn" onClick={() => setConfirm(false)}>Cancel</button>
+                <button type="button" className="lo-text-btn" onClick={() => setConfirm(false)}>Keep them</button>
                 <button type="button" className="lo-text-btn" onClick={() => remove(items.map(t => t.id))}>Delete all</button>
               </div>
             )

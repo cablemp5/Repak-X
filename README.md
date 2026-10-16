@@ -52,9 +52,10 @@ repakxtra is a fork of **[Repak X](https://github.com/X-zant/Repak-X)** by **Xza
 > [!NOTE]
 > Rendered previews need the preview kit and [Blender](https://www.blender.org/download/) (free). **Setup > Mod previews** installs both.
 
-**Library:** hero and type filters, double-click to rename, deletes go to a trash folder with Undo. Mods that are on and
-clash with another mod that is on get a red **Conflict** badge, and **Check Conflicts** shows a red dot while any do. File sizes are a
-setting (**Settings > Interface**).
+**Library:** hero and type filters, double-click to rename. Deleted mods wait 7 days in **Settings > Recently deleted**
+(Undo right after a delete, Restore any time before). Mods that are on and clash with another mod that is on get a red
+**Conflict** badge, and **Check Conflicts** shows a red dot while any do; it groups the clashing mods and says what they
+replace ("These 3 mods replace Black Panther's materials"). File sizes are a setting (**Settings > Interface > Mods view**).
 
 **Setup:** the signature bypass ships inside the app (with an "Is it safe?" report), Project Galacta installs and updates in one click, and the preview kit and Blender install from here.
 
@@ -115,7 +116,7 @@ repakxtra ships the bypass inside the app: **Setup** installs, repairs or turns 
 <summary><strong>What is Project Galacta, and do I need it?</strong></summary>
 <br>
 
-Most skin mods need it. It loads more mod types and swaps mesh mods live in game. **Setup** installs the newest
+Most skin mods need it. It loads more types of mods and lets you toggle mods in game. **Setup** installs the newest
 [Project Galacta](https://github.com/0xSaturno/ProjectGalacta) release in one click and tells you when an update is out.
 
 </details>
@@ -144,8 +145,9 @@ switch, then launch it again with `Ctrl+G`), and while Repak X is closed (both c
 <br>
 
 Rendered previews need the preview kit and [Blender](https://www.blender.org/download/) (free).
-**Setup > Mod previews** downloads the newest kit and installs Blender if it's missing; a kit zip dropped on the
-window installs too. Without either, **Capture in game** on a loadout's page uses a screenshot of the hero instead.
+**Setup > Mod previews** downloads the newest kit from GitHub and installs Blender if it's missing; a kit zip picked
+with **From file…** or dropped on the window installs too. It shows where your kit came from and checks GitHub for
+updates. Without either, **Capture in game** on a loadout's page uses a screenshot of the hero instead.
 
 </details>
 
