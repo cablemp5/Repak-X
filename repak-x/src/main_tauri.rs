@@ -13,6 +13,7 @@ mod xtra_trash; // repakxtra: undoable delete
 mod xtra_capture; // repakxtra: capture preview in game
 mod xtra_update; // repakxtra: updates from repakxtra's own releases
 mod xtra_storage; // repakxtra: saved loadouts and settings shared with the dev copy
+mod xtra_buildmark; // repakxtra: test and dev copies color their taskbar icon
 mod character_data;
 mod crash_monitor;
 mod discord_presence;
@@ -8627,6 +8628,7 @@ fn main() {
             // void. Entries land in a replay buffer until the webview mounts.
             ui_log::init(app.handle().clone());
             emit_session_banner(app);
+            xtra_buildmark::tint_window_icon(app); // repakxtra: green (test) or amber (dev) taskbar icon
 
             #[cfg(any(windows, target_os = "linux"))]
             {

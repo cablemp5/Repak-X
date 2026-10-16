@@ -51,8 +51,10 @@ if ($Release) {
 Run { dotnet publish UAssetToolRivals/src/UAssetTool/UAssetToolNative.csproj -c Release -r win-x64 -p:DebugType=none -p:DebugSymbols=false -o target/uassettool }
 Push-Location repak-x
 Run { npm install }
-# Test copies mark themselves (green "xtra", "test build" in the version line); stable and release builds never do
+# Test copies mark themselves (green "xtra", "test build" in the version line, a green taskbar icon from
+# xtra_buildmark.rs); stable and release builds never do
 $env:VITE_REPAKXTRA_TEST = if ($Test) { '1' } else { '' }
+$env:REPAKXTRA_BUILD = if ($Test) { 'test' } else { '' }
 Run { npm run build }
 Pop-Location
 $env:SKIP_UASSET_TOOL_BUILD = '1'
