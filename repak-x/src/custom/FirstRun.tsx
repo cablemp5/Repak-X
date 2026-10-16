@@ -8,7 +8,7 @@ import { open as pick } from '@tauri-apps/plugin-dialog'
 import { motion } from 'framer-motion'
 import { Check, Upload } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
-import { DoctorProblems, KitProgressBar } from './SetupPanel'
+import { BlenderTrust, DoctorProblems, KitProgressBar } from './SetupPanel'
 import { isKitZip, usePreviewKit } from './previewKit'
 
 type Alert = ReturnType<typeof useAlert>
@@ -154,6 +154,7 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
               title={kit.latest === null ? 'No kit published yet: drop a kit zip on the window' : 'Downloads the preview kit and installs Blender if it is missing (Windows asks for admin rights once)'}>
               {kit.busy === 'setup' ? 'Setting up…' : 'Set up previews'}</button>}>
             <p>{kitReady ? 'Ready. A loadout page renders its preview.' : `Pictures of your mods and loadouts, and clips of animation mods. Downloads the preview kit${kit.latest?.size ? ` (${Math.round(kit.latest.size / 1048576)} MB)` : ''} and uses Blender (installed for you if missing).`}</p>
+            {!kitReady && kit.kit && !kit.kit.blender && <BlenderTrust />}
             <KitProgressBar p={kit.progress} />
             <DoctorProblems d={kit.doctor} />
           </Step>

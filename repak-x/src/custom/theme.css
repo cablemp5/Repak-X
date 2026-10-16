@@ -1123,13 +1123,6 @@ html[data-view="home"] .container > .config-warning { display: none !important; 
   padding: 3px 8px; border-radius: 999px; font-size: 11px; font-variant-numeric: tabular-nums;
   background: rgba(10, 11, 14, 0.62); color: var(--text-secondary);
 }
-/* The last loadout render failed or was refused: said over the image it kept */
-.lo-media-note {
-  position: absolute; left: 8px; right: 8px; top: 8px; pointer-events: auto; z-index: 1;
-  padding: 4px 9px; border-radius: 8px; font-size: 11px; line-height: 1.35;
-  background: rgba(10, 11, 14, 0.78); color: var(--text-secondary);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
 
 /* ---------- motion: recipes from transitions.dev (free library), with its motion tokens. Settings > Interface >
    Animations sets html[data-motion="off"], which zeroes these and every other transition and animation. ---------- */
@@ -1333,14 +1326,19 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 /* Loadout page Group: a dropdown of the groups */
 .lp-group { display: flex; align-items: center; gap: 10px; }
 .lp-group .custom-dropdown-container { width: 240px; }
-/* Generating: a spinner; pointing at it shows Stop */
-.run-icon { display: inline-grid; place-items: center; }
-.run-icon > * { grid-area: 1 / 1; }
-svg.run-spin { animation: run-spin 0.9s linear infinite; }
-.run-stop { opacity: 0; }
-button.is-running:hover .run-spin { opacity: 0; }   /* a run's own button turns into Stop; a card that is generating keeps its spinner */
-button.is-running:hover .run-stop { opacity: 1; }
-@keyframes run-spin { to { transform: rotate(360deg); } }
+/* Generating: what it is doing (dot loader, "2 of 9") as a quiet status, and Stop as its own button beside it with a
+   small rounded square, the same Stop as Home's batch line */
+.run-group { display: inline-flex; align-items: center; gap: 6px; flex: none; }
+.run-group .is-running { display: inline-flex !important; align-items: center; gap: 8px; cursor: default; pointer-events: none;
+  border-color: transparent !important; background: transparent !important; padding-left: 4px !important; color: var(--text-primary) !important; }
+.run-stop-btn { display: inline-flex !important; align-items: center; gap: 7px; }
+.stop-glyph { width: 9px; height: 9px; border-radius: 2px; background: currentColor; flex: none; }
+/* A Generate button on a PC without the preview kit: grayed out, with a small blue "Set up" that says where to go */
+.is-unavailable { color: var(--text-secondary) !important; opacity: 0.85; }
+.is-unavailable svg.lucide { opacity: 0.6; }
+.is-unavailable:hover { color: var(--text-primary) !important; opacity: 1; }
+.setup-chip { margin-left: 2px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 600; line-height: 16px;
+  color: color-mix(in srgb, var(--accent-primary), white 35%); background: color-mix(in srgb, var(--accent-primary), transparent 82%); }
 
 /* Loadout page actions: On/Off, Generate previews, image, and a More menu, on one line */
 .lp-actions { row-gap: 8px; }
@@ -1673,12 +1671,13 @@ button.is-running:hover .run-stop { opacity: 1; }
 .fr-foot .su-sub { margin: 0 auto 0 0; }
 
 /* Preview kit: download progress and what the PC check found missing (Setup and the first-launch setup) */
-.su-progress { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.su-progress { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
 .su-progress-track { flex: 1; height: 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; position: relative; }
 .su-progress-track i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: var(--accent-primary); transition: width 0.2s ease; }
 .su-progress-track i.is-indeterminate { width: 30%; animation: su-slide 1.1s ease-in-out infinite; }
 @keyframes su-slide { from { left: -30%; } to { left: 100%; } }
-.su-progress-text { flex: none; min-width: 110px; text-align: right; }
+.su-progress-text { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.su-progress-track { flex: none; }
 .su-problems { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .su-problems li { font-size: 12.5px; line-height: 1.5; color: var(--text-primary); padding-left: 14px; position: relative; }
 .su-problems li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: #e3a008; }
@@ -1781,3 +1780,22 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
    and amber for the live dev copy (dev.ps1), instead of blue */
 :root[data-build="test"] .title-x { color: #3ecf6e !important; }
 :root[data-build="dev"] .title-x { color: #f5a524 !important; }
+
+/* Setup > Mod previews: its two parts (the kit, Blender) as rows with a check when present, their links on the right;
+   a quiet trust line while Blender is missing or installing */
+.su-parts { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; border: 1px solid var(--panel-border); border-radius: 10px; }
+.su-part { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 12px; }
+.su-part + .su-part { border-top: 1px solid var(--panel-border); }
+.su-part-mark { flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; border: 1.5px dashed rgba(255, 255, 255, 0.22); }
+.su-part-mark.is-ok { border: none; background: color-mix(in srgb, #3ecf6e, transparent 80%); color: #3ecf6e; }
+.su-part-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.su-part-text b { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.su-part-text span { font-size: 12.5px; color: var(--text-secondary); }
+.su-part-links { flex: none; display: inline-flex; gap: 14px; font-size: 12.5px; }
+.su-link, .su-trust a { cursor: pointer; color: color-mix(in srgb, var(--accent-primary), white 30%) !important; }
+.su-link { display: inline; height: auto !important; min-height: 0 !important; padding: 0 !important; border: none !important;
+  background: none !important; font: inherit !important; }
+.su-link:hover:not(:disabled), .su-trust a:hover { text-decoration: underline; }
+.su-link:disabled { opacity: 0.45; cursor: default; }
+.su-trust { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+.su-trust svg.lucide { flex: none; margin-top: 2px; color: #3ecf6e; }

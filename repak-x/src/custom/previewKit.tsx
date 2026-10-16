@@ -11,7 +11,8 @@ type Alert = ReturnType<typeof useAlert>
 export type KitStatus = { version: string | null; dev: boolean; blender: string | null }
 export type KitRelease = { version: string; published: string; notes: string; url: string; asset: string; size: number }
 export type Doctor = { ok: boolean; problems: string[] }
-export type KitProgress = { stage: 'download' | 'unpack'; done: number; total: number }
+/** blender: winget's progress (done of total bytes, or percent when total is 100) and its latest message */
+export type KitProgress = { stage: 'download' | 'unpack' | 'blender'; done: number; total: number; text?: string }
 
 /** A kit zip by its file name (repakxtra-preview-kit-v2.zip, also "... (1).zip" from a browser). */
 export const isKitZip = (path: string) => /(^|[\\/])repakxtra-preview-kit[^\\/]*\.zip$/i.test(path)
@@ -21,10 +22,13 @@ export const isNewerKit = (latest: string, installed?: string | null) =>
 const mb = (n: number) => `${Math.round(n / 1048576)} MB`
 /** The generator's check of this PC; when it cannot run (no kit, busy, would not start) that is its one problem. */
 const checkPc = () => invoke<Doctor>('previews_doctor').catch((e): Doctor => ({ ok: false, problems: [String(e)] }))
-/** "38 MB of 108 MB", "Unpacking…" */
+/** "38 MB of 108 MB", "Unpacking…", "Downloading Blender · 120 MB of 345 MB" */
 export const progressText = (p: KitProgress | null) =>
-  !p ? '' : p.stage === 'unpack' ? 'Unpacking…' : p.total ? `${mb(p.done)} of ${mb(p.total)}` : mb(p.done)
-export const progressShare = (p: KitProgress | null) => (p?.stage === 'download' && p.total ? Math.min(1, p.done / p.total) : null)
+  !p ? '' : p.stage === 'unpack' ? 'Unpacking…'
+    : p.stage === 'blender' ? [p.text || 'Installing Blender', p.total === 100 ? `${p.done}%` : p.total ? `${mb(p.done)} of ${mb(p.total)}` : ''].filter(Boolean).join(' · ')
+    : p.total ? `${mb(p.done)} of ${mb(p.total)}` : mb(p.done)
+export const progressShare = (p: KitProgress | null) => (p?.stage !== 'unpack' && p?.total ? Math.min(1, p.done / p.total) : null)
+const BLENDER_START: KitProgress = { stage: 'blender', done: 0, total: 0, text: 'Asking winget for Blender' }
 
 export function usePreviewKit(alert: Alert) {
   const [kit, setKit] = useState<KitStatus | null>(null)
@@ -69,6 +73,7 @@ export function usePreviewKit(alert: Alert) {
       return v
     }),
     installBlender: () => run('blender', async () => {
+      setProgress(BLENDER_START)
       const path = await invoke<string>('preview_kit_install_blender')
       await status()
       setDoctor(await checkPc())
@@ -93,7 +98,7 @@ export function usePreviewKit(alert: Alert) {
       const release = latest === undefined ? await fetchLatest() : latest
       if (!now.version && !now.dev && !release) throw new Error('No preview kit has been published yet. If someone sent you the kit zip, drop it on this window.')
       if (release && (!now.version ? !now.dev : isNewerKit(release.version, now.version))) await installKit()
-      if (!now.blender) { await invoke<string>('preview_kit_install_blender'); await status() }
+      if (!now.blender) { setProgress(BLENDER_START); await invoke<string>('preview_kit_install_blender'); await status() }
       const d = await checkPc()
       setDoctor(d)
       if (d.ok) alert.success('Mod previews', 'Ready. Generate previews from a loadout.')

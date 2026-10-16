@@ -7,7 +7,7 @@ import { useMediaUrl } from './loadoutMedia'
 import { type Loadout, type Mod, displayName, flipMods, modKey } from './loadoutStore'
 import { ModName } from './modName'
 import { MatrixLoader, revealOnLoad } from './motion'
-import { hasPreview, noPreviewPossible, previewSetKey, useCovers, usePreviewOutcome, usePreviewState, usePreviewUrl, usePreviewVersion } from './previews'
+import { hasPreview, noPreviewPossible, previewSetKey, useCovers, usePreviewState, usePreviewUrl, usePreviewVersion } from './previews'
 
 /** The home screen's badge color class for a mod type (theme.css *-badge sets --badge-dot). */
 export const typeClass = (category?: string | null) => `${(category || 'unknown').toLowerCase().replace(/\s+/g, '-')}-badge`
@@ -62,7 +62,6 @@ export function CardMedia({ p, l, className = '', title, onClick, onRemoveImage,
   const src = slide?.key ? generated : own
   const [warm] = useState(src) // already cached when the card mounted: shown at once, without the blur-in
   const state = usePreviewState(previewSetKey(l.id))
-  const setNote = usePreviewOutcome(previewSetKey(l.id)) // the last loadout render failed (its image stays) or was refused
   const impossible = !src && !state && noPreviewPossible(l)
   return (
     <div className={`lo-media ${className}${paged ? ' is-paged' : ''}${state ? ` is-${state.kind}` : ''}`}>
@@ -105,7 +104,6 @@ export function CardMedia({ p, l, className = '', title, onClick, onRemoveImage,
           <X size={14} />
         </button>
       )}
-      {!state && setNote && <span className="lo-media-note" title={setNote}>{setNote}</span>}
     </div>
   )
 }

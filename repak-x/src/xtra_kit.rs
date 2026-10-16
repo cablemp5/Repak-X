@@ -143,11 +143,14 @@ fn unpack(zip: &[u8], dir: &Path) -> Result<String, String> {
 }
 
 /// Install progress for Setup (`preview-kit-progress`): the stage, and the bytes so far of `total` (0 when unknown).
+/// Blender's stage also says what winget is doing ("Downloading", "Starting package install...").
 #[derive(Clone, Serialize)]
 struct Progress {
     stage: &'static str,
     done: u64,
     total: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    text: Option<String>,
 }
 
 /// Downloads the kit zip, reporting about every megabyte.
@@ -162,7 +165,7 @@ async fn download(app: &AppHandle, url: &str) -> Result<Vec<u8>, String> {
         let done = bytes.len() as u64;
         if done - told >= 1 << 20 || done == total {
             told = done;
-            let _ = app.emit("preview-kit-progress", Progress { stage: "download", done, total });
+            let _ = app.emit("preview-kit-progress", Progress { stage: "download", done, total, text: None });
         }
     }
     Ok(bytes)
@@ -180,38 +183,94 @@ pub async fn preview_kit_install(app: AppHandle, file: Option<String>) -> Result
             download(&app, &release.asset).await?
         }
     };
-    let _ = app.emit("preview-kit-progress", Progress { stage: "unpack", done: 0, total: 0 });
+    let _ = app.emit("preview-kit-progress", Progress { stage: "unpack", done: 0, total: 0, text: None });
     fs::create_dir_all(crate::app_dir()).map_err(|e| e.to_string())?;
     // Thousands of files: off the async runtime
     tauri::async_runtime::spawn_blocking(move || { let _hold = hold; unpack(&zip, &kit_dir()) }).await.map_err(|e| e.to_string())?
 }
 
-/// Installs Blender with winget (Windows' package manager; Blender's own installer asks for admin rights once), then
-/// finds it. Already installed: just finds it.
+/// Installs Blender with winget (Windows' package manager: the official BlenderFoundation.Blender package; Blender's own
+/// installer asks for admin rights once), then finds it. Already installed: just finds it. Setup shows winget's progress
+/// as it goes, and every message lands in the app's Logs (scope Blender).
 #[tauri::command]
-pub async fn preview_kit_install_blender() -> Result<String, String> {
+pub async fn preview_kit_install_blender(app: AppHandle) -> Result<String, String> {
     if let Some(b) = blender() {
         return Ok(b.display().to_string());
     }
-    let out = tauri::async_runtime::spawn_blocking(|| {
-        let mut cmd = std::process::Command::new("winget");
-        cmd.args(["install", "--id", "BlenderFoundation.Blender", "--exact", "--silent", "--accept-package-agreements", "--accept-source-agreements"]);
-        #[cfg(windows)]
-        {
-            use std::os::windows::process::CommandExt;
-            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    crate::ui_log::info("Blender", "Installing Blender (winget package BlenderFoundation.Blender, from blender.org)");
+    let (code, last) = tauri::async_runtime::spawn_blocking(move || run_winget(&app)).await.map_err(|e| e.to_string())??;
+    if let Some(b) = blender() {
+        crate::ui_log::success("Blender", format!("Installed: {}", b.display()));
+        return Ok(b.display().to_string());
+    }
+    let error = format!("Blender did not install (winget exit {}). {last}", code.unwrap_or(-1));
+    crate::ui_log::error("Blender", &error);
+    Err(error)
+}
+
+/// "12.0 MB / 345 MB" (winget's download bar) as bytes done and total, or "45%" as 45 of 100.
+fn winget_progress(line: &str) -> Option<(u64, u64)> {
+    let size = regex_lite::Regex::new(r"(\d+(?:\.\d+)?)\s*(KB|MB|GB)\s*/\s*(\d+(?:\.\d+)?)\s*(KB|MB|GB)").ok()?;
+    let bytes = |n: &str, unit: &str| n.parse::<f64>().ok().map(|v| (v * match unit { "KB" => 1024.0, "MB" => 1048576.0, _ => 1073741824.0 }) as u64);
+    if let Some(c) = size.captures(line) {
+        return Some((bytes(&c[1], &c[2])?, bytes(&c[3], &c[4])?));
+    }
+    let pct = regex_lite::Regex::new(r"(?:^|\s)(\d{1,3})\s*%").ok()?;
+    pct.captures(line).and_then(|c| c[1].parse::<u64>().ok()).filter(|p| *p <= 100).map(|p| (p, 100))
+}
+
+/// Runs winget, passing its download progress and messages to Setup (`preview-kit-progress`, stage "blender") and its
+/// messages to the Logs. winget redraws its bar with carriage returns, so its output is split on those too. Returns the
+/// exit code and its last message.
+fn run_winget(app: &AppHandle) -> Result<(Option<i32>, String), String> {
+    use std::process::{Command, Stdio};
+    let mut cmd = Command::new("winget");
+    cmd.args(["install", "--id", "BlenderFoundation.Blender", "--exact", "--silent", "--accept-package-agreements", "--accept-source-agreements"])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    let mut child = cmd.spawn().map_err(|_| "winget is not on this PC. Download Blender from blender.org, then pick blender.exe in Setup.".to_string())?;
+    let mut out = child.stdout.take().ok_or("winget gave no output")?;
+    let mut last = String::new();
+    let mut sent = std::time::Instant::now() - std::time::Duration::from_secs(1);
+    let mut handle = |raw: &[u8]| {
+        let line = String::from_utf8_lossy(raw);
+        let line = line.trim();
+        if let Some((done, total)) = winget_progress(line) {
+            if sent.elapsed().as_millis() >= 150 || done >= total {
+                sent = std::time::Instant::now();
+                let _ = app.emit("preview-kit-progress", Progress { stage: "blender", done, total, text: Some(last.clone()) });
+            }
+        } else if line.chars().filter(|c| c.is_alphabetic()).count() >= 3 && line != last {
+            // A message, not the spinner winget draws while it waits
+            crate::ui_log::info("Blender", line);
+            last = line.to_string();
+            let _ = app.emit("preview-kit-progress", Progress { stage: "blender", done: 0, total: 0, text: Some(last.clone()) });
         }
-        cmd.output()
-    })
-    .await
-    .map_err(|e| e.to_string())?
-    .map_err(|_| "winget is not on this PC. Download Blender from blender.org, then pick blender.exe in Setup.".to_string())?;
-    if let Some(b) = blender() {
-        return Ok(b.display().to_string());
+    };
+    let (mut buf, mut line) = ([0u8; 4096], Vec::new());
+    loop {
+        let n = out.read(&mut buf).unwrap_or(0);
+        if n == 0 {
+            break;
+        }
+        for &b in &buf[..n] {
+            if b == b'\r' || b == b'\n' {
+                handle(&line);
+                line.clear();
+            } else {
+                line.push(b);
+            }
+        }
     }
-    let said = String::from_utf8_lossy(&out.stdout);
-    let last = said.lines().map(str::trim).filter(|l| l.chars().any(char::is_alphabetic)).last().unwrap_or("");
-    Err(format!("Blender did not install (winget exit {}). {last}", out.status.code().unwrap_or(-1)))
+    handle(&line);
+    drop(handle);
+    let code = child.wait().ok().and_then(|s| s.code());
+    Ok((code, last))
 }
 
 #[tauri::command]
@@ -240,6 +299,15 @@ pub fn preview_kit_set_blender(path: Option<String>) -> Result<Option<String>, S
 mod tests {
     use super::*;
     use std::io::Write;
+
+    #[test]
+    fn reads_wingets_download_bar_and_percent() {
+        assert_eq!(winget_progress("  ██████▒▒▒▒  12.0 MB /  345 MB"), Some((12 * 1048576, 345 * 1048576)));
+        assert_eq!(winget_progress("1.5 GB / 2 GB"), Some(((1.5 * 1073741824.0) as u64, 2 * 1073741824)));
+        assert_eq!(winget_progress("  ████  45%"), Some((45, 100)));
+        assert_eq!(winget_progress("Starting package install..."), None);
+        assert_eq!(winget_progress("Found Blender [BlenderFoundation.Blender] Version 5.2"), None);
+    }
 
     fn kit_zip(extra: &[(&str, &[u8])]) -> Vec<u8> {
         let mut w = zip::ZipWriter::new(Cursor::new(Vec::new()));

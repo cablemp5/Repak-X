@@ -392,6 +392,11 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('list') // 'grid', 'compact', 'list'
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null) // { x, y, mod }
   const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false)
+  useEffect(() => { // repakxtra: a preview failure toast's Open logs
+    const open = () => setIsLogDrawerOpen(true)
+    window.addEventListener('repakxtra-open-logs', open)
+    return () => window.removeEventListener('repakxtra-open-logs', open)
+  }, [])
 
   const [clashes, setClashes] = useState<ClashRecord[]>([])
   const [launchSuccess, setLaunchSuccess] = useState(false)

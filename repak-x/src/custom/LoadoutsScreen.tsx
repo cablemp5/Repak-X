@@ -12,7 +12,7 @@ import { CardMedia, OnDot } from './loadoutBits'
 import { prepareMedia, putMedia } from './loadoutMedia'
 import { plural } from './modName'
 import { MatrixLoader, Num } from './motion'
-import { dismissPreviewSummary, generateAllLoadouts, loadoutHasPreview, stopPreviews, usePreviewsAvailable, usePreviewBatch, usePreviewSummary, usePreviewVersion } from './previews'
+import { PreviewsUnavailable, dismissPreviewSummary, generateAllLoadouts, loadoutHasPreview, stopPreviews, usePreviewFailureToast, usePreviewsAvailable, usePreviewBatch, usePreviewSummary, usePreviewVersion } from './previews'
 import {
   type Loadout, type Mod, OTHER, addGroup, changesToTurnOff, changesToTurnOn, deleteGroup, displayName, groupKey,
   inGroup, isActive, modKey, moveGroup, nextLoadoutName, openLoadout, patchLoadout, readLoadouts, renameGroup,
@@ -118,6 +118,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
   const canGenerate = usePreviewsAvailable()
   const genRef = useRef<HTMLDivElement>(null)
   usePreviewVersion()
+  usePreviewFailureToast(p.alert)
   const mediaTarget = useRef<string | null>(null)
   const hovered = useRef<string | null>(null)
   const openRef = useRef(openId)
@@ -270,6 +271,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
           <button type="button" className="lo-text-btn" data-tour="new-collection" onClick={newGroup} title="A new collection: a named shelf for loadouts that belong together (drag cards onto it)">
             <FolderPlus size={14} /> New collection
           </button>
+          {!canGenerate && <PreviewsUnavailable className="lo-text-btn" label="Generate all previews" />}
           {canGenerate && <div className="lo-gen" ref={genRef}>
             <button type="button" className="lo-text-btn" disabled={loadouts.length === 0} aria-haspopup={withPreview > 0 ? 'menu' : undefined}
               aria-expanded={withPreview > 0 ? genMenu : undefined}
@@ -299,9 +301,9 @@ export default function LoadoutsScreen(p: LoadoutProps) {
           <MatrixLoader />
           <span className="lo-batch-what t-shimmer">Generating {batch.name} Preview</span>
           {batch.jobs > 1 && <span className="lo-batch-left">{batch.job} of {batch.jobs}</span>}
-          <button type="button" className="lo-text-btn lo-batch-stop" onClick={stopPreviews} disabled={batch.stopping}
+          <button type="button" className="lo-text-btn lo-batch-stop run-stop-btn" onClick={stopPreviews} disabled={batch.stopping}
             title={batch.left ? 'Stop now and clear the queue' : 'Stop now'}>
-            {batch.stopping ? 'Stopping…' : batch.left ? 'Stop all' : 'Stop'}
+            <span className="stop-glyph" aria-hidden="true" />{batch.stopping ? 'Stopping…' : batch.left ? 'Stop all' : 'Stop'}
           </button>
           {/* how far the batch is: loadouts done of all asked for */}
           {batch.jobs > 1 && <span className="lo-batch-track" aria-hidden="true"><i style={{ width: `${((batch.job - 1) / batch.jobs) * 100}%` }} /></span>}
