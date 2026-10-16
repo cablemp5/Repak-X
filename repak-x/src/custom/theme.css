@@ -1799,3 +1799,7 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 .su-link:disabled { opacity: 0.45; cursor: default; }
 .su-trust { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
 .su-trust svg.lucide { flex: none; margin-top: 2px; color: #3ecf6e; }
+
+/* Details panel: a hero with forms shows each form's preview side by side */
+.mod-preview-frame.has-forms { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; width: 100%; aspect-ratio: auto; }
+.mod-preview-frame.has-forms img { width: 100%; min-width: 0; }

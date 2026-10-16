@@ -7,7 +7,7 @@ import { useMediaUrl } from './loadoutMedia'
 import { type Loadout, type Mod, displayName, flipMods, modKey } from './loadoutStore'
 import { ModName } from './modName'
 import { MatrixLoader, revealOnLoad } from './motion'
-import { hasPreview, noPreviewPossible, previewSetKey, useCovers, usePreviewState, usePreviewUrl, usePreviewVersion } from './previews'
+import { formKeys, hasPreview, noPreviewPossible, previewSetKey, useCovers, usePreviewState, usePreviewUrl, usePreviewVersion } from './previews'
 
 /** The home screen's badge color class for a mod type (theme.css *-badge sets --badge-dot). */
 export const typeClass = (category?: string | null) => `${(category || 'unknown').toLowerCase().replace(/\s+/g, '-')}-badge`
@@ -20,6 +20,7 @@ const rank = (c?: string | null) => { const i = TYPE_ORDER.indexOf(c ?? ''); ret
  *  Material previews together on one slide and its VFX swatches on another. The combined render hides only the mods it
  *  shows that the loadout still holds. It reads "Older render" when it was made for other installed mods than the
  *  loadout has now (or before that was recorded). */
+type Slide = { key: string; label: string; older?: boolean; keys?: string[] }
 function usePreviewSlides(p: LoadoutProps, l: Loadout) {
   usePreviewVersion()
   const set = previewSetKey(l.id)
@@ -32,7 +33,7 @@ function usePreviewSlides(p: LoadoutProps, l: Loadout) {
     .sort((a, b) => rank(categoryOf(a)) - rank(categoryOf(b)))
   // Material and VFX previews each share one slide, however many mods of that type the loadout has
   const together = (k: string) => { const c = categoryOf(k); return c && SHARED.includes(c) ? keys.filter(x => categoryOf(x) === c) : [k] }
-  const slides: { key: string; label: string; older?: boolean; keys?: string[] }[] = keys.flatMap(k => {
+  const slides: Slide[] = keys.flatMap(k => {
     const g = together(k)
     if (g.length < 2) return [{ key: k, label: categoryOf(k) ?? 'Mod' }]
     return k === g[0] ? [{ key: k, keys: g, label: `${g.length} ${categoryOf(k)}` }] : []
@@ -43,7 +44,13 @@ function usePreviewSlides(p: LoadoutProps, l: Loadout) {
     const kinds = [...new Set(covered.map(categoryOf).filter((c): c is string => Boolean(c)))].sort((a, b) => rank(a) - rank(b))
     slides.unshift({ key: set, label: older ? 'Older render' : kinds.join(' + ') || 'Character', older }) // e.g. "Mesh + Texture + Material"
   }
-  return slides
+  // A hero with forms (Magik and Darkchylde, Hulk's three): each other form's image follows its first; a shared slide
+  // (several Material mods) gets one more shared slide with their other forms
+  return slides.flatMap((s): Slide[] => {
+    if (!s.keys) return [s, ...formKeys(s.key).map((k, i) => ({ key: k, label: `${s.label} · form ${i + 2}`, older: s.older }))]
+    const more = s.keys.flatMap(formKeys)
+    return more.length ? [s, { key: more[0], keys: more, label: `${s.label} · other forms` }] : [s]
+  })
 }
 
 /** The loadout's image: its own image or video, then its generated previews, paged with arrows. With onRemoveImage,

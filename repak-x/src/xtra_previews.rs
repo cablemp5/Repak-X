@@ -252,10 +252,14 @@ fn log_generator(err: std::process::ChildStderr, mut file: Option<std::fs::File>
         if text.is_empty() {
             continue;
         }
-        // A Python traceback: its indented frames, then one unindented line naming the exception, which ends it
-        let in_traceback = traceback || text.starts_with("Traceback");
-        traceback = in_traceback && (text.starts_with("Traceback") || line.starts_with(char::is_whitespace));
-        if in_traceback || generator_error(text) {
+        // A Python traceback: its header and indented frames go to the log's details (debug), and the one unindented line
+        // naming the exception, which ends it, is the error. A failed run showed 27 red lines for one error
+        let starts = text.starts_with("Traceback");
+        let in_traceback = traceback || starts;
+        traceback = in_traceback && (starts || line.starts_with(char::is_whitespace));
+        if traceback {
+            crate::ui_log::debug("Previews", text);
+        } else if in_traceback || generator_error(text) {
             crate::ui_log::error("Previews", text);
         } else {
             crate::ui_log::info("Previews", text);

@@ -83,7 +83,17 @@ const listeners = new Set<() => void>()
 const notify = () => { version++; listeners.forEach(l => l()) }
 const subscribe = (l: () => void) => { listeners.add(l); return () => listeners.delete(l) }
 
-invoke<string[]>('list_mod_previews').then(keys => { keys.forEach(k => revs.set(k, 0)); notify() }).catch(() => undefined)
+/** Reads which previews exist. After a run it also drops the other-form images (<key>@2) the generator deleted, since
+ *  nothing else reports those as gone. */
+const syncPreviewList = () => invoke<string[]>('list_mod_previews').then(keys => {
+  const now = new Set(keys)
+  for (const k of [...revs.keys()]) if (k.includes('@') && !now.has(k)) { revs.delete(k); dropCached(k) }
+  keys.forEach(k => { if (!revs.has(k)) revs.set(k, 0) })
+  notify()
+}).catch(() => undefined)
+syncPreviewList()
+/** A character's other forms (Magik's Darkchylde, Hulk's other two): <key>@2, <key>@3 beside <key>. */
+export const formKeys = (key: string) => [2, 3, 4].map(n => `${key}@${n}`).filter(k => revs.has(k))
 // No generator on this PC (a friend's copy without the preview kit): Generate buttons stay hidden, existing previews still show
 let available = false
 /** Asks the backend again (after the preview kit was installed or removed in Setup). */
@@ -159,6 +169,7 @@ listen<boolean>('mod-previews-done', e => {
   play(run.busy ? 'warning' : stoppedEarly ? 'close' : run.made && !failed && run.setResult !== 'failed' ? 'ready' : run.made ? 'warning' : 'error')
   batchDone++
   notify()
+  syncPreviewList()
   startNext()
   if (!running()) batchDone = 0
 }).catch(() => undefined)
@@ -387,10 +398,14 @@ export function ModPreview({ path }: { path: string }) {
   const busy = pending.has(key)
   const queued = queue.some(q => q.id === id)
   const message = outcome.get(key)
+  const forms = formKeys(key)
   return (
     <div className="detail-section mod-preview">
       {url && (
-        <div className="mod-preview-frame"><img src={url} alt="Generated preview" onLoad={revealOnLoad} /></div>
+        <div className={`mod-preview-frame${forms.length ? ' has-forms' : ''}`}>
+          <img src={url} alt="Generated preview" onLoad={revealOnLoad} />
+          {forms.map(k => <FormImage key={k} k={k} />)}
+        </div>
       )}
       {!canGenerate && <div className="mod-preview-bar"><PreviewsUnavailable className="mod-preview-btn" label="Generate preview" /></div>}
       {canGenerate && <div className="mod-preview-bar">
@@ -405,6 +420,12 @@ export function ModPreview({ path }: { path: string }) {
       </div>}
     </div>
   )
+}
+
+/** Another form's image beside the first in the details panel. */
+function FormImage({ k }: { k: string }) {
+  const src = usePreviewUrl(k)
+  return src ? <img src={src} alt="Generated preview, another form" onLoad={revealOnLoad} /> : null
 }
 
 /** Previews for a set of mods (the selection bar, a loadout page), with progress and Stop while its own run goes.
