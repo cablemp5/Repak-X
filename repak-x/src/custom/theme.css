@@ -1749,5 +1749,7 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 .su-row .su-meta { margin: 0; min-width: 0; }
 .su-ok { color: #3ecf6e; }
 
-/* Test builds (build.ps1 -Test, custom/version.ts TEST_BUILD): the "xtra" in the app name is green instead of blue */
+/* Test and dev copies (custom/version.ts BUILD): the "xtra" in the app name is green for a test build (build.ps1 -Test)
+   and amber for the live dev copy (dev.ps1), instead of blue */
 :root[data-build="test"] .title-x { color: #3ecf6e !important; }
+:root[data-build="dev"] .title-x { color: #f5a524 !important; }

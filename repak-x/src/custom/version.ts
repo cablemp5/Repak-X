@@ -2,14 +2,15 @@
 // from Cargo (get_app_version).
 export const REPAKXTRA_VERSION = '0.3.1'
 
-/** A copy made with `build.ps1 -Test` (it sets VITE_REPAKXTRA_TEST for the frontend build). It marks itself: the
- *  "xtra" in the app name turns green (theme.css, :root[data-build="test"]) and the version line says "test build". */
-export const TEST_BUILD = import.meta.env.VITE_REPAKXTRA_TEST === '1'
-if (TEST_BUILD) document.documentElement.dataset.build = 'test'
+/** Which copy this is. "dev": the live dev copy (dev.ps1, or the browser preview), served by Vite. "test": made with
+ *  `build.ps1 -Test`, which sets VITE_REPAKXTRA_TEST for the frontend build. Both mark themselves: the "xtra" in the app
+ *  name takes their color (theme.css, :root[data-build]) and the version line says "dev build" or "test build". */
+export const BUILD: 'dev' | 'test' | '' = import.meta.env.DEV ? 'dev' : import.meta.env.VITE_REPAKXTRA_TEST === '1' ? 'test' : ''
+if (BUILD) document.documentElement.dataset.build = BUILD
 
-/** The header's and Credits' version line: "v0.3.1 (RepakX v2.0.1, forked by cable)", "v0.3.1 test build (...)" */
+/** The header's and Credits' version line: "v0.3.1 (RepakX v2.0.1, forked by cable)", "v0.3.1 dev build (...)" */
 export const versionTag = (repakx?: string) => {
-  const v = `v${REPAKXTRA_VERSION}${TEST_BUILD ? ' test build' : ''}`
+  const v = `v${REPAKXTRA_VERSION}${BUILD ? ` ${BUILD} build` : ''}`
   return repakx ? `${v} (RepakX v${repakx}, forked by cable)` : `${v} (forked by cable)`
 }
 

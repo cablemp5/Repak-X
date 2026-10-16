@@ -12,6 +12,7 @@ mod xtra_previews; // repakxtra: generated mod previews
 mod xtra_trash; // repakxtra: undoable delete
 mod xtra_capture; // repakxtra: capture preview in game
 mod xtra_update; // repakxtra: updates from repakxtra's own releases
+mod xtra_storage; // repakxtra: saved loadouts and settings copied for the dev copy
 mod character_data;
 mod crash_monitor;
 mod discord_presence;
@@ -8700,6 +8701,8 @@ fn main() {
             xtra_kit::preview_kit_install,
             xtra_kit::preview_kit_remove,
             xtra_kit::preview_kit_set_blender,
+            xtra_storage::xtra_storage_snapshot_write,
+            xtra_storage::xtra_storage_snapshot_read,
             xtra_kit::preview_kit_install_blender, // repakxtra: Blender with winget
             xtra_previews::previews_doctor, // repakxtra: can this PC make previews
             xtra_previews::cancel_mod_previews,
