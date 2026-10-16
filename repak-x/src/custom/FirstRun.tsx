@@ -10,6 +10,7 @@ import { Check, Upload } from 'lucide-react'
 import type { useAlert } from '../components/AlertHandler'
 import { BlenderTrust, DoctorProblems, KitProgressBar } from './SetupPanel'
 import { isKitZip, usePreviewKit } from './previewKit'
+import { ShortcutButton, useShortcut } from './shortcut'
 
 type Alert = ReturnType<typeof useAlert>
 type Bypass = { state: 'installed' | 'disabled' | 'partial' | 'other' | 'missing' }
@@ -51,6 +52,7 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
   const asked = useRef(0) // the newest status check: answers to an older one (another game folder) are dropped
   const [busy, setBusy] = useState<string | null>(null)
   const kit = usePreviewKit(alert)
+  const shortcut = useShortcut()
   const detected = useRef(false)
 
   useEffect(() => {
@@ -159,7 +161,12 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
             <DoctorProblems d={kit.doctor} />
           </Step>
 
-          <Step n={5} done={false} wide title="Add your first mods">
+          <Step n={5} done={Boolean(shortcut.exists)} optional title="Desktop shortcut"
+            action={!shortcut.exists && <ShortcutButton s={shortcut} />}>
+            <p>{shortcut.exists ? 'On your desktop. Settings > General can make one again later.' : 'Start repakxtra from your desktop. You can also make one later in Settings > General.'}</p>
+          </Step>
+
+          <Step n={6} done={false} wide title="Add your first mods">
             <div className="fr-drop">
               <Upload size={18} aria-hidden="true" />
               <span>Drop .pak, .zip, .rar or .7z files, or mod folders, anywhere on this window.</span>

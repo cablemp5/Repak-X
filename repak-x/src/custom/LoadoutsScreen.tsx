@@ -19,6 +19,7 @@ import {
   setLoadoutGroup, setView, snapshotLoadout, sweepMediaOnce, useGroups, useLoadouts, useOpenLoadout, useView, writeLoadouts,
 } from './loadoutStore'
 import { savedItem } from './storageCarryOver'
+import { useUpstreamWatch } from './upstream'
 
 type GroupBy = 'group' | 'hero'
 const GROUP_BY_KEY = 'repakxtra.loadoutGroupBy'
@@ -122,6 +123,7 @@ export default function LoadoutsScreen(p: LoadoutProps) {
   const genRef = useRef<HTMLDivElement>(null)
   usePreviewVersion()
   usePreviewFailureToast(p.alert)
+  useUpstreamWatch(p.alert) // Repak X open beside it
   const mediaTarget = useRef<string | null>(null)
   const hovered = useRef<string | null>(null)
   const openRef = useRef(openId)

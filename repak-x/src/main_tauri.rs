@@ -15,6 +15,8 @@ mod xtra_update; // repakxtra: updates from repakxtra's own releases
 mod xtra_storage; // repakxtra: saved loadouts and settings shared with the dev copy
 mod xtra_buildmark; // repakxtra: test and dev copies color their taskbar icon
 mod xtra_export; // repakxtra: export a loadout as a zip
+mod xtra_shortcut; // repakxtra: desktop shortcut
+mod xtra_identity; // repakxtra: its own app identifier, beside Repak X
 mod character_data;
 mod crash_monitor;
 mod discord_presence;
@@ -909,6 +911,7 @@ async fn set_mod_priority(
     priority: usize,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<(), String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let path = PathBuf::from(&mod_path);
     if !path.exists() {
         return Err("Mod file does not exist".to_string());
@@ -2301,6 +2304,7 @@ async fn quick_organize(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<i32, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let state_guard = state.lock().unwrap();
     let mod_directory = state_guard.game_path.clone();
     drop(state_guard);
@@ -2369,6 +2373,7 @@ async fn quick_organize_locked(
     flatten: Option<bool>,
     window: Window,
 ) -> Result<i32, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let existing = PathBuf::from(&existing_mod_path);
     let output_dir = existing
         .parent()
@@ -2943,6 +2948,7 @@ async fn install_mods(
     window: Window,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<(), String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     use std::sync::atomic::{AtomicBool, AtomicI32};
     use std::sync::Arc as StdArc;
 
@@ -3347,6 +3353,7 @@ async fn delete_mod(
     window: Window,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<(), String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let path_buf = PathBuf::from(&path);
     log::info!("delete_mod called with path: {}", path);
     let trash = xtra_trash::reserve(trash_id)?; // repakxtra: undoable delete
@@ -3489,6 +3496,7 @@ async fn update_mod(
     window: Window,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<UpdateModResult, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     info!(
         "update_mod called: old={}, new={}, preserve_name={}, obfuscate={:?}",
         old_mod_path, new_mod_source, preserve_name, obfuscate
@@ -3979,6 +3987,7 @@ async fn rename_mod(
     window: Window,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<String, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let old_path_buf = PathBuf::from(&mod_path);
 
     info!(
@@ -4569,6 +4578,7 @@ async fn assign_mod_to_folder(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<(), String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let state = state.lock().unwrap();
     let game_path = &state.game_path;
     let source_path = PathBuf::from(&mod_path);
@@ -4706,6 +4716,7 @@ async fn toggle_mod(
     window: Window,
     state: State<'_, Arc<Mutex<AppState>>>,
 ) -> Result<bool, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let path = PathBuf::from(&mod_path);
 
     if !path.exists() {
@@ -5603,6 +5614,7 @@ async fn recompress_mods(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<RecompressResult, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let game_path = {
         let state = state.lock().unwrap();
         state.game_path.clone()
@@ -6163,7 +6175,7 @@ async fn download_update(
     info!("Starting update download from: {}", asset_url);
 
     // Create temp directory for the update
-    let temp_dir = std::env::temp_dir().join("repakx_update");
+    let temp_dir = std::env::temp_dir().join("repakxtra_update"); // repakxtra: not Repak X's
     if temp_dir.exists() {
         let _ = std::fs::remove_dir_all(&temp_dir);
     }
@@ -6331,7 +6343,7 @@ async fn apply_update(downloaded_path: String, window: Window) -> Result<(), Str
     // Use runtime OS detection to create the appropriate updater script
     if cfg!(target_os = "windows") {
         // Windows: Create .bat script
-        let updater_script_path = std::env::temp_dir().join("repakx_updater.bat");
+        let updater_script_path = std::env::temp_dir().join("repakxtra_updater.bat"); // repakxtra: not Repak X's
 
         let script_content = if is_zip {
             format!(
@@ -6345,7 +6357,7 @@ echo Waiting for RepakX to close...
 timeout /t 2 /nobreak >nul
 
 :waitloop
-tasklist /FI "IMAGENAME eq {exe_name}" 2>NUL | find /I /N "{exe_name}">NUL
+tasklist /FI "PID eq {pid}" /NH 2>NUL | find /I "{exe_name}">NUL
 if "%ERRORLEVEL%"=="0" (
     echo Still running, waiting...
     timeout /t 1 /nobreak >nul
@@ -6442,6 +6454,7 @@ start "" "{exe_path}"
 (goto) 2>nul & del "%~f0" & exit
 "#,
                 exe_name = exe_name,
+                pid = std::process::id(), // repakxtra: wait for this process only
                 temp_dir = download_path
                     .parent()
                     .unwrap_or(&std::env::temp_dir())
@@ -6459,7 +6472,7 @@ echo Waiting for RepakX to close...
 timeout /t 2 /nobreak >nul
 
 :waitloop
-tasklist /FI "IMAGENAME eq {exe_name}" 2>NUL | find /I /N "{exe_name}">NUL
+tasklist /FI "PID eq {pid}" /NH 2>NUL | find /I "{exe_name}">NUL
 if "%ERRORLEVEL%"=="0" (
     timeout /t 1 /nobreak >nul
     goto waitloop
@@ -6475,6 +6488,7 @@ del "{installer_path}"
 (goto) 2>nul & del "%~f0" & exit
 "#,
                 exe_name = exe_name,
+                pid = std::process::id(), // repakxtra: wait for this process only
                 installer_path = download_path.to_string_lossy().replace('/', "\\"),
             )
         };
@@ -6507,7 +6521,7 @@ del "{installer_path}"
         }
     } else if cfg!(target_os = "linux") {
         // Linux: Create .sh script
-        let linux_script_path = std::env::temp_dir().join("repakx_updater.sh");
+        let linux_script_path = std::env::temp_dir().join("repakxtra_updater.sh"); // repakxtra
 
         let linux_script = if is_tar_gz {
             format!(
@@ -6758,7 +6772,7 @@ async fn set_auto_update_enabled(
 /// Cancel an ongoing update download (cleanup temp files)
 #[tauri::command]
 async fn cancel_update_download() -> Result<(), String> {
-    let temp_dir = std::env::temp_dir().join("repakx_update");
+    let temp_dir = std::env::temp_dir().join("repakxtra_update"); // repakxtra: not Repak X's
     if temp_dir.exists() {
         std::fs::remove_dir_all(&temp_dir)
             .map_err(|e| format!("Failed to cleanup temp directory: {}", e))?;
@@ -7212,14 +7226,16 @@ fn log_dir() -> PathBuf {
 fn save_state(state: &AppState) -> std::io::Result<()> {
     let dir = app_dir();
     std::fs::create_dir_all(&dir)?;
-    let path = dir.join("state.json");
+    let path = dir.join("repakxtra-state.json"); // repakxtra: its own file, so an open Repak X never overwrites it
     let file = File::create(path)?;
     serde_json::to_writer_pretty(file, state)?;
     Ok(())
 }
 
 fn load_state() -> AppState {
-    let path = app_dir().join("state.json");
+    // repakxtra: its own state file; the first start reads Repak X's state.json (shared until now) as its starting point
+    let own = app_dir().join("repakxtra-state.json");
+    let path = if own.exists() { own } else { app_dir().join("state.json") };
     let mut state = if let Ok(file) = File::open(path) {
         serde_json::from_reader(file).unwrap_or_default()
     } else {
@@ -8487,6 +8503,7 @@ fn handle_deep_link_url(url: &str, app_handle: &tauri::AppHandle) {
 // ============================================================================
 
 fn main() {
+    xtra_identity::carry_over_webview_storage(); // repakxtra: before the window opens
     if let Ok(exe_path) = std::env::current_exe() {
         if let Some(exe_dir) = exe_path.parent() {
             // Cleanup old uassettool folder from previous versions
@@ -8519,7 +8536,8 @@ fn main() {
     info!("Starting RepakX v{}", env!("CARGO_PKG_VERSION"));
 
     // Register protocol handler for portable app support (self-healing registry)
-    if let Err(e) = register_protocol_handler() {
+    if crate::xtra_identity::upstream_running() { // repakxtra: an open Repak X keeps the links until it closes
+    } else if let Err(e) = register_protocol_handler() {
         warn!(
             "Failed to register repakx:// protocol handler: {} - browser extension may not work",
             e
@@ -8719,6 +8737,10 @@ fn main() {
             xtra_storage::xtra_storage_backup_write,
             xtra_buildmark::xtra_buildmark_tint,
             xtra_export::export_loadout_zip, // repakxtra: export a loadout as a zip
+            xtra_shortcut::shortcut_status, // repakxtra: desktop shortcut
+            xtra_shortcut::shortcut_create,
+            xtra_identity::xtra_upstream_running, // repakxtra: beside Repak X
+            xtra_identity::xtra_protocol_reclaim,
             xtra_kit::preview_kit_install_blender, // repakxtra: Blender with winget
             xtra_previews::previews_doctor, // repakxtra: can this PC make previews
             xtra_previews::cancel_mod_previews,

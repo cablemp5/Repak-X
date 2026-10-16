@@ -20,9 +20,9 @@ import { SiEpicgames } from "react-icons/si"
 import { RiGraduationCapFill } from "react-icons/ri"
 import { BsKeyboardFill } from "react-icons/bs"
 import { IoIosSettings } from "react-icons/io"
-import DiscordWidget from './DiscordWidget'
 import { REPAKXTRA_VERSION } from '../custom/version' // repakxtra
-import CableDiscord from '../custom/CableDiscord' // repakxtra
+import CableDiscord, { RepakXDiscord } from '../custom/CableDiscord' // repakxtra: both servers as quiet cards
+import { ShortcutSetting } from '../custom/shortcut' // repakxtra
 import './SettingsPanel.css'
 import { useAlert } from './AlertHandler'
 import { motion } from 'framer-motion'
@@ -201,7 +201,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
             {activeCategory === 'general' && (
               <>
                 <div className="setting-section">
-                  <h3>Game Mods Path</h3>
+                  <h3>Mods folder</h3>
                   <div className="setting-group">
                     <p className="setting-hint">Your game's mods folder path.</p>
                     <div className="combined-input-group">
@@ -292,6 +292,8 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                   </div>
                 </div>
 
+                <ShortcutSetting />{/* repakxtra: desktop shortcut */}
+
                 <div className="setting-section">
                   <h3>Updates</h3>
                   <div className="setting-group">
@@ -347,7 +349,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                 {/* repakxtra: no Theme section (dark only, accent fixed to the title's blue) */}
 
                 <div className="setting-section">
-                  <h3>Mods View Settings</h3>
+                  <h3>Mods view</h3>
                   <div className="setting-group">
                     <div className="setting-item">
                       <Checkbox
@@ -420,7 +422,7 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                 </div>
 
                 <div className="setting-section">
-                  <h3>Advanced UI Settings</h3>
+                  <h3>Advanced</h3>
                   <div className="setting-group">
                     <div className="setting-item">
                       <Checkbox
@@ -516,10 +518,10 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                         Repak X is built for the community.
                       </p>
                       <p className="setting-hint" style={{ marginBottom: 0 }}>
-                        If you need help, want to report a bug, or have a feature request, join the Discord server and help make Repak X better for everyone.
+                        If you need help, want to report a bug, or have a feature request, join a Discord server below: Repak X's for the app it is built on, cable's for repakxtra.
                       </p>
                     </div>
-                    <DiscordWidget />
+                    <RepakXDiscord />
                     <CableDiscord />{/* repakxtra: cable's server */}
                   </div>
                 </div>

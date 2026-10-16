@@ -1867,3 +1867,28 @@ html[data-show-mod-size] .mod-list-grid .mod-size { display: inline !important; 
 .install-mod-card { max-height: none !important; }   /* each card shows all its parts: no scrollbar inside a card */
 /* A switch clicked in a tile: a quiet ring, not the app's blue one (keyboard focus still shows it) */
 .app .install-mod-card .install-toggle :focus-visible { outline-color: rgba(255, 255, 255, 0.35) !important; }
+
+/* ---------- Settings: a sidebar like the app's other sidebars (quiet rows, the active one a soft fill, no boxed pill
+   or blue icon), section titles as readable sentence-case headings with a hairline between sections (not small gray
+   capitals), and Help's lines at one size ---------- */
+.settings-sidebar { background: transparent !important; padding: 12px 8px !important; gap: 2px !important; }
+@media (min-width: 761px) { .settings-sidebar { flex-basis: 196px !important; } }   /* narrower, it is a row of tabs (SettingsPanel.css) */
+.settings-nav-item { height: 34px; padding: 0 10px !important; border: none !important; border-radius: var(--quiet-radius) !important;
+  font-size: 13px !important; font-weight: 500 !important; color: var(--text-secondary) !important; box-shadow: none !important; }
+.settings-nav-item:hover:not(.active) { background: var(--quiet-hover) !important; color: var(--text-primary) !important; }
+.settings-nav-item.active { background: var(--quiet-active) !important; color: var(--text-primary) !important; box-shadow: none !important; }
+.settings-nav-icon { opacity: 0.75 !important; color: currentColor !important; }
+.settings-nav-item.active .settings-nav-icon { color: var(--text-primary) !important; opacity: 1 !important; }
+.settings-content .setting-section h3 { text-transform: none !important; letter-spacing: -0.005em !important; font-size: 14px !important;
+  font-weight: 600 !important; color: var(--text-primary) !important; margin: 0 0 2px !important; }
+.settings-content .setting-section + .setting-section {
+  border-top: 1px solid var(--panel-border); padding-top: 20px; margin-top: 4px; }
+.settings-content .setting-hint { font-size: 12.5px !important; color: var(--text-secondary) !important; }
+.settings-content .setting-group > div > span { font-size: 13px !important; font-weight: 400 !important; opacity: 1 !important; color: var(--text-primary); }
+.settings-content .setting-group > div > span strong { font-weight: 600; }
+.settings-content .setting-item > p:first-child:not([class]) { font-size: 13px !important; font-weight: 600 !important; margin-bottom: 4px !important; }   /* Community's intro line, under its heading */
+.shortcut-setting { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.shortcut-done { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.shortcut-done svg.lucide { color: #3ecf6e; }
+/* VFX Updater title: "xtra" in the app's blue, like the main window */
+.vfx-header .title-x { color: var(--accent-primary) !important; }   /* over .vfx-header h1 span; test and dev colors still win */
