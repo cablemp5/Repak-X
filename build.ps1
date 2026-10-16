@@ -75,7 +75,10 @@ if ($Release) {
     Remove-Item $zip -ErrorAction SilentlyContinue
     Run { tar.exe -a -cf $zip -C $out repakxtra.exe UAssetTool.dll data }
     Write-Host "Packed: $zip (SHA-256 $((Get-FileHash $zip).Hash.ToLower()))" -ForegroundColor Green
-    Write-Host 'Publish it (swap --generate-notes for --notes-file notes.md to write your own):'
-    Write-Host "  gh release create v$ver $zip -R cablemp5/repak-xtra --target main --prerelease --title `"repakxtra $ver`" --generate-notes"
+    # On the clipboard as one line: a wrapped terminal line copied by hand can pick up a line break and fail to parse
+    $publish = "gh release create v$ver $zip -R cablemp5/repak-xtra --target main --prerelease --title `"repakxtra $ver`" --generate-notes"
+    Set-Clipboard -Value $publish
+    Write-Host 'The publish command is on the clipboard: paste it and press Enter (swap --generate-notes for --notes-file notes.md to write your own):'
+    Write-Host "  $publish"
 }
 if ($Test) { Write-Host 'The app runs one copy at a time: close the stable repakxtra before opening the test one, or you will just get the stable window.' -ForegroundColor Yellow }
