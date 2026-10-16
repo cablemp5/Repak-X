@@ -35,24 +35,30 @@ repakxtra is a fork of **[Repak X](https://github.com/X-zant/Repak-X)** by **Xza
 
 **Loadouts**
 - One click turns a set of mods on or off. Loadouts are independent, and you are warned when two that are on change the same hero.
-- Groups (drag cards between them) or a view by hero.
+- Collections (drag cards between them) or a view by hero. The pencils rename loadouts and collections.
 - Make one from the Library selection, the right-click menu, the sidebar or while installing. Undo for every removal.
+- On a loadout's page: add and remove mods, rename a mod, turn single mods on or off, and **More > Export as zip** (every
+  mod's files in one zip, named after the loadout). Changes save as you make them.
 - The Library sidebar lists them for quick switching, the ones that are on first.
 
 **Previews**
 - Character mods render on the hero in the lobby pose, using the mods' real materials. A loadout's mods render together.
+- Heroes with forms get one picture per form the mod changes (Magik and Darkchylde, Hulk's three); cards page through them.
 - Animations get a looping clip, VFX mods a palette of the colors they change, UI mods an icon sheet, sound mods a list.
 - **Generate all previews** queues every loadout. Mods with nothing to show are marked "No preview possible".
-- **Capture in game:** on a loadout's page, press `Ctrl+Shift+X` on the hero's Overview or Cosmetics screen to use a screenshot instead.
+- **Capture in game:** on a loadout's page, click **Capture preview in game**, switch to the hero's Overview or Cosmetics
+  screen in the game, then press `Ctrl+Shift+X` to use a screenshot instead.
 
 > [!NOTE]
 > Rendered previews need the preview kit and [Blender](https://www.blender.org/download/) (free). **Setup > Mod previews** installs both.
 
-**Library:** hero and type filters, double-click to rename, deletes go to a trash folder with Undo.
+**Library:** hero and type filters, double-click to rename, deletes go to a trash folder with Undo. Mods that are on and
+clash with another mod that is on get a red **Conflict** badge, and **Check Conflicts** shows a red dot while any do. File sizes are a
+setting (**Settings > Interface**).
 
 **Setup:** the signature bypass ships inside the app (with an "Is it safe?" report), Project Galacta installs and updates in one click, and the preview kit and Blender install from here.
 
-**Sigeon V2 Editor:** create and edit configs and console overrides, and switch configs from the header. Your license key is never shown or touched.
+**Sigeon V2 Editor:** create and edit configs and console overrides, and switch configs from the header. Your license key is never shown, and saving keeps its line as it was.
 
 ## Keyboard shortcuts
 
@@ -60,18 +66,18 @@ repakxtra is a fork of **[Repak X](https://github.com/X-zant/Repak-X)** by **Xza
 | --- | --- |
 | `F1` | Show every shortcut |
 | `L` | Switch between Loadouts and the Library |
-| `Ctrl+1` to `Ctrl+9` | Turn loadout 1 to 9 on or off (Loadouts page order) |
+| `Ctrl+1` to `Ctrl+9` | Turn the loadout with that number in the Library sidebar on or off |
 | `Ctrl+G` | Launch the game |
 | `Ctrl+O` | Install PAKs or archives |
-| `S` | Cycle Sigeon: Off, Base, High |
-| `Ctrl+Shift+X` (in game) | [Capture the loadout's image](#features) |
+| `S` | Cycle Sigeon through Off and the installed configs |
+| `Ctrl+Shift+X` (in game) | [Capture the loadout's image](#features), once **Capture preview in game** is open |
 
 ## Screenshots
 
 <table>
   <tr>
     <td width="50%"><img src=".github/screenshots/loadout-page.png" alt="A loadout's page"><br><sub>A loadout's page</sub></td>
-    <td width="50%"><img src=".github/screenshots/generating.png" alt="Previews generating"><br><sub>Generating all previews</sub></td>
+    <td width="50%"><img src=".github/screenshots/generating.png" alt="Previews generating"><br><sub>Generating a loadout's previews</sub></td>
   </tr>
   <tr>
     <td width="50%"><img src=".github/screenshots/library.png" alt="Library"><br><sub>Library</sub></td>
@@ -87,6 +93,7 @@ repakxtra is a fork of **[Repak X](https://github.com/X-zant/Repak-X)** by **Xza
 
 <details>
 <summary><strong>Is repakxtra the official Repak X?</strong></summary>
+<br>
 
 No. repakxtra is an unofficial fork of [Repak X](https://github.com/X-zant/Repak-X). Installing, conflict checks,
 the Asset Explorer and the VFX Updater are Repak X's work; repakxtra adds loadouts, previews and guided setup.
@@ -96,6 +103,7 @@ Bugs in repakxtra belong here, not with the Repak X team.
 
 <details>
 <summary><strong>Why does every mod need the signature bypass?</strong></summary>
+<br>
 
 Marvel Rivals only loads files it has signed, so a mod that replaces game files is ignored without the bypass.
 repakxtra ships the bypass inside the app: **Setup** installs, repairs or turns it off, and its
@@ -105,6 +113,7 @@ repakxtra ships the bypass inside the app: **Setup** installs, repairs or turns 
 
 <details>
 <summary><strong>What is Project Galacta, and do I need it?</strong></summary>
+<br>
 
 Most skin mods need it. It loads more mod types and swaps mesh mods live in game. **Setup** installs the newest
 [Project Galacta](https://github.com/0xSaturno/ProjectGalacta) release in one click and tells you when an update is out.
@@ -112,15 +121,27 @@ Most skin mods need it. It loads more mod types and swaps mesh mods live in game
 </details>
 
 <details>
-<summary><strong>Why can't I switch mods or loadouts right now?</strong></summary>
+<summary><strong>Can I keep Repak X installed too?</strong></summary>
+<br>
 
-The game is running. Mods and loadouts only switch while Marvel Rivals is closed. Close the game, switch, then
-launch it again (`Ctrl+G`).
+Yes, and both can be open at once: repakxtra has its own app identity and settings. Both apps change the game's
+files, so close Repak X before switching, installing, renaming or deleting mods, or changing Setup, in repakxtra.
+While Repak X is open, repakxtra refuses those changes and says why.
+
+</details>
+
+<details>
+<summary><strong>Why can't I switch mods or loadouts right now?</strong></summary>
+<br>
+
+The game is running, or Repak X is open. Mods and loadouts only switch while Marvel Rivals is closed (close the game,
+switch, then launch it again with `Ctrl+G`), and while Repak X is closed (both change the same files).
 
 </details>
 
 <details>
 <summary><strong>How do I get mod previews?</strong></summary>
+<br>
 
 Rendered previews need the preview kit and [Blender](https://www.blender.org/download/) (free).
 **Setup > Mod previews** downloads the newest kit and installs Blender if it's missing; a kit zip dropped on the
@@ -130,6 +151,7 @@ window installs too. Without either, **Capture in game** on a loadout's page use
 
 <details>
 <summary><strong>How do I update repakxtra?</strong></summary>
+<br>
 
 **Settings > Updates > Check Now.** When a newer release is out, **Download update** fetches it and
 **Install and restart** replaces the app and opens the new version. Loadouts, settings and pictures carry over.
@@ -138,15 +160,17 @@ window installs too. Without either, **Capture in game** on a loadout's page use
 
 <details>
 <summary><strong>Does the Sigeon V2 Editor see my license key?</strong></summary>
+<br>
 
-No. The editor never reads, shows or saves the key: **Open in Notepad** opens the config so you can paste the key
-after `licenseKey=` yourself, and every save writes the key line back exactly as it was. The editor follows the
+It never shows it. The key stays out of the editor's window: **Open in Notepad** opens the config so you can paste the
+key after `licenseKey=` yourself, and every save writes the key line back exactly as it was. The editor follows the
 current `SigeonLoader.ini` format (base, n64, low, mid and high configs, Hide UID, gamma and sharpening).
 
 </details>
 
 <details>
 <summary><strong>What should I do if I hit a bug?</strong></summary>
+<br>
 
 Update first (**Settings > Updates > Check Now**); a newer release may already fix it. If it persists, ask on
 [Discord](https://discord.gg/C7geHdWBP5) with your repakxtra version (shown in the header), what you
