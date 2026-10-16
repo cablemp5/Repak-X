@@ -405,7 +405,16 @@ export default function LoadoutsScreen(p: LoadoutProps) {
 
         {loadouts.length > 0 && (
           <div className="lo-grid">
+            {/* A real card's parts, unseen, give it a real card's size at every width; the plus and words sit on top */}
             <div className="lo-card lo-card-new">
+              <div className="lo-card-ghost" aria-hidden="true" ref={el => el?.setAttribute('inert', '')}>
+                <div className="lo-card-image" />
+                <div className="lo-card-body">
+                  <div className="lo-card-title"><h3>&nbsp;</h3><Switch size="sm" checked={false} /></div>
+                  <p className="lo-card-meta">&nbsp;</p>
+                  <div className="lo-card-actions"><span className="lo-expand">&nbsp;</span></div>
+                </div>
+              </div>
               <button type="button" className="lo-card-add" onClick={createEmpty}>
                 <span className="lo-card-add-icon"><Plus size={20} /></span>
                 <span className="lo-card-add-title">New loadout</span>

@@ -779,13 +779,13 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
 }
 .shortcut-row:hover { background: transparent !important; }
 .shortcut-action { font-size: 13px; color: var(--text-primary); text-align: right; }
-.shortcuts-modal kbd {
+.shortcuts-modal kbd, .cp-modal kbd {   /* the capture dialog's keys too */
   display: inline-block; min-width: 22px; padding: 1px 6px; text-align: center;
   font-family: var(--font-primary) !important; font-size: 11px; font-weight: 600;
   color: var(--text-primary); background: var(--bg-light); border: 1px solid rgba(255, 255, 255, 0.1);
   border-bottom-width: 2px; border-radius: 5px; box-shadow: none;
 }
-.shortcuts-modal .key-separator { margin: 0 3px; color: var(--text-secondary); font-size: 11px; }
+.shortcuts-modal .key-separator, .cp-modal .key-separator { margin: 0 3px; color: var(--text-secondary); font-size: 11px; }
 .shortcuts-footer { font-size: 12px; color: var(--text-secondary); }
 /* Rows size to their cards: overflow-clipped cards let auto rows shrink to fit the screen and overlap */
 .lo-grid { grid-auto-rows: max-content; }
@@ -1902,3 +1902,22 @@ html[data-show-mod-size] .mod-list-grid .mod-size { display: inline !important; 
 html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !important; }
 /* Home: renaming a collection edits in a field its own size, lined up with the header */
 .lo-group-head .lo-group-rename { flex: none !important; width: 260px !important; margin: 0 !important; }
+
+/* ---------- batch 2, group 1: loadouts ---------- */
+/* Add mods list: a mod that is on says so with a green badge the size of its type badge */
+.mod-row .mod-type-badge.category-badge.on-badge { --badge-dot: #3ecf6e; color: #3ecf6e !important;
+  background: color-mix(in srgb, #3ecf6e, transparent 90%) !important; border-color: color-mix(in srgb, #3ecf6e, transparent 62%) !important; }
+/* New loadout card: an unseen real card underneath sets its size; the plus and words fill it */
+.lo-grid .lo-card.lo-card-new { position: relative; display: block !important; min-height: 0 !important; }
+.lo-card-new .lo-card-ghost { visibility: hidden; display: flex; flex-direction: column; }
+.lo-card-new .lo-card-add { position: absolute; inset: 0; }
+/* A preview's caption ("Mesh + Texture + Material · 1/4", "Older render") shows on hover, with the arrows */
+.lo-media-label { opacity: 0; transition: opacity 0.15s ease; }
+.lo-media:hover .lo-media-label, .lo-media:focus-within .lo-media-label { opacity: 1; }
+/* Saved: beside the loadout's name, on the name's line */
+.lp-name-wrap .lp-saved { margin-left: 6px; align-self: center; }
+/* A card's status line stays one line ("Black Panther · 0/9 · 1 not installed" ends in … when narrow), so every card,
+   the New loadout card included, is one height */
+.lo-card-meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Capture dialog: the + between keys in the step text's color (the dialog's steps are one color) */
+.cp-modal .key-separator { color: var(--text-primary); }

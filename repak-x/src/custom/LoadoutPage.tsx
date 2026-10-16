@@ -1,6 +1,6 @@
 // repakxtra: one loadout as a page (Home > card). Its picture beside the name, collection, on/off and actions; below
 // them its mods (switch, rename, Remove with Undo), then every other mod, searchable, sortable and filterable by type,
-// to add. The two lists stack at every width. Every change saves at once; a quiet "Saved" says so.
+// to add. The two lists stack at every width. Every change saves at once; a quiet "Saved" beside the name says so.
 import { useEffect, useRef, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { save as pickSavePath } from '@tauri-apps/plugin-dialog'
@@ -201,6 +201,8 @@ export default function LoadoutPage({ p, l, busy, onToggle, onBack, onPickMedia,
             <button type="button" className="lo-icon lp-pen" title="Rename loadout" aria-label="Rename loadout" onClick={() => { nameRef.current?.focus(); nameRef.current?.select() }}>
               <Pencil size={14} />
             </button>
+            {/* Beside the name, where a document says it saved; its mods switching counts too: every change here applies at once */}
+            <SavedNote sig={JSON.stringify([l.name, l.label, l.on, l.mediaRev ?? null, Boolean(l.image), mine.map(k => (byKey.get(k)?.enabled ? 1 : 0)).join('')])} />
           </span>
           <div className="lp-group">
             <span>Collection</span>
@@ -228,8 +230,6 @@ export default function LoadoutPage({ p, l, busy, onToggle, onBack, onPickMedia,
               <OnDot on={onNow} of={present} />
               {missing.length > 0 && <><span className="lo-sep">·</span>{missing.length} not installed</>}
             </>}
-            {/* Its mods switching counts too: every change made here applies at once */}
-            <SavedNote sig={JSON.stringify([l.name, l.label, l.on, l.mediaRev ?? null, Boolean(l.image), mine.map(k => (byKey.get(k)?.enabled ? 1 : 0)).join('')])} />
           </p>
           <div className="lp-actions">
             <label className="lp-switch">

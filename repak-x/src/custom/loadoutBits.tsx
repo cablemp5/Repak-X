@@ -53,8 +53,8 @@ function usePreviewSlides(p: LoadoutProps, l: Loadout) {
   })
 }
 
-/** The loadout's image: its own image or video, then its generated previews, paged with arrows. With onRemoveImage,
- *  its own image shows an X that removes it. */
+/** The loadout's image: its own image or video, then its generated previews, paged with arrows. Hovering shows the
+ *  arrows and what the slide is ("Mesh + Texture · 1/4"). With onRemoveImage, its own image shows an X that removes it. */
 export function CardMedia({ p, l, className = '', title, onClick, onRemoveImage, emptyText = 'Click to add an image, or paste one' }: {
   p: LoadoutProps; l: Loadout; className?: string; title: string; onClick: () => void; onRemoveImage?: () => void; emptyText?: string
 }) {
@@ -165,7 +165,7 @@ export function ModRow({ p, k, mod, onToggle, onRename, children }: {
               </button>
             )}
           </span>}
-      {!onToggle && mod?.enabled && <span className="mod-row-on" title="On now" aria-label="On now" role="img" />}
+      {!onToggle && mod?.enabled && <span className="mod-type-badge category-badge on-badge" title="This mod is on now">On</span>}
       <span className={`mod-type-badge category-badge ${typeClass(category)}`}>{category ?? 'Unknown'}</span>
       {onToggle && (mod
         ? <Switch size="sm" color="primary" checked={Boolean(mod.enabled)} title={mod.enabled ? `Turn ${k} off` : `Turn ${k} on`}

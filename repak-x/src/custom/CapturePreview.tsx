@@ -30,8 +30,12 @@ function toWebp(buf: ArrayBuffer): Promise<Blob> {
   return new Promise((ok, fail) => canvas.toBlob(b => (b ? ok(b) : fail(new Error('Could not encode the picture.'))), 'image/webp', 0.9))
 }
 
-/** Ctrl + Shift + X as keycaps with room between them. */
-const Keys = () => <span className="cp-keys"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>X</kbd></span>
+/** Ctrl + Shift + X as keycaps, drawn like the Keyboard shortcuts screen's (F1). */
+const Keys = () => (
+  <span className="cp-keys">
+    <kbd>Ctrl</kbd><span className="key-separator">+</span><kbd>Shift</kbd><span className="key-separator">+</span><kbd>X</kbd>
+  </span>
+)
 
 function CaptureDialog({ p, l, hero, onUse, onClose }: {
   p: LoadoutProps; l: Loadout; hero?: string; onUse: (blob: Blob) => Promise<boolean>; onClose: () => void
@@ -105,8 +109,8 @@ function CaptureDialog({ p, l, hero, onUse, onClose }: {
                   <figcaption>The green box is what you get.</figcaption>
                 </figure>
                 <ol className="cp-steps">
-                  <li>In the game, open <b>{who}</b>'s <b>Overview</b> or <b>Cosmetics</b> screen.</li>
-                  <li>Press <Keys /> there, or <b>Capture now</b>.</li>
+                  <li><span>In the game, open {who}'s Overview or Cosmetics screen.</span></li>
+                  <li><span>Press <Keys /> there, or click Capture now.</span></li>
                 </ol>
               </div>
             )}
