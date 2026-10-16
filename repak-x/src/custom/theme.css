@@ -555,7 +555,6 @@ html:not([data-show-asset-explorer]) .btn-asset-explorer + .divider-vertical { d
   transition: border-color 0.15s ease;
 }
 .lo-card:hover { border-color: rgba(255, 255, 255, 0.14); }
-.lo-card.is-on { border-color: color-mix(in srgb, var(--accent-primary), transparent 35%); }
 .lo-card-image {
   display: block !important; aspect-ratio: 16 / 9; width: 100%; padding: 0 !important;
   border: none !important; border-radius: 0 !important; background: var(--bg-dark) !important;
