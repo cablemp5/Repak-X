@@ -69,8 +69,8 @@ pub fn xtra_protocol_reclaim() -> Result<(), String> {
     crate::register_protocol_handler().map_err(|e| e.to_string())
 }
 
-/// What carrying the old storage over says when it cannot finish now. Yes: start without it (it is not tried again);
-/// No: quit, to try at the next start.
+/// What carrying the old storage over says when it cannot finish now. Yes: start without it this time; No: quit.
+/// Either way the next start tries again.
 #[cfg(windows)]
 fn ask_continue(text: &str) -> bool {
     const MB_YESNO: u32 = 0x4;
@@ -98,10 +98,11 @@ pub fn carry_over_webview_storage() {
     #[cfg(windows)]
     if in_use(&old) {
         if !ask_continue("Repak X (or an older repakxtra) is open. Close it, then open repakxtra again: this first start \
-                          brings your loadouts, settings and loadout pictures over from it.\n\nStart now without them?") {
+                          brings your loadouts, settings and loadout pictures over from it.\n\nStart now without them? \
+                          They come over at a later start, once it is closed.") {
             std::process::exit(0);
         }
-        return finish();
+        return; // no marker: the next start tries again
     }
     match carry_over(&old, &new_root.join(r"EBWebView\Default")) {
         Ok(n) => {
@@ -109,12 +110,12 @@ pub fn carry_over_webview_storage() {
             finish()
         }
         Err(e) => {
+            // No marker either: a copy that failed (a file held for a moment) is tried again at the next start
             log::warn!("repakxtra: browser storage not carried over: {e}");
             #[cfg(windows)]
-            if !ask_continue(&format!("repakxtra could not bring your loadouts and settings over from Repak X's folder:\n{e}\n\nStart now without them?")) {
+            if !ask_continue(&format!("repakxtra could not bring your loadouts and settings over from Repak X's folder:\n{e}\n\nStart now without them? It tries again at the next start.")) {
                 std::process::exit(0);
             }
-            finish()
         }
     }
 }

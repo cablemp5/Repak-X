@@ -28,7 +28,7 @@ export const progressText = (p: KitProgress | null) =>
     : p.stage === 'blender' ? [p.text || 'Installing Blender', p.total === 100 ? `${p.done}%` : p.total ? `${mb(p.done)} of ${mb(p.total)}` : ''].filter(Boolean).join(' · ')
     : p.total ? `${mb(p.done)} of ${mb(p.total)}` : mb(p.done)
 export const progressShare = (p: KitProgress | null) => (p?.stage !== 'unpack' && p?.total ? Math.min(1, p.done / p.total) : null)
-const BLENDER_START: KitProgress = { stage: 'blender', done: 0, total: 0, text: 'Asking winget for Blender' }
+const BLENDER_START: KitProgress = { stage: 'blender', done: 0, total: 0, text: 'Asking winget for Blender (Windows may ask for permission)' }
 
 export function usePreviewKit(alert: Alert) {
   const [kit, setKit] = useState<KitStatus | null>(null)

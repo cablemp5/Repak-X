@@ -4151,6 +4151,7 @@ async fn create_folder(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<String, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let state = state.lock().unwrap();
     let game_path = &state.game_path;
 
@@ -4355,6 +4356,7 @@ async fn delete_folder(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<(), String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let state = state.lock().unwrap();
     let game_path = &state.game_path;
 
@@ -4421,6 +4423,7 @@ async fn rename_folder(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<String, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let mut state = state.lock().unwrap();
     let game_path = state.game_path.clone();
 
@@ -4489,6 +4492,7 @@ async fn move_folder(
     state: State<'_, Arc<Mutex<AppState>>>,
     window: Window,
 ) -> Result<String, String> {
+    crate::xtra_identity::upstream_guard()?; // repakxtra: not while Repak X is open (both change the same files)
     let mut state = state.lock().unwrap();
     let game_path = state.game_path.clone();
 

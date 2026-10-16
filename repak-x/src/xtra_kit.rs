@@ -235,6 +235,22 @@ fn run_winget(app: &AppHandle) -> Result<(Option<i32>, String), String> {
     }
     let mut child = cmd.spawn().map_err(|_| "winget is not on this PC. Download Blender from blender.org, then pick blender.exe in Setup.".to_string())?;
     let mut out = child.stdout.take().ok_or("winget gave no output")?;
+    // A Windows permission prompt left unanswered would keep Setup busy forever: after 30 minutes winget is ended (the
+    // reads below then end too). The process handle stays open until wait(), so the PID cannot belong to anyone else
+    let (done, timer) = std::sync::mpsc::channel::<()>();
+    let pid = child.id();
+    std::thread::spawn(move || {
+        if timer.recv_timeout(std::time::Duration::from_secs(30 * 60)).is_err() {
+            let mut kill = std::process::Command::new("taskkill");
+            kill.args(["/PID", &pid.to_string(), "/T", "/F"]).stdout(Stdio::null()).stderr(Stdio::null());
+            #[cfg(windows)]
+            {
+                use std::os::windows::process::CommandExt;
+                kill.creation_flags(0x08000000);
+            }
+            let _ = kill.status();
+        }
+    });
     let mut last = String::new();
     let mut sent = std::time::Instant::now() - std::time::Duration::from_secs(1);
     let mut handle = |raw: &[u8]| {
@@ -270,6 +286,7 @@ fn run_winget(app: &AppHandle) -> Result<(Option<i32>, String), String> {
     handle(&line);
     drop(handle);
     let code = child.wait().ok().and_then(|s| s.code());
+    let _ = done.send(());
     Ok((code, last))
 }
 

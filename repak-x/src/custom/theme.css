@@ -1895,3 +1895,10 @@ html[data-show-mod-size] .mod-list-grid .mod-size { display: inline !important; 
 /* Sigeon V2 Editor: its section labels read like Settings' headings now (sentence case, not small capitals) */
 .sg-section h4 { text-transform: none !important; letter-spacing: -0.005em !important; font-size: 14px !important; color: var(--text-primary) !important; }
 .sg-folder-label { text-transform: none !important; letter-spacing: 0 !important; font-size: 12.5px !important; font-weight: 600 !important; color: var(--text-primary) !important; }
+
+/* VFX Updater title: its first span is the "repak" + "xtra" word (white, like the main window); "VFX Updater" stays gray */
+.vfx-header h1 > span:first-child { color: var(--text-primary) !important; }
+/* Animations off: the Saved note stays shown instead of fading (a 0 s fade ended invisible) */
+html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !important; }
+/* Home: renaming a collection edits in a field its own size, lined up with the header */
+.lo-group-head .lo-group-rename { flex: none !important; width: 260px !important; margin: 0 !important; }

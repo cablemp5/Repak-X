@@ -12,7 +12,7 @@ import { deleteMedia } from './loadoutMedia'
 import CustomDropdown from '../components/CustomDropdown'
 import {
   type Loadout, type Mod, OTHER, loadoutable, addGroup, addModToLoadout, displayName, duplicateLoadout, groupKey, setLoadoutGroup,
-  useGroups, isActive, modKey, openLoadout, patchLoadout, readLoadouts, removeModFromLoadout, renameGroup, renameModKey, takeFresh,
+  useGroups, isActive, modKey, openLoadout, patchLoadout, readLoadouts, removeModFromLoadout, renameGroup, renameModKey, repakXOpen, takeFresh,
 } from './loadoutStore'
 import { plural } from './modName'
 import { SwapText } from './motion'
@@ -146,7 +146,8 @@ export default function LoadoutPage({ p, l, busy, onToggle, onBack, onPickMedia,
       renameModKey(from, modKey(path))
       await p.reload()
     } catch (e) {
-      console.warn('Rename failed:', e)
+      const why = repakXOpen(e)   // other errors show the backend's own Rename Failed toast
+      if (why) p.alert.warning('Not renamed', why); else console.warn('Rename failed:', e)
     }
   }
 

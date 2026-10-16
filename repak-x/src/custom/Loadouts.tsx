@@ -171,7 +171,7 @@ export async function runChanges(p: LoadoutProps, l: Loadout, changes: Mod[], ve
     const flipped = new Set(changes.filter(m => !failed.includes(m)).map(m => m.path))
     const after = p.mods.map(m => (flipped.has(m.path) ? { ...m, enabled: !m.enabled } : m))
     if (failed.length) {
-      p.alert.warning(`${l.name} partly ${verb}`, `Could not switch ${failed.map(m => modKey(m.path)).join(', ')}. Close anything using those files, then try again.`)
+      p.alert.warning(`${l.name} partly ${verb}`, failed.reason ?? `Could not switch ${failed.map(m => modKey(m.path)).join(', ')}. Close anything using those files, then try again.`)
     } else {
       p.alert.success(`${l.name} ${verb}`, `${plural(changes.length, 'mod')} switched.`)
     }

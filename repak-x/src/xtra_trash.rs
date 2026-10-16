@@ -132,6 +132,7 @@ fn purge_old(root: &Path) {
 /// Puts back every file of the given deletions (ids from delete_mod), each where it was deleted from.
 #[tauri::command]
 pub async fn restore_trashed_mods(ids: Vec<String>) -> Result<usize, String> {
+    crate::xtra_identity::upstream_guard()?; // Undo moves files back into the mods folder: not while Repak X is open
     restore_from(&trash_dir(), &ids)
 }
 

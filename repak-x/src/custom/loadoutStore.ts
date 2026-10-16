@@ -181,11 +181,19 @@ export const replaceInLoadout = (l: Loadout, oldKey: string, newKey: string) =>
 /** Readable mod name from its key: drops the _9999999_P priority suffix. */
 export const displayName = normKey
 
-/** Toggle each mod through the backend; returns the mods that could not be switched. */
+/** The backend's refusal while Repak X is open (xtra_identity.rs upstream_guard), or null for any other error. */
+export const repakXOpen = (e: unknown) => (/^Repak X is open/.test(String(e)) ? String(e) : null)
+
+/** Toggle each mod through the backend; returns the mods that could not be switched, with the reason when Repak X is
+ *  open (then the rest are not tried: every one would be refused). */
 export const flipMods = async (changes: Mod[]) => {
-  const failed: Mod[] = []
-  for (const m of changes) {
-    try { await invoke('toggle_mod', { modPath: m.path }) } catch { failed.push(m) }
+  const failed: Mod[] & { reason?: string } = []
+  for (const [i, m] of changes.entries()) {
+    try { await invoke('toggle_mod', { modPath: m.path }) } catch (e) {
+      failed.push(m)
+      failed.reason = repakXOpen(e) ?? undefined
+      if (failed.reason) { failed.push(...changes.slice(i + 1)); break }
+    }
   }
   return failed
 }

@@ -134,7 +134,8 @@ export async function toggleMod(p: LoadoutProps, mod: Mod) {
     p.alert.warning('Game Running', 'Cannot toggle mods while game is running.')
     return
   }
-  if ((await flipMods([mod])).length) p.alert.warning('Not switched', `${displayName(mod.path.split(/[/\\]/).pop() || mod.path)} could not be switched.`)
+  const failed = await flipMods([mod])
+  if (failed.length) p.alert.warning('Not switched', failed.reason ?? `${displayName(mod.path.split(/[/\\]/).pop() || mod.path)} could not be switched.`)
   await p.reload()
 }
 
