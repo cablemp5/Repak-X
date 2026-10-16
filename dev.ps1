@@ -21,6 +21,9 @@ New-Item -ItemType Directory -Force target\debug\data | Out-Null
 Copy-Item target\uassettool\UAssetTool.dll target\debug\ -Force
 Copy-Item repak-x\src\data\character_data.json target\debug\data\ -Force
 $env:SKIP_UASSET_TOOL_BUILD = '1'
+# WebView2's debugging port, on this PC only, so tools can screenshot and click through the dev copy; the stable and test
+# copies never open it
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9223'
 Set-Location repak-x
 # Its own port (5180), so it never collides with the browser preview (npm run dev, 5173)
 npx tauri dev --config tauri.dev.conf.json
