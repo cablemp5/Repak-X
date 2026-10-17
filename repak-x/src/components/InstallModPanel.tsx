@@ -415,10 +415,11 @@ export default function InstallModPanel({ mods, allTags, folders = [], currentFo
                           />
                         )}
                         <div className="install-mod-card__title">
-                          <label className="field-label">Custom name</label>{/* repakxtra */}
+                          {/* repakxtra: no "Custom name" label above the field: its placeholder says it (screen readers get aria-label) */}
                           <div className="mod-name-input-wrapper">
                             <input
                               type="text"
+                              aria-label="Custom name"
                               placeholder="Insert custom name here"
                               value={modSettings[idx]?.customName || ''}
                               onChange={(e) => updateModSetting(idx, 'customName', e.target.value)}
