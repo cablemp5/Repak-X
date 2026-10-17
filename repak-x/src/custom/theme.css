@@ -2167,3 +2167,9 @@ button.btn-icon, .view-switcher .btn-icon-small, .copy-paths-btn.icon-only { wid
   transform: scaleX(1) !important; transition: transform 2s linear !important;
 }
 .hold-delete svg, .context-menu-item.danger > span { position: relative; z-index: 1; }
+/* Animations off (html[data-motion="off"] zeroes every transition) keeps these: the fill is the timer, not decoration */
+html[data-motion] .btn-ghost.danger .danger-bg, html[data-motion] .context-menu-item.danger .danger-bg, html[data-motion] .hold-delete::after {
+  transition-duration: 150ms !important; transition-delay: 0s !important;
+}
+html[data-motion] .btn-ghost.danger.holding .danger-bg, html[data-motion] .context-menu-item.danger.holding .danger-bg,
+html[data-motion] .hold-delete.holding::after { transition-duration: 2s !important; }
