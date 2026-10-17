@@ -70,6 +70,7 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
       alert.error('Sigeon not switched', String(e))
     }
     await refresh()
+    window.dispatchEvent(new Event('sigeon-changed')) // the type hints (typeHints.tsx) follow the switch
     setBusy(false)
   }
 
