@@ -458,7 +458,7 @@ html[data-motion="off"] .wm .wm-dots rect, html[data-animations="off"] .wm .wm-d
 .fr-welcome .wm { align-self: baseline; transform: translateY(18.5%); }
 /* The header lines the version tag up with the logo's bottom edge; the same shift puts the logo's baseline on the tag's */
 .header .wm { transform: translateY(18.5%); }
-.header-title-group { gap: 6px !important; }   /* the version tag close beside the logo */
+.header-title-group { gap: 3px !important; }   /* the version tag close beside the logo */
 
 /* ---------- optional controls, off unless enabled in Settings > Interface (custom/uiPrefs.tsx) ---------- */
 html:not([data-show-priority]) .mod-card .number-input-container { display: none !important; }
