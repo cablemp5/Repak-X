@@ -441,7 +441,14 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 
 /* ---------- title: repakxtra, no logo mark ---------- */
 .header .repak-icon { display: none !important; }
-.header .title-x, .credits-app-name .title-x, .fr-head .title-x { color: var(--accent-primary); }
+/* The name is the logo image (custom/Wordmark.tsx): the white copy on dark, the ink copy on the light theme */
+.wordmark { display: inline-flex; line-height: 0; }
+.wordmark img { display: block; width: auto; user-select: none; }
+.wordmark .wm-ink, [data-theme="light"] .wordmark .wm-dark { display: none; }
+[data-theme="light"] .wordmark .wm-ink { display: block; }
+/* Beside text ("Welcome to"), its baseline on the text's: the p's descender is 17% of the image's height */
+.fr-welcome { display: flex; align-items: baseline; gap: 0.3em; }
+.fr-welcome .wordmark { align-self: baseline; transform: translateY(17%); }
 
 /* ---------- optional controls, off unless enabled in Settings > Interface (custom/uiPrefs.tsx) ---------- */
 html:not([data-show-priority]) .mod-card .number-input-container { display: none !important; }
@@ -1099,7 +1106,6 @@ html[data-view="home"] .container > .config-warning { display: none !important; 
 .credits-modal .modal-footer .btn-primary:hover { background: var(--quiet-hover) !important; }
 /* upstream lays the credits name out as a spaced flex row and its sections as gapped columns */
 .credits-app-name { display: block !important; gap: 0 !important; }
-.credits-app-name .title-x { display: inline !important; margin: 0 !important; padding: 0 !important; }
 .credits-section { gap: 0 !important; }
 
 /* ---------- loadout image: own image + generated previews, paged with arrows ---------- */
@@ -1777,10 +1783,10 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 .su-row .su-meta { margin: 0; min-width: 0; }
 .su-ok { color: #3ecf6e; }
 
-/* Test and dev copies (custom/version.ts BUILD): the "xtra" in the app name is green for a test build (build.ps1 -Test)
-   and amber for the live dev copy (dev.ps1), instead of blue */
-:root[data-build="test"] .title-x { color: #3ecf6e !important; }
-:root[data-build="dev"] .title-x { color: #f5a524 !important; }
+/* Test and dev copies (custom/version.ts BUILD): the dots of the logo turn green for a test build (build.ps1 -Test) and
+   amber for the live dev copy (dev.ps1), instead of blue. A hue turn leaves the white (and ink) "repak" as it is */
+:root[data-build="test"] .wordmark img { filter: hue-rotate(-90deg) saturate(1.3) brightness(1.4); }
+:root[data-build="dev"] .wordmark img { filter: hue-rotate(175deg) saturate(2) brightness(2); }
 
 /* Setup > Mod previews: its two parts (the kit, Blender) as rows with a check when present, their links on the right;
    a quiet trust line while Blender is missing or installing */
