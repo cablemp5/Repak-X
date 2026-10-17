@@ -441,18 +441,25 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 
 /* ---------- title: repakxtra, no logo mark ---------- */
 .header .repak-icon { display: none !important; }
-/* The logo (custom/Wordmark.tsx): "repak" white (ink on the light theme), "xtra" as dots in 4 saturated blues */
+/* The logo (custom/Wordmark.tsx): "repak" white (ink on the light theme); "xtra" a deep blue base under three glows
+   (top left, top right, bottom middle) */
 .wm { display: block; flex: none; overflow: visible;
-  --wm-0: #1f5bff; --wm-1: #3d74ff; --wm-2: #0f46e8; --wm-3: #4a80ff; }
+  --wm-base: #0a2499; --wm-c1: #9fd0ff; --wm-c2: #1f5bff; --wm-c3: #2f7dff; }
+[data-theme="light"] .wm { --wm-c1: #3d8bff; }   /* ice blue would wash out on white */
 .wm-repak { fill: #ededed; }
 [data-theme="light"] .wm-repak { fill: #0a0a0a; }
-.wm .s0 { fill: var(--wm-0); } .wm .s1 { fill: var(--wm-1); } .wm .s2 { fill: var(--wm-2); } .wm .s3 { fill: var(--wm-3); }
-/* The dots pulse like the MatrixLoader (1.4 s, scattered starts) while the app works and on hover, dimmest at 40% so
-   the letters stay readable */
-.wm.is-live .wm-dots rect, .header-branding:hover .wm .wm-dots rect, .wm:hover .wm-dots rect { animation: wm-pulse 1.4s ease-in-out infinite; }
-@keyframes wm-pulse { 0%, 100% { opacity: 0.4; } 45% { opacity: 1; } 70% { opacity: 0.55; } }
-html[data-motion="off"] .wm .wm-dots rect, html[data-animations="off"] .wm .wm-dots rect { animation: none !important; }
-@media (prefers-reduced-motion: reduce) { .wm .wm-dots rect { animation: none !important; } }
+.wm-base { fill: var(--wm-base); }
+.wm .wm-c1 { stop-color: var(--wm-c1); } .wm .wm-c2 { stop-color: var(--wm-c2); } .wm .wm-c3 { stop-color: var(--wm-c3); }
+/* While the app works and on hover, the glows drift inside the letters, each its own way */
+.wm.is-live .wm-glow, .header-branding:hover .wm .wm-glow, .wm:hover .wm-glow { animation: 2.6s ease-in-out infinite alternate; }
+.wm.is-live .wm-glow1, .header-branding:hover .wm .wm-glow1, .wm:hover .wm-glow1 { animation-name: wm-drift1; }
+.wm.is-live .wm-glow2, .header-branding:hover .wm .wm-glow2, .wm:hover .wm-glow2 { animation-name: wm-drift2; animation-delay: -0.9s; }
+.wm.is-live .wm-glow3, .header-branding:hover .wm .wm-glow3, .wm:hover .wm-glow3 { animation-name: wm-drift3; animation-delay: -1.7s; }
+@keyframes wm-drift1 { to { transform: translate(900px, 420px); } }
+@keyframes wm-drift2 { to { transform: translate(-1000px, 300px); } }
+@keyframes wm-drift3 { to { transform: translate(300px, -650px); } }
+html[data-motion="off"] .wm .wm-glow, html[data-animations="off"] .wm .wm-glow { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .wm .wm-glow { animation: none !important; } }
 /* Beside text ("Welcome to"): its baseline on the text's (the p's descender is 18.5% of its height) */
 .fr-welcome { display: flex; align-items: baseline; gap: 0.3em; }
 .fr-welcome .wm { align-self: baseline; transform: translateY(18.5%); }
@@ -1792,10 +1799,10 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 .su-row .su-meta { margin: 0; min-width: 0; }
 .su-ok { color: #3ecf6e; }
 
-/* Test and dev copies (custom/version.ts BUILD): the logo's dots are green for a test build (build.ps1 -Test) and amber
-   for the live dev copy (dev.ps1), instead of blue */
-:root[data-build="test"] .wm { --wm-0: #3ecf6e; --wm-1: #5fe08a; --wm-2: #27b356; --wm-3: #72e89b; }
-:root[data-build="dev"] .wm { --wm-0: #f5a524; --wm-1: #ffb84d; --wm-2: #e08e0b; --wm-3: #ffc266; }
+/* Test and dev copies (custom/version.ts BUILD): the logo's "xtra" is green for a test build (build.ps1 -Test) and
+   amber for the live dev copy (dev.ps1), instead of blue */
+:root[data-build="test"] .wm { --wm-base: #0b6b2e; --wm-c1: #b8f5cc; --wm-c2: #3ecf6e; --wm-c3: #5fe08a; }
+:root[data-build="dev"] .wm { --wm-base: #8a4b00; --wm-c1: #ffe0a3; --wm-c2: #f5a524; --wm-c3: #ffb84d; }
 
 /* Setup > Mod previews: its two parts (the kit, Blender) as rows with a check when present, their links on the right;
    a quiet trust line while Blender is missing or installing */
