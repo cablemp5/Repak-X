@@ -83,7 +83,7 @@ export default function SigeonControl({ alert }: { alert: ReturnType<typeof useA
       {unset ? (
         <button type="button" className="btn-settings sigeon-btn is-unset" onClick={() => setSettingUp(true)}
           aria-haspopup="dialog" title="Set up Sigeon V2">
-          <Gauge size={16} /> Sigeon <span className="sigeon-state">not configured</span>
+          <Gauge size={16} /> Sigeon <span className="sigeon-state">Not configured</span>
         </button>
       ) : (
         <button type="button" className={`btn-settings sigeon-btn ${on ? 'is-on' : ''}`} onClick={() => setOpen(v => !v)}
