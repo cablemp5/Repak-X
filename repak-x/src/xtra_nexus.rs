@@ -51,7 +51,8 @@ fn archive_entries(path: &str) -> Vec<String> {
 fn pak_stems(entries: &[String]) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for e in entries {
-        let path = std::path::Path::new(e.rsplit(['/', '\\']).next().unwrap_or(e));
+        let name = e.rsplit(['/', '\\']).next().unwrap_or(e);
+        let path = std::path::Path::new(crate::xtra_offfiles::strip_off(name).unwrap_or(name)); // a .pak.off installs as its .pak
         let is_pak = path.extension().is_some_and(|x| x.eq_ignore_ascii_case("pak"));
         if let (true, Some(stem)) = (is_pak, path.file_stem().and_then(|s| s.to_str())) {
             if !stem.is_empty() && !out.iter().any(|o| o == stem) {
@@ -91,8 +92,8 @@ mod tests {
 
     #[test]
     fn lists_each_pak_once() {
-        let entries = ["Mod/A_9999999_P.pak", "Mod/A_9999999_P.utoc", "Mod/A_9999999_P.ucas", r"Other\B.PAK", "readme.txt", "C.pak.txt", "Mod/A_9999999_P.pak"];
-        assert_eq!(pak_stems(&entries.map(String::from)), vec!["A_9999999_P".to_string(), "B".to_string()]);
+        let entries = ["Mod/A_9999999_P.pak", "Mod/A_9999999_P.utoc", "Mod/A_9999999_P.ucas", r"Other\B.PAK", "readme.txt", "C.pak.txt", "Mod/A_9999999_P.pak", "D.pak.off"];
+        assert_eq!(pak_stems(&entries.map(String::from)), vec!["A_9999999_P".to_string(), "B".to_string(), "D".to_string()]);
     }
 
     #[test]

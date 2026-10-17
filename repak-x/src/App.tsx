@@ -133,6 +133,7 @@ import SharingPanel from './components/SharingPanel'
 import ConflictsPanel from './custom/ConflictsPanel' // repakxtra: in place of Repak X's ClashPanel (grouped, in words)
 import { keepThisOne } from './custom/keepOne' // repakxtra: Keep this one
 import { recordSources, renameSource } from './custom/nexusSource' // repakxtra: Nexus source
+import { stageOffFiles } from './custom/offFiles' // repakxtra: .pak.off files
 import CrashSuspects, { previousCrashes, withSuspects } from './custom/CrashSuspects' // repakxtra: crash suspects
 
 type ModRecord = {
@@ -697,6 +698,7 @@ function App() {
   // Unified file drop handler function
   const handleFileDrop = async (paths: string[]) => {
     if (!paths || paths.length === 0) return
+    paths = await stageOffFiles(paths) // repakxtra: .pak.off sets install like .pak
     console.log('Dropped items:', paths)
     if (await installDroppedKit(paths, alert)) return // repakxtra: a preview kit zip installs as the kit, not as a mod
 

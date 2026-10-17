@@ -220,6 +220,15 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       case 'xtra_newest_crash': return localStorage.getItem('mock.crash') === '1'
         ? { time: Math.floor(Date.now() / 1000) - 3600, crash_type: 'Access Violation', asset_path: '/Game/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001' } : null
       case 'xtra_upstream_running': return Boolean(mock.__repakXOpen)
+      case 'xtra_stage_off_files': { // like xtra_offfiles.rs: a .off set becomes one staged .pak
+        const out: string[] = []
+        for (const p of args?.paths ?? []) {
+          const m = p.match(/^(.*[\\/])?(.+)\.(pak|utoc|ucas)\.off$/i)
+          const next = m ? `C:/Temp/repakxtra-off/${m[2]}.pak` : p
+          if (!out.includes(next)) out.push(next)
+        }
+        return out
+      }
       case 'xtra_nexus_sources': return (args?.paths ?? []).map((p: string) => { // same rule as xtra_nexus.rs
         const m = p.split(/[\\/]/).pop()!.match(/^(.+)_(\d+)_([0-9A-Za-z.-]+)_(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})Z_[0-9A-Za-z]+\.(zip|rar|7z)$/i)
         return m ? { id: Number(m[2]), version: m[3].replace(/-/g, '.'), uploaded: Date.UTC(+m[4], +m[5] - 1, +m[6], +m[7], +m[8]) / 1000, paks: [m[1]] } : null
