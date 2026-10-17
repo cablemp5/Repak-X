@@ -92,7 +92,7 @@ button, input, select, textarea, .MuiButton-root { font-family: inherit !importa
 .setting-subtext.is-danger { color: var(--text-secondary) !important; }
 /* shortcut: the Discord card banner is an inline red gradient; matched on its rendered color, recheck after upstream updates */
 [style*="190, 28, 28"] { background: var(--bg-lighter) !important; }
-.header .version { font-size: 12px; color: var(--text-secondary); }
+.header .version { font-size: 11px; }   /* secondary beside the logo (its dimmer color is below) */
 /* a narrow window (1200px) shortens the version line ("…"), never wraps a button's label */
 .header-branding, .header-title-group, .header .version { min-width: 0; }
 .header .version { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1266,7 +1266,7 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 
 /* ---------- critique fixes (2026-10-14) ---------- */
 /* Contrast: secondary text at full strength (the version line, group counts and Ctrl+N numbers fell under 4.5:1) */
-.header .version { color: var(--text-secondary) !important; opacity: 1 !important; }
+.header .version { color: color-mix(in srgb, var(--text-secondary) 72%, transparent) !important; opacity: 1 !important; }
 .lo-group-count { opacity: 1; }
 .lo-num { opacity: 0.9; }
 .mn-ver { font-size: 11px; }
