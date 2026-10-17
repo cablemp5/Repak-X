@@ -1478,8 +1478,7 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 
 /* ---------- Setup panel (SetupPanel.tsx): the signature bypass and Project Galacta, one card each ---------- */
 .su-btn { position: relative; gap: 6px !important; }
-.su-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-primary);
-  box-shadow: 0 0 0 2px var(--bg-darker); }
+.su-dot { background: var(--accent-primary); --dot-ring: var(--bg-darkest); }   /* the header behind it */
 .su-modal { width: min(760px, 94vw) !important; max-width: none !important; max-height: 90vh; display: flex; flex-direction: column; padding: 0 !important; }
 .su-modal .modal-header, .su-changelog .modal-header { padding: 16px 20px !important; border-bottom: 1px solid var(--panel-border); align-items: flex-start; }
 .su-sub { margin: 4px 0 0; font-size: 12.5px; color: var(--text-secondary); }
@@ -1822,8 +1821,11 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 /* Mod file size: in the tags row, left of the type tag (ModsList.tsx sizeTag); the actions row's own size stays hidden */
 .mod-actions-row .mod-size { display: none !important; }
 .btn-check-conflicts { position: relative; }
-.conflict-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: #f2555a;
-  box-shadow: 0 0 0 2px var(--bg-darkest); pointer-events: none; }
+.conflict-dot { background: #f2555a; --dot-ring: var(--bg-darker); }   /* the Library toolbar behind it */
+/* Attention dots (Setup, Check Conflicts) sit on their button's top-right corner like a notification badge, centered on
+   the corner, with a ring in the color behind them */
+.su-dot, .conflict-dot { position: absolute; top: -1px; right: -1px; transform: translate(50%, -50%); width: 8px; height: 8px;
+  border-radius: 50%; box-shadow: 0 0 0 2px var(--dot-ring); pointer-events: none; z-index: 2; }
 .mod-type-badge.conflict-badge { background: color-mix(in srgb, #f2555a, transparent 85%) !important; border: 1px solid color-mix(in srgb, #f2555a, transparent 55%) !important;
   color: #ff8a8e !important; font-size: 11px !important; font-weight: 600 !important; }
 
