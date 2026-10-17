@@ -61,6 +61,7 @@ import LoadoutsScreen, { ViewTabs } from './custom/LoadoutsScreen'
 import { modKey, renameModKey } from './custom/loadoutStore' // repakxtra
 import { TagsToggle } from './custom/uiPrefs'
 import { useConflictCount, useConflictWatch } from './custom/conflicts' // repakxtra: red conflict dot and badges
+import { reportSource } from './custom/setupReport' // repakxtra: Copy setup report reads the live list
 import { GeneratePreviewsButton } from './custom/previews'
 import { finishInstallLoadout } from './custom/installLoadout'
 import SigeonControl from './custom/SigeonControl'
@@ -395,6 +396,7 @@ function App() {
   const [isLogDrawerOpen, setIsLogDrawerOpen] = useState(false)
   useConflictWatch(mods) // repakxtra
   const conflictCount = useConflictCount() // repakxtra
+  reportSource.get = () => ({ mods, modDetails, launcherType, gamePath }) // repakxtra: setup report
   useEffect(() => { // repakxtra: the Library tab lands on its home view (custom/LoadoutsScreen.tsx ViewTabs)
     const home = () => {
       setSelectedFolderId('all'); setSelectedCharacters(new Set()); setSelectedCategories(new Set()); setFilterTag(''); setModState('all')

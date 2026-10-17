@@ -1682,7 +1682,8 @@ html[data-motion="off"] *, html[data-motion="off"] *::before, html[data-motion="
 .su-problems li { font-size: 12.5px; line-height: 1.5; color: var(--text-primary); padding-left: 14px; position: relative; }
 .su-problems li::before { content: ''; position: absolute; left: 2px; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: #e3a008; }
 .su-note.is-ok { color: var(--text-primary); }
-.su-guided { margin-left: auto; margin-right: 4px; }
+.su-guided { margin-left: auto; margin-right: 4px; white-space: nowrap; }
+.su-report { margin-right: 4px; white-space: nowrap; }
 /* Setup header: the title block, Guided setup and the close button share one center line */
 .su-modal .modal-header { align-items: center; gap: 12px; padding: 18px 22px !important; }
 .su-modal .modal-header h2 { margin: 0; }

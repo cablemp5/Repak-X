@@ -216,6 +216,9 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
         if (failed.length) throw `Restored ${restored} file(s); failed: ${failed.join('; ')}`
         return restored
       }
+      // localStorage 'mock.crash' = '1': the newest crash the setup report names
+      case 'xtra_newest_crash': return localStorage.getItem('mock.crash') === '1'
+        ? { time: Math.floor(Date.now() / 1000) - 3600, crash_type: 'Access Violation', asset_path: '/Game/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001' } : null
       case 'get_skip_launcher_status':
       case 'check_for_previous_crash': return false
       // localStorage 'mock.clashes': a JSON list of { file_path, mod_paths } to show conflicts (custom/conflicts.ts)
