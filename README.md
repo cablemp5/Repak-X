@@ -61,6 +61,29 @@ replace ("These 3 mods replace Black Panther's materials"). File sizes are a set
 
 **Sigeon V2 Editor:** create and edit configs and console overrides, and switch configs from the header. Your license key is never shown, and saving keeps its line as it was.
 
+## See it in action
+
+**Turn a loadout on.** One switch per loadout; its mods switch together, and the dot says how many are on.
+
+<img src=".github/screenshots/demo-loadouts.gif" alt="Turning loadouts on and off from the Loadouts screen" width="100%">
+
+**Make a loadout.** Name it, search your mods, add them, turn it on. Every change saves as you make it.
+
+<img src=".github/screenshots/demo-new-loadout.gif" alt="Making a new loadout, adding mods and turning it on" width="100%">
+
+**Page through previews.** Hover a card for its renders, VFX colors and UI icons; a loadout's page shows them larger.
+
+<img src=".github/screenshots/demo-previews.gif" alt="Paging through a loadout's previews on its card and its page" width="100%">
+
+**Check Conflicts.** Mods that change the same files are grouped and described in words. Switch off the ones you don't
+want until it says **All resolved**.
+
+<img src=".github/screenshots/demo-conflicts.gif" alt="The conflicts screen resolving as mods are switched off" width="100%">
+
+**Recently deleted.** A deleted mod waits 7 days in **Settings > Recently deleted**; **Restore** puts it back.
+
+<img src=".github/screenshots/demo-recently-deleted.gif" alt="Deleting a mod, then restoring it from Settings, Recently deleted" width="100%">
+
 ## Keyboard shortcuts
 
 | Keys | Action |

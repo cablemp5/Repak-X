@@ -212,6 +212,7 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
           else if (data.mods.some((m: any) => m.path === mod.path)) failed.push(`${mod.path} already exists, left the trashed copy alone`)
           else { data.mods.push(mod); trash.delete(id); restored++ }
         }
+        if (restored) setTimeout(() => emit('mods_dir_changed', null), 200) // the real app's folder watcher sees them come back
         if (failed.length) throw `Restored ${restored} file(s); failed: ${failed.join('; ')}`
         return restored
       }
