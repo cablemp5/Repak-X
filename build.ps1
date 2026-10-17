@@ -79,8 +79,15 @@ if ($Release) {
     $zip = "dist\repak-xtra-v$ver-windows.zip"
     Remove-Item $zip -ErrorAction SilentlyContinue
     Run { & "$env:SystemRoot\System32\tar.exe" -a -cf $zip -C $out repakxtra.exe UAssetTool.dll data }
-    $magic = [System.IO.File]::ReadAllBytes((Resolve-Path $zip))[0..1]
-    if ($magic[0] -ne 0x50 -or $magic[1] -ne 0x4B) { throw "$zip is not a zip: the in-app updater could not unpack it." }
+    # Unpacked the way the in-app updater does (Windows PowerShell's Expand-Archive): the zip must give back the same app
+    $check = Join-Path $env:TEMP "repakxtra-release-check-$PID"
+    Remove-Item $check -Recurse -Force -ErrorAction SilentlyContinue
+    try {
+        & powershell -NoProfile -Command "`$ErrorActionPreference = 'Stop'; Expand-Archive -LiteralPath '$((Resolve-Path $zip).Path)' -DestinationPath '$check' -Force"
+        $same = $LASTEXITCODE -eq 0 -and (Test-Path "$check\repakxtra.exe") -and
+            (Get-FileHash "$check\repakxtra.exe").Hash -eq (Get-FileHash "$out\repakxtra.exe").Hash
+        if (-not $same) { throw "$zip does not unpack to this build: the in-app updater could not install it. Nothing to publish." }
+    } finally { Remove-Item $check -Recurse -Force -ErrorAction SilentlyContinue }
     Write-Host "Packed: $zip (SHA-256 $((Get-FileHash $zip).Hash.ToLower()))" -ForegroundColor Green
     # On the clipboard as one line: a wrapped terminal line copied by hand can pick up a line break and fail to parse
     $publish = "gh release create v$ver $zip -R cablemp5/repak-xtra --target main --prerelease --title `"repak-xtra $ver`" --generate-notes"
