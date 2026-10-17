@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { invoke } from '@tauri-apps/api/core'
 import { motion } from 'framer-motion'
-import { Check, ChevronRight, Copy, ExternalLink, RefreshCw, ShieldCheck, Wrench } from 'lucide-react'
+import { Check, ChevronRight, Copy, ExternalLink, MonitorCheck, ShieldCheck, Wrench } from 'lucide-react'
 import { open as pickFile } from '@tauri-apps/plugin-dialog'
 import { type Doctor, type KitProgress, isNewerKit, progressShare, progressText, usePreviewKit } from './previewKit'
 import Checkbox from '../components/ui/Checkbox'
@@ -125,7 +125,7 @@ function PreviewKitCard({ alert }: { alert: Alert }) {
   const chip = !kit ? 'Checking…' : ready ? (update ? 'Update available' : 'Ready') : 'Not set up'
   const missing = kit && !ready
   const kitOk = Boolean(kit?.version)
-  const from = kit?.source === 'github' ? 'Pulled from GitHub' : kit?.source === 'file' ? 'Loaded from a file' : null
+  const from = kit?.source === 'github' ? 'Downloaded from GitHub' : kit?.source === 'file' ? 'Loaded from a file' : null
   const size = latest?.size ? Math.round(latest.size / 1048576) : null
   const blenderName = kit?.blender?.replace(/^.*[\\/](Blender[^\\/]*)[\\/]blender\.exe$/i, '$1')
   const installingBlender = busy === 'blender' || k.progress?.stage === 'blender'
@@ -183,7 +183,7 @@ function PreviewKitCard({ alert }: { alert: Alert }) {
             </button>
           )}
           <button type="button" className="lo-text-btn" disabled={Boolean(busy)} onClick={() => k.checkPc()} title="Check that this PC can make previews">
-            <RefreshCw size={14} className={busy === 'doctor' ? 'su-spin' : ''} /> {busy === 'doctor' ? 'Checking…' : 'Check this PC'}
+            <MonitorCheck size={14} /> {busy === 'doctor' ? 'Checking…' : 'Check this PC'}
           </button>
         </div>
       </div>
@@ -341,9 +341,13 @@ export function SetupPanel({ alert, onClose, focus }: { alert: Alert; onClose: (
               <dt>Location</dt>
               <dd>{!g ? 'Checking…' : g.installed ? <><code>{where}</code>{g.disabled ? ', off in the Library' : ''}</> : 'Not installed'}</dd>
               <dt>Latest</dt>
-              <dd>{g?.latest
-                ? <>{g.latest}{g.published ? `, ${date(g.published)}` : ''} · <button type="button" className="su-link" onClick={() => setNotes("What's new")}>What's new</button></>
-                : 'Not checked yet'}</dd>
+              <dd>
+                {g?.latest
+                  ? <>{g.latest}{g.published ? `, ${date(g.published)}` : ''} · <button type="button" className="su-link" onClick={() => setNotes("What's new")}>What's new</button></>
+                  : 'Not checked yet'}
+                {/* the same words and look as the preview kit's update check */}
+                {' · '}<button type="button" className="su-link" disabled={Boolean(busy)} onClick={check}>{busy === 'check' ? 'Checking…' : 'Check for updates'}</button>
+              </dd>
             </dl>
             <div className="su-actions">
               {(!g?.installed || g.up_to_date === false) && (
@@ -351,9 +355,6 @@ export function SetupPanel({ alert, onClose, focus }: { alert: Alert; onClose: (
                   {busy === 'install-galacta' ? 'Installing…' : g?.installed ? `Update${g.latest ? ` to ${g.latest}` : ''}` : 'Install'}
                 </button>
               )}
-              <button type="button" className="lo-text-btn" disabled={Boolean(busy)} onClick={check}>
-                <RefreshCw size={14} className={busy === 'check' ? 'su-spin' : ''} /> {busy === 'check' ? 'Checking…' : 'Check'}
-              </button>
             </div>
             </div>
             <div className="su-options">

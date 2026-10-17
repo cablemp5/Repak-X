@@ -369,7 +369,7 @@ export default function InstallModPanel({ mods, allTags, folders = [], currentFo
         transition={{ duration: 0.15 }}
       >
         <div className="install-header">
-          <h2>Install Mods</h2>
+          <h2>Install mods</h2>{/* repakxtra: sentence case, like the other dialogs */}
           <button className="close-btn" onClick={onCancel}>×</button>
         </div>
 
@@ -415,7 +415,7 @@ export default function InstallModPanel({ mods, allTags, folders = [], currentFo
                           />
                         )}
                         <div className="install-mod-card__title">
-                          <label className="field-label">Custom Name</label>
+                          <label className="field-label">Custom name</label>{/* repakxtra */}
                           <div className="mod-name-input-wrapper">
                             <input
                               type="text"

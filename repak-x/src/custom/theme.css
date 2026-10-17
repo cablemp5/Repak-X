@@ -1924,7 +1924,7 @@ html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !impo
 
 /* ---------- batch 2, group 2: Setup ---------- */
 /* A part's mark: a plain green check beside its name when present, an empty ring when not (no filled or dashed disc) */
-.su-part-mark { align-self: flex-start; width: 16px !important; height: 18px !important; border: none !important; border-radius: 0 !important;
+.su-part-mark { align-self: center; width: 16px !important; height: 16px !important; border: none !important; border-radius: 0 !important;
   background: none !important; display: grid; place-items: center; }
 .su-part-mark:not(.is-ok)::before { content: ""; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.28); }
 .su-part-mark.is-ok { color: #3ecf6e; }
@@ -1985,8 +1985,12 @@ html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !impo
 .cf-modal { width: min(720px, 92vw) !important; max-width: none !important; max-height: 86vh; display: flex; flex-direction: column; padding: 0 !important; }
 .cf-modal .modal-header { padding: 16px 20px !important; border-bottom: 1px solid var(--panel-border); align-items: flex-start; }
 .cf-modal .modal-header h2 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px !important; font-weight: 700; }
-.cf-count { padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 18px; background: var(--bg-lighter); color: var(--text-secondary); }
-.cf-sub { margin: 4px 0 0; max-width: 62ch; font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+/* The count of conflicts still open, in the conflict red; green "All resolved" once none are */
+.cf-count { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; line-height: 18px;
+  color: #ff8a8e; background: color-mix(in srgb, #f2555a, transparent 85%); border: 1px solid color-mix(in srgb, #f2555a, transparent 55%); }
+.cf-count.is-done { color: #3ecf6e; background: color-mix(in srgb, #3ecf6e, transparent 88%); border-color: color-mix(in srgb, #3ecf6e, transparent 60%); }
+.cf-intro { flex: 1; min-width: 0; }
+.cf-sub { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
 .cf-body { overflow-y: auto; padding: 16px 20px !important; display: flex; flex-direction: column; gap: 12px !important; }
 .cf-group { border: 1px solid var(--panel-border); border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
 .cf-head { display: flex; align-items: center; gap: 12px; }
@@ -2065,3 +2069,48 @@ html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !impo
 .app .install-mod-card .install-toggle :focus-visible { outline: 2px solid color-mix(in srgb, var(--tile, #888), white 25%) !important; outline-offset: 2px !important; }
 /* Recently deleted: the row's own yes/no before deleting one mod for good */
 .rd-ask { font-size: 12.5px; color: var(--text-primary); white-space: nowrap; }
+
+/* ---------- batch 2, review round ---------- */
+/* Conflicts: a group whose mods no longer clash says "Resolved" in green and settles back */
+.cf-head { position: relative; }
+.cf-resolved { order: 2; margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: #3ecf6e; background: color-mix(in srgb, #3ecf6e, transparent 88%); }
+.cf-group { transition: border-color 200ms ease, background 200ms ease; }
+.cf-group.is-resolved { border-color: color-mix(in srgb, #3ecf6e, transparent 70%); background: color-mix(in srgb, #3ecf6e, transparent 97%); }
+.cf-group.is-resolved .cf-what h3 { color: var(--text-secondary); }
+
+/* Toasts: icon, words, action and close on one center line; the close a square, never a tall box */
+.toast-item { align-items: center !important; }
+.toast-close { width: 28px !important; height: 28px !important; min-height: 0 !important; padding: 0 !important; margin: 0 !important;
+  display: grid !important; place-items: center; flex: none; border-radius: 6px !important; align-self: center !important; }
+.toast-close:hover { background: var(--quiet-hover) !important; }
+.toast-end-content { align-self: center; }
+
+/* Icon-only buttons are squares: the app's 36px button floor no longer stretches them into tall boxes */
+.modal-close, .install-mod-panel .close-btn { width: 32px !important; height: 32px !important; min-height: 0 !important; padding: 0 !important;
+  display: inline-grid !important; place-items: center; flex: none; line-height: 1 !important; }
+button.btn-icon, .view-switcher .btn-icon-small, .copy-paths-btn.icon-only { width: 36px !important; min-width: 36px !important; height: 36px !important;
+  min-height: 0 !important; padding: 0 !important; display: inline-flex !important; align-items: center; justify-content: center; }
+.btn-ghost[title="Refresh list"], .btn-ghost[title="Expand Details"], .btn-ghost[title="Collapse Details"] { width: 36px !important; min-width: 36px !important;
+  height: 36px !important; padding: 0 !important; justify-content: center; }
+.fp-expand { width: 24px !important; height: 24px !important; min-height: 0 !important; padding: 0 !important; }
+.tags-toggle-more { width: 38px !important; min-width: 38px !important; padding: 0 !important; justify-content: center; }
+
+/* Settings > Help & Community: rows like every other section (label, gray note, button); buttons in regular weight */
+.settings-content .xs-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
+.settings-content .xs-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.settings-content .xs-label { font-size: 13px; font-weight: 450; color: var(--text-primary); }
+.settings-content .xs-text .setting-subtext { padding: 0 !important; margin: 0 !important; }
+.settings-content .xs-note { margin: -4px 0 4px !important; padding: 0 !important; }
+.settings-content .action-btn, .settings-content .lo-text-btn { font-weight: 400 !important; }
+/* Install card, one scale: labels (Custom name, Add to loadout, Install to) 12.5px gray; what you type and pick (the
+   name, folders, the footer choice) 13px regular; the file-name preview 12.5px gray; tile hints 12px regular under
+   their 13px tinted names; tags 12px */
+.install-mod-card .field-label, .install-mod-card__tags .field-label, .imp-section-header, .imp-section-header span {
+  font-size: 12.5px !important; font-weight: 500 !important; color: var(--text-secondary) !important; }
+.install-mod-card .mod-name-input { font-size: 13px !important; }
+.install-mod-card__hint { font-size: 12.5px !important; color: var(--text-secondary) !important; }
+.install-mod-card .install-toggle .install-toggle__hint { font-weight: 400 !important; }
+.install-mod-card .imp-folder-item, .install-mod-card .imp-folder-item .folder-name { font-size: 13px !important; font-weight: 400 !important; }
+.install-mod-card .imp-folder-item.selected .folder-name { font-weight: 500 !important; }
+.install-actions .install-loadout .repakx-checkbox-label, .install-actions .install-loadout .repakx-checkbox-label span { font-weight: 400 !important; }

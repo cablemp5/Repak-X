@@ -8,7 +8,11 @@
 .cp-modal .cp-body { gap: 20px; }   /* not .modal-body's 2rem section gap */
 
 /* The example on the left, the two steps beside it */
-.cp-how { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 20px; align-items: center; }
+.cp-how { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); grid-template-areas: "pic steps" "cap ."; column-gap: 20px; row-gap: 8px; align-items: center; }
+.cp-how .cp-example { display: contents; }
+.cp-how .cp-example-frame { grid-area: pic; }
+.cp-how .cp-example figcaption { grid-area: cap; }
+.cp-how .cp-steps { grid-area: steps; }
 /* The steps: the number in a 22px column, the words beside it on 22px lines (a keycap fits inside one), one color,
    no bold */
 .cp-steps { margin: 0; padding: 0; list-style: none; counter-reset: cp; display: flex; flex-direction: column; gap: 14px; }
@@ -61,4 +65,4 @@
 .cp-crop { position: absolute; left: 50.35%; top: 9.96%; width: 23.85%; height: 60%; border: 2px solid #3ecf6e; border-radius: 3px;
   box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.5); pointer-events: none; }
 .cp-example figcaption { font-size: 12px; color: var(--text-secondary); }
-@media (max-width: 720px) { .cp-how { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) { .cp-how { grid-template-columns: minmax(0, 1fr); grid-template-areas: "pic" "cap" "steps"; } }

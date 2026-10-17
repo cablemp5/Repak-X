@@ -488,29 +488,23 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
               <>
                 <div className="setting-section">
                   <h3>Help</h3>
-                  <div className="setting-group">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                      <span style={{ fontWeight: 'normal', opacity: 0.9 }}>Replay the app tour to learn about key features</span>
-                      <button
-                        onClick={onReplayTour}
-                        className="action-btn"
-                        title="Replay the onboarding tour"
-                        style={{ minWidth: '120px' }}
-                      >
-                        <RiGraduationCapFill style={{ color: accentColor }} /> Replay Tour
+                  <div className="setting-group">{/* repakxtra: a label, a gray note and a button per row, like the other sections */}
+                    <div className="xs-row">
+                      <div className="xs-text">
+                        <span className="xs-label">App tour</span>
+                        <span className="setting-subtext">A short walk through the main screens and features.</span>
+                      </div>
+                      <button onClick={onReplayTour} className="action-btn" title="Replay the onboarding tour">
+                        <RiGraduationCapFill /> Replay tour
                       </button>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
-                      <span style={{ fontSize: '1rem', opacity: 0.9 }}>
-                        Press <strong style={{ opacity: 1 }}>F1</strong> anytime to view all available keyboard shortcuts
-                      </span>
-                      <button
-                        onClick={onOpenShortcuts}
-                        className="action-btn"
-                        title="View keyboard shortcuts"
-                        style={{ minWidth: '120px' }}
-                      >
-                        <BsKeyboardFill style={{ color: accentColor }} /> Shortcuts
+                    <div className="xs-row">
+                      <div className="xs-text">
+                        <span className="xs-label">Keyboard shortcuts</span>
+                        <span className="setting-subtext">Every shortcut in one list. F1 opens it from anywhere.</span>
+                      </div>
+                      <button onClick={onOpenShortcuts} className="action-btn" title="View keyboard shortcuts">
+                        <BsKeyboardFill /> Shortcuts
                       </button>
                     </div>
                   </div>
@@ -519,14 +513,9 @@ export default function SettingsPanel({ settings, onSave, onClose, theme, setThe
                 <div className="setting-section">
                   <h3>Community</h3>
                   <div className="setting-group">
-                    <div className="setting-item">
-                      <p style={{ margin: 0, fontSize: '0.925rem', fontWeight: 600, opacity: 0.9 }}>
-                        Repak X is built for the community.
-                      </p>
-                      <p className="setting-hint" style={{ marginBottom: 0 }}>
-                        If you need help, want to report a bug, or have a feature request, join a Discord server below: Repak X's for the app it is built on, cable's for repakxtra.
-                      </p>
-                    </div>
+                    <p className="setting-subtext xs-note">{/* repakxtra: one gray note like the other sections */}
+                      Repak X is built for the community. For help, bug reports or feature requests, join a Discord server: Repak X's for the app it is built on, cable's for repakxtra.
+                    </p>
                     <RepakXDiscord />
                     <CableDiscord />{/* repakxtra: cable's server */}
                   </div>

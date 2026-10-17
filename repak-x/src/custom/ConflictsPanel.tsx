@@ -3,7 +3,7 @@
 // in words what they replace ("Both replace Black Panther's materials"), with each mod's priority and switch below.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronRight } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import NumberInput from '../components/ui/NumberInput'
 import Switch from '../components/ui/Switch'
 import { resolveHeroImage, useHeroImages } from '../utils/heroImages'
@@ -18,6 +18,14 @@ export type ConflictGroup = { mods: string[]; files: string[] }
 
 /** A mod's path without its on/off extension: the same mod before and after a switch. */
 const stemOf = (p: string) => p.replace(/\.(pak|bak_repak|pak_disabled)$/i, '')
+/** The same mod after a switch or a priority change too (its 9s and a leading !): its name alone. */
+const sameMod = (p: string) => modKey(p).replace(/^!/, '').toLowerCase()
+
+/** A group is resolved once no two of its mods that are still on share a priority: one left on, or each at its own. */
+export const resolved = (g: ConflictGroup, find: (path: string) => Mod | undefined) => {
+  const on = g.mods.map(find).filter((m): m is Mod => Boolean(m && m.enabled !== false))
+  return new Set(on.map(m => m.priority ?? 0)).size === on.length
+}
 
 /** Mods grouped by exactly the files they share: three mods that all change the same seven materials are one group, not
  *  three pairs. A record without files (a mod's own check, where file_path is the file) counts that one file. Files are
@@ -88,17 +96,18 @@ export function describe(g: ConflictGroup, heroes: Hero[]) {
   return { title: `${who} replace ${whose} ${what}`, hero: known, skin }
 }
 
-function Group({ g, heroes, byStem, onSetPriority, onToggleMod }: {
-  g: ConflictGroup; heroes: Hero[]; byStem: Map<string, Mod>
+function Group({ g, heroes, find, done, onSetPriority, onToggleMod }: {
+  g: ConflictGroup; heroes: Hero[]; find: (path: string) => Mod | undefined; done: boolean
   onSetPriority?: (path: string, priority: number) => void; onToggleMod?: (path: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const d = describe(g, heroes)
   const portrait = d.hero ? resolveHeroImage(d.hero, heroes) : undefined
   return (
-    <section className="cf-group">
+    <section className={`cf-group${done ? ' is-resolved' : ''}`}>
       <div className="cf-head">
         {portrait && <img className="cf-hero" src={portrait} alt="" />}
+        {done && <span className="cf-resolved" role="status"><Check size={13} strokeWidth={2.5} />Resolved</span>}
         <div className="cf-what">
           <h3>{d.title}</h3>
           <p>
@@ -114,7 +123,7 @@ function Group({ g, heroes, byStem, onSetPriority, onToggleMod }: {
       {open && <ul className="cf-files">{g.files.map(f => <li key={f}>{f.replace(/^Marvel\/Content\//, '')}</li>)}</ul>}
       <ul className="cf-mods">
         {g.mods.map(path => {
-          const mod = byStem.get(stemOf(path))
+          const mod = find(path)
           const now = mod?.path ?? path
           const on = mod?.enabled !== false
           const name = modKey(now)
@@ -160,8 +169,15 @@ export default function ConflictsPanel({ clashes, mods = [], characterData = [],
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
   }
   const groups = useMemo(() => groupConflicts(clashes), [clashes])
-  // The list is not checked again after a switch, so a mod may now have its other extension: matched by its stem
-  const byStem = useMemo(() => new Map(mods.map(m => [stemOf(m.path), m])), [mods])
+  // The list is not checked again after a switch or a priority change, so a mod may now have another extension or
+  // name suffix: matched by its stem, then by its name alone
+  const find = useMemo(() => {
+    const byStem = new Map(mods.map(m => [stemOf(m.path), m]))
+    const byName = new Map(mods.map(m => [sameMod(m.path), m]))
+    return (path: string) => byStem.get(stemOf(path)) ?? byName.get(sameMod(path))
+  }, [mods])
+  const open = groups.filter(g => !resolved(g, find)).length // still conflicting, as mods are switched here
+  const allDone = groups.length > 0 && open === 0
   useEffect(() => {
     const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { e.stopPropagation(); onClose() } }
     window.addEventListener('keydown', esc, true)
@@ -173,12 +189,18 @@ export default function ConflictsPanel({ clashes, mods = [], characterData = [],
         onKeyDown={trap} onClick={e => e.stopPropagation()}
         initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.15 }}>
         <div className="modal-header">
-          <div>
-            <h2>Conflicts{groups.length > 0 && <span className="cf-count">{groups.length}</span>}</h2>
+          <div className="cf-intro">
+            <h2>
+              Conflicts
+              {open > 0 && <span className="cf-count" aria-label={`${open} unresolved`}>{open}</span>}
+              {allDone && <span className="cf-count is-done"><Check size={12} strokeWidth={2.5} />All resolved</span>}
+            </h2>
             <p className="cf-sub">
-              {groups.length
-                ? 'Mods that are on, at the same priority, and change the same game files. Only one version of each file loads: turn off the ones you do not want, or raise the priority of the one that should win.'
-                : 'Mods that are on, at the same priority, and change the same game files show here.'}
+              {allDone
+                ? 'Every conflict below is resolved: the mods that are still on no longer share files at the same priority.'
+                : groups.length
+                  ? 'Mods that are on, at the same priority, and change the same game files. Only one version of each file loads: turn off the ones you do not want, or raise the priority of the one that should win.'
+                  : 'Mods that are on, at the same priority, and change the same game files show here.'}
             </p>
           </div>
           <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
@@ -186,7 +208,8 @@ export default function ConflictsPanel({ clashes, mods = [], characterData = [],
         <div className="modal-body cf-body">
           {groups.length === 0
             ? <p className="cf-empty">No conflicts: no two mods that are on share files at the same priority.</p>
-            : groups.map(g => <Group key={g.mods.map(stemOf).join('|')} g={g} heroes={characterData} byStem={byStem} onSetPriority={onSetPriority} onToggleMod={onToggleMod} />)}
+            : groups.map(g => <Group key={g.mods.map(stemOf).join('|')} g={g} heroes={characterData} find={find} done={resolved(g, find)}
+                onSetPriority={onSetPriority} onToggleMod={onToggleMod} />)}
         </div>
         <div className="modal-footer cf-footer">
           <button type="button" className="btn-primary" onClick={onClose}>Done</button>
@@ -213,4 +236,9 @@ if (import.meta.env.DEV) {
   console.assert(mixed.title === "Both replace Black Panther's and hero 1099's materials and mesh" && !mixed.hero, 'an unknown hero is named by id, no single portrait', mixed)
   console.assert(kindOf('Marvel/Content/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001.uasset') === 'mesh' && kindOf('x/UI/Textures/T_Icon.uasset') === 'UI', 'kinds')
   console.assert(groupConflicts([{ file_path: 'Characters: 1026 - Priority: 1', mod_paths: ['A.pak', 'B.pak'] }])[0].files.length === 0, 'records without files still list their mods')
+  const live = (ms: Mod[]) => (p: string) => ms.find(m => m.path === p)
+  const g3 = { mods: ['A.pak', 'B.pak', 'C.pak'], files: [] }
+  console.assert(!resolved(g3, live([{ path: 'A.pak', priority: 1 }, { path: 'B.pak', priority: 1 }, { path: 'C.pak', priority: 1, enabled: false }])), 'two on at one priority: open')
+  console.assert(resolved(g3, live([{ path: 'A.pak', priority: 1 }, { path: 'B.pak', priority: 2 }, { path: 'C.pak', priority: 3 }])), 'each at its own priority: resolved')
+  console.assert(resolved(g3, live([{ path: 'A.pak', priority: 1 }, { path: 'B.pak', enabled: false }])), 'one left on (C gone): resolved')
 }
