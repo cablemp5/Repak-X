@@ -456,6 +456,8 @@ html[data-motion="off"] .wm .wm-dots rect, html[data-animations="off"] .wm .wm-d
 /* Beside text ("Welcome to"): its baseline on the text's (the p's descender is 18.5% of its height) */
 .fr-welcome { display: flex; align-items: baseline; gap: 0.3em; }
 .fr-welcome .wm { align-self: baseline; transform: translateY(18.5%); }
+/* The header lines the version tag up with the logo's bottom edge; the same shift puts the logo's baseline on the tag's */
+.header .wm { transform: translateY(18.5%); }
 
 /* ---------- optional controls, off unless enabled in Settings > Interface (custom/uiPrefs.tsx) ---------- */
 html:not([data-show-priority]) .mod-card .number-input-container { display: none !important; }
