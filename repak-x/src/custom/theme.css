@@ -1802,7 +1802,7 @@ html[data-motion="off"] .t-matrix i { animation: none; opacity: 0.6; }
 /* Test and dev copies (custom/version.ts BUILD): the logo's "xtra" is green for a test build (build.ps1 -Test) and
    amber for the live dev copy (dev.ps1), instead of blue */
 :root[data-build="test"] .wm { --wm-base: #27b356; --wm-c1: #c6f7d6; --wm-c2: #5fe08a; --wm-c3: #3ecf6e; }   /* no dark base: it muddied the glows */
-:root[data-build="dev"] .wm { --wm-base: #e8890c; --wm-c1: #ffe9b0; --wm-c2: #ffb238; --wm-c3: #f59a1c; }
+:root[data-build="dev"] .wm { --wm-base: #d97706; --wm-c1: #fcd34d; --wm-c2: #f59e0b; --wm-c3: #fb923c; }
 
 /* Setup > Mod previews: its two parts (the kit, Blender) as rows with a check when present, their links on the right;
    a quiet trust line while Blender is missing or installing */
