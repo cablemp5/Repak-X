@@ -220,8 +220,17 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       case 'xtra_newest_crash': return localStorage.getItem('mock.crash') === '1'
         ? { time: Math.floor(Date.now() / 1000) - 3600, crash_type: 'Access Violation', asset_path: '/Game/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001' } : null
       case 'xtra_upstream_running': return Boolean(mock.__repakXOpen)
-      case 'get_skip_launcher_status':
-      case 'check_for_previous_crash': return false
+      // Crash suspects: mods whose path has window.__suspectMatch (part of a name) hold the crashed asset
+      case 'xtra_crash_suspects': return (args?.modPaths ?? []).filter((p: string) => mock.__suspectMatch && p.includes(mock.__suspectMatch))
+      // localStorage 'mock.prevCrash' = '1': a crash from before the app started (its toast at startup)
+      case 'check_for_previous_crash': {
+        if (localStorage.getItem('mock.prevCrash') !== '1') return null
+        const crash_folder = 'C:/Users/you/AppData/Local/Marvel/Saved/Crashes/UECC-Windows-MOCK_0000'
+        setTimeout(() => emit('game_crash_detected', { title: 'Game Crashed', description: 'Error: Access Violation', type: 'danger', crash_folder,
+          crash_type: 'Access Violation', asset_path: '/Game/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001', character_id: '1026', is_mesh_crash: true }), 500)
+        return { crash_folder }
+      }
+      case 'get_skip_launcher_status': return false
       // localStorage 'mock.clashes': a JSON list of { file_path, mod_paths } to show conflicts (custom/conflicts.ts)
       case 'check_mod_clashes': return JSON.parse(localStorage.getItem('mock.clashes') || '[]')
       // Installing: the file picker returns two fake paks, install adds them to the library and reports done. A folder

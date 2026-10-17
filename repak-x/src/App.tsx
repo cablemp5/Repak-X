@@ -132,6 +132,7 @@ import ToolsPanel from './components/ToolsPanel'
 import SharingPanel from './components/SharingPanel'
 import ConflictsPanel from './custom/ConflictsPanel' // repakxtra: in place of Repak X's ClashPanel (grouped, in words)
 import { keepThisOne } from './custom/keepOne' // repakxtra: Keep this one
+import CrashSuspects, { previousCrashes, withSuspects } from './custom/CrashSuspects' // repakxtra: crash suspects
 
 type ModRecord = {
   path: string
@@ -1564,7 +1565,7 @@ function App() {
 
       // Show persistent error toast for crashes
       alert.crash(payload.title, payload.description, {
-        action: {
+        action: withSuspects({ // repakxtra: See suspects beside Details
           label: 'Details',
           onClick: () => {
             // Appended, not assigned. Replacing the entries threw away the
@@ -1577,7 +1578,7 @@ function App() {
             setIsLogDrawerOpen(true)
             alert.info('Crash Details', 'Report opened in Log Drawer.')
           }
-        }
+        }, payload)
       })
 
       // Log detailed crash info to console for debugging
@@ -1592,7 +1593,7 @@ function App() {
 
     // Check for crashes from previous game sessions
     if (isFirstRun) {
-      invoke('check_for_previous_crash').catch(err => {
+      invoke<{ crash_folder?: string } | null>('check_for_previous_crash').then(c => { if (c?.crash_folder) previousCrashes.add(c.crash_folder) }).catch(err => { // repakxtra: its suspects are the mods on now
         uiLog.error('Crash', `Could not check for previous crashes: ${err}`)
       })
     }
@@ -3665,6 +3666,8 @@ function App() {
           onClose={() => setPanel('clash', false)}
         />
       )}
+
+      <CrashSuspects deps={{ alert, isBlocked: undoBlocked, reload: loadMods }} mods={mods} details={modDetails} heroes={characterData} />{/* repakxtra */}
 
       {panels.settings && (
         <SettingsPanel

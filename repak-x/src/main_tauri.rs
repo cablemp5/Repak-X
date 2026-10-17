@@ -8767,6 +8767,7 @@ fn main() {
             xtra_identity::xtra_upstream_running, // repakxtra: beside Repak X
             xtra_identity::xtra_protocol_reclaim,
             xtra_crash::xtra_newest_crash, // repakxtra: setup report
+            xtra_crash::xtra_crash_suspects, // repakxtra: crash suspects
             xtra_kit::preview_kit_install_blender, // repakxtra: Blender with winget
             xtra_previews::previews_doctor, // repakxtra: can this PC make previews
             xtra_previews::cancel_mod_previews,

@@ -1,6 +1,6 @@
-// repakxtra: Keep this one (conflicts screen). Turns off the other mods of a conflict group that are on, all or none:
-// when a switch is refused (the game or Repak X is open) the ones already switched go back. The toast's Undo turns them
-// on again.
+// repakxtra: Keep this one (conflicts screen) and crash suspects' Turn off selected. Turns mods off all or none: when a
+// switch is refused (the game or Repak X is open) the ones already switched go back. The toast's Undo turns them on
+// again.
 import { invoke } from '@tauri-apps/api/core'
 import type { useAlert } from '../components/AlertHandler'
 import { displayName, flipMods, modKey } from './loadoutStore'
@@ -27,15 +27,17 @@ async function flipAll(mods: Mod[]) {
   return failed.reason ?? `Could not switch ${failed.map(m => name(m.path)).join(', ')}. Close anything using those files, then try again.`
 }
 
-export async function keepThisOne(d: KeepDeps, keep: string, others: Mod[]) {
-  const off = others.filter(m => m.enabled !== false)
-  if (!off.length) return
-  if (d.isBlocked()) { d.alert.warning(...GAME_RUNNING); return }
+/** Turns these mods off (all or none) and shows `title` with an Undo that turns them on again. False when nothing
+ *  changed (the game is running, or a switch was refused: both are said in a toast). */
+export async function turnOffWithUndo(d: KeepDeps, mods: Mod[], title: string, text: string) {
+  const off = mods.filter(m => m.enabled !== false)
+  if (!off.length) return false
+  if (d.isBlocked()) { d.alert.warning(...GAME_RUNNING); return false }
   const refused = await flipAll(off)
   await d.reload()
-  if (refused) { d.alert.warning('Nothing changed', refused); return }
+  if (refused) { d.alert.warning('Nothing changed', refused); return false }
   const stems = new Set(off.map(m => stem(m.path)))
-  const id = d.alert.success(`Kept ${name(keep)}`, `Turned off ${off.length === 1 ? name(off[0].path) : plural(off.length, 'other mod')}.`, {
+  const id = d.alert.success(title, text, {
     duration: 10000,
     action: {
       label: 'Undo', onClick: async () => {
@@ -51,4 +53,10 @@ export async function keepThisOne(d: KeepDeps, keep: string, others: Mod[]) {
       },
     },
   })
+  return true
+}
+
+export function keepThisOne(d: KeepDeps, keep: string, others: Mod[]) {
+  const off = others.filter(m => m.enabled !== false)
+  return turnOffWithUndo(d, off, `Kept ${name(keep)}`, `Turned off ${off.length === 1 ? name(off[0].path) : plural(off.length, 'other mod')}.`)
 }
