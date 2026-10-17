@@ -230,8 +230,11 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
         return out
       }
       case 'xtra_nexus_sources': return (args?.paths ?? []).map((p: string) => { // same rule as xtra_nexus.rs
-        const m = p.split(/[\\/]/).pop()!.match(/^(.+)_(\d+)_([0-9A-Za-z.-]+)_(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})Z_[0-9A-Za-z]+\.(zip|rar|7z)$/i)
-        return m ? { id: Number(m[2]), version: m[3].replace(/-/g, '.'), uploaded: Date.UTC(+m[4], +m[5] - 1, +m[6], +m[7], +m[8]) / 1000, paks: [m[1]] } : null
+        const file = p.split(/[\\/]/).pop()!
+        const m = file.match(/^(.+)[_ ](\d+)[_ ]([0-9A-Za-z.-]+)[_ ](\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})Z[_ ][0-9A-Za-z]+\.(zip|rar|7z)$/i)
+        if (m) return { id: Number(m[2]), version: m[3].replace(/-/g, '.'), uploaded: Date.UTC(+m[4], +m[5] - 1, +m[6], +m[7], +m[8]) / 1000, paks: [m[1]] }
+        const o = file.match(/^(.+?)-(\d+)-([0-9A-Za-z]+(?:-[0-9A-Za-z]+)*)-(\d{9,11})\.(zip|rar|7z)$/i)
+        return o ? { id: Number(o[2]), version: o[3].replace(/-/g, '.'), uploaded: Number(o[4]), paks: [o[1]] } : null
       })
       // Crash suspects: mods whose path has window.__suspectMatch (part of a name) hold the crashed asset
       case 'xtra_crash_suspects': return (args?.modPaths ?? []).filter((p: string) => mock.__suspectMatch && p.includes(mock.__suspectMatch))

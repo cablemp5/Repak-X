@@ -1,5 +1,5 @@
 //! repakxtra: where a mod came from, read off the archive's name when it is a Nexus Mods download
-//! ("<name>_<mod id>_<version>_<YYYY-MM-DDTHH-MMZ>_<random>.zip"). Nothing is fetched; other names give nothing.
+//! (see parse for its two name formats). Nothing is fetched; other names give nothing.
 
 use regex_lite::Regex;
 use serde::Serialize;
@@ -17,15 +17,28 @@ pub struct NexusSource {
     paks: Vec<String>,
 }
 
-/// Matched from the timestamp backwards: the name part may hold digits and underscores of its own ("BP_9999999_P").
+/// Both of Nexus's download names. The current one, matched from the timestamp backwards (the name part may hold digits
+/// and underscores of its own, "BP_9999999_P"), with underscores or spaces between the parts:
+///   "<name>_<id>_<version>_<YYYY-MM-DDTHH-MMZ>_<random>.zip"  and  "<name> <id> <version> <YYYY-MM-DDTHH-MMZ> <random>.zip"
+/// and the older one, with dashes and Unix seconds: "<name>-<id>-<version>-<seconds>.zip" (version "2-5" is 2.5).
 fn parse(file_name: &str) -> Option<NexusSource> {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    let re = RE.get_or_init(|| {
-        Regex::new(r"(?i)^(.+)_(\d+)_([0-9A-Za-z.\-]+)_(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z)_[0-9A-Za-z]+\.(zip|rar|7z)$").unwrap()
+    static NOW: OnceLock<Regex> = OnceLock::new();
+    static OLD: OnceLock<Regex> = OnceLock::new();
+    let now = NOW.get_or_init(|| {
+        Regex::new(r"(?i)^(.+)[_ ](\d+)[_ ]([0-9A-Za-z.\-]+)[_ ](\d{4}-\d{2}-\d{2}T\d{2}-\d{2}Z)[_ ][0-9A-Za-z]+\.(zip|rar|7z)$").unwrap()
     });
+    // shortcut: the name is matched up to the first "-<digits>-" that fits, so a name ending in "-<number>" reads wrong
+    // (rare in practice); the newer format has no such ambiguity
+    let old = OLD.get_or_init(|| Regex::new(r"(?i)^(.+?)-(\d+)-([0-9A-Za-z]+(?:-[0-9A-Za-z]+)*)-(\d{9,11})\.(zip|rar|7z)$").unwrap());
     let name = file_name.rsplit(['/', '\\']).next().unwrap_or(file_name);
-    let caps = re.captures(name)?;
-    let uploaded = chrono::NaiveDateTime::parse_from_str(&caps[4].to_uppercase(), "%Y-%m-%dT%H-%MZ").ok()?.and_utc().timestamp();
+    let (caps, uploaded) = if let Some(c) = now.captures(name) {
+        let t = chrono::NaiveDateTime::parse_from_str(&c[4].to_uppercase(), "%Y-%m-%dT%H-%MZ").ok()?.and_utc().timestamp();
+        (c, t)
+    } else {
+        let c = old.captures(name)?;
+        let t = c[4].parse().ok()?;
+        (c, t)
+    };
     Some(NexusSource { id: caps[2].parse().ok()?, version: caps[3].replace('-', "."), uploaded, paks: Vec::new() })
 }
 
@@ -88,6 +101,18 @@ mod tests {
         assert_eq!(parse("Pucci_Icon_11083_1_2026-07-22T21-07Z_Qb2JNEtBG.zip"), src(11083, "1", "2026-07-22 21:07"));
         assert_eq!(parse("Pucci_Skin_11083_1_2026-07-19T16-10Z_CNMGVqLMR.zip"), src(11083, "1", "2026-07-19 16:10"));
         assert_eq!(parse(r"C:\Users\x\Downloads\Cool Mod_2940_1-0-2_2026-01-02T03-04Z_abc.rar"), src(2940, "1.0.2", "2026-01-02 03:04"));
+        // the same format with spaces, as some downloads arrive
+        assert_eq!(parse("Mialygosa Magik 1.3.1 12984 5 2026-09-21T17-38Z YLrVJSM1X.zip"), src(12984, "5", "2026-09-21 17:38"));
+    }
+
+    #[test]
+    fn reads_the_older_nexus_names() {
+        let at = |id: u64, version: &str, uploaded: i64| Some(NexusSource { id, version: version.into(), uploaded, paks: Vec::new() });
+        assert_eq!(parse("MAGIK DISCO REVIVIAMP-7488-2-1774550074.zip"), at(7488, "2", 1774550074));
+        assert_eq!(parse("MAGIK GALA JUMPSUIT WITH CHIN-8170-1-1777240756.zip"), at(8170, "1", 1777240756));
+        assert_eq!(parse("Radiant Knight Magik-3485-2-5-1750665034.rar"), at(3485, "2.5", 1750665034));
+        assert_eq!(parse("Some-Mod-v2.zip"), None);
+        assert_eq!(parse("Mod-12-3-1750665034.pak"), None, "not an archive");
     }
 
     #[test]
