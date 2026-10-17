@@ -537,11 +537,10 @@ const ModItem = memo(function ModItem({
                     </div>
                     <button
                         className={`hold-delete ${isDeleteHolding ? 'holding' : ''}`}
-                        onMouseDown={startDeleteHold}
-                        onMouseUp={cancelDeleteHold}
-                        onMouseLeave={cancelDeleteHold}
-                        onTouchStart={startDeleteHold}
-                        onTouchEnd={cancelDeleteHold}
+                        onPointerDown={startDeleteHold} /* repakxtra: pointer events (mouse, pen and touch) in place of mouse + touch */
+                        onPointerUp={cancelDeleteHold}
+                        onPointerLeave={cancelDeleteHold}
+                        onPointerCancel={cancelDeleteHold}
                         aria-label={holdToDelete ? "Hold to delete mod" : "Delete mod"}
                         title={holdToDelete ? "Hold 2s to delete" : "Click to delete"}
                     >

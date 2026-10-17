@@ -4351,9 +4351,10 @@ function App() {
 
                   <button
                     className={`btn-ghost danger bulk-delete ${isDeletingBulk ? 'holding' : ''}`}
-                    onMouseDown={handleBulkDeleteDown}
-                    onMouseUp={handleBulkDeleteUp}
-                    onMouseLeave={handleBulkDeleteUp}
+                    onPointerDown={handleBulkDeleteDown} /* repakxtra: pointer events, so a pen holds too */
+                    onPointerUp={handleBulkDeleteUp}
+                    onPointerLeave={handleBulkDeleteUp}
+                    onPointerCancel={handleBulkDeleteUp}
                     title={holdToDelete ? "Hold 2s to delete selected mods" : "Click to delete selected mods"}
                   >
                     <div className="danger-bg" />

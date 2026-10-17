@@ -2153,3 +2153,21 @@ button.btn-icon, .view-switcher .btn-icon-small, .copy-paths-btn.icon-only { wid
 
 /* Type hint under the type badges in mod details (custom/typeHints.tsx) */
 .type-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }
+
+/* ---------- Hold to delete (the holdToDelete setting): one fill for every hold control (bulk Delete, the Library
+   right-click Delete and Delete Folder, a mod card's delete). Nothing on hover; pressing grows it from the left edge to
+   the right, linear, over the same 2 s as the delete timer; letting go or leaving snaps it back in 150 ms. It is the
+   timer, so it shows with animations off too. Neutral white tint, red only in the right-click menu (cable's call). */
+.btn-ghost.danger, .context-menu-item.danger, .hold-delete { position: relative; overflow: hidden; isolation: isolate; }
+.btn-ghost.danger .danger-bg, .context-menu-item.danger .danger-bg, .hold-delete::after {
+  content: ''; position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important;
+  border-radius: 0 !important; z-index: 0 !important; pointer-events: none;
+  background: rgba(255, 255, 255, 0.14) !important; opacity: 1 !important;
+  transform: scaleX(0) !important; transform-origin: left center !important;
+  transition: transform 150ms ease-out !important; animation: none !important;
+}
+.context-menu-item.danger .danger-bg { background: rgba(242, 85, 90, 0.24) !important; }
+.btn-ghost.danger.holding .danger-bg, .context-menu-item.danger.holding .danger-bg, .hold-delete.holding::after {
+  transform: scaleX(1) !important; transition: transform 2s linear !important;
+}
+.hold-delete svg, .context-menu-item.danger > span { position: relative; z-index: 1; }
