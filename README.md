@@ -1,9 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/brand/wordmark-dark.png">
-    <source media="(prefers-color-scheme: light)" srcset=".github/brand/wordmark-light.png">
-    <img src=".github/brand/wordmark-dark.png" alt="repakxtra" width="560">
-  </picture>
+  <img src=".github/banner.svg" alt="repakxtra" width="560">
 </p>
 
 <p align="center">

@@ -11,7 +11,6 @@ import type { useAlert } from '../components/AlertHandler'
 import { BlenderTrust, DoctorProblems, KitProgressBar } from './SetupPanel'
 import { isKitZip, usePreviewKit } from './previewKit'
 import { OFF_EXT } from './offFiles'
-import Wordmark from './Wordmark'
 import { ShortcutButton, useShortcut } from './shortcut'
 
 type Alert = ReturnType<typeof useAlert>
@@ -121,7 +120,7 @@ export default function FirstRun({ alert, gamePath, onAutoDetect, onBrowse, onAd
         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}>
         <div className="modal-header fr-head">
           <div>
-            <h2 className="fr-welcome">Welcome to <Wordmark height={17} /></h2>
+            <h2>Welcome to repak<span className="title-x">xtra</span></h2>
             <p className="su-sub">Get Marvel Rivals ready for mods. Steps 1 to 3 make mods work; close the game first.</p>
           </div>
           <button className="modal-close" onClick={close} aria-label="Close">×</button>

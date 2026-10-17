@@ -130,7 +130,6 @@ import SettingsPanel from './components/SettingsPanel'
 import CreditsPanel from './components/CreditsPanel'
 import ToolsPanel from './components/ToolsPanel'
 import SharingPanel from './components/SharingPanel'
-import Wordmark from './custom/Wordmark' // repakxtra: the logo image
 import ConflictsPanel from './custom/ConflictsPanel' // repakxtra: in place of Repak X's ClashPanel (grouped, in words)
 import { keepThisOne } from './custom/keepOne' // repakxtra: Keep this one
 import { recordSources, renameSource } from './custom/nexusSource' // repakxtra: Nexus source
@@ -3879,7 +3878,7 @@ function App() {
         >
           <ModularLogo size={50} className="repak-icon" />
           <div className="header-title-group">
-            <h1 className="font-logo"><Wordmark height={22} /></h1>{/* repakxtra: the logo image */}
+            <h1 className="font-logo">repak<span className="title-x">xtra</span></h1>{/* repakxtra */}
             <span className="version">{versionTag(version)}</span>{/* repakxtra */}
           </div>
         </div>
