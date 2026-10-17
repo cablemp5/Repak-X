@@ -2013,6 +2013,7 @@ html[data-motion="off"] .lp-saved { animation: none !important; opacity: 1 !impo
 .cf-mod-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-primary); }
 .cf-mod.is-off .cf-mod-name { color: var(--text-secondary); }
 .cf-priority { flex: none; }
+.cf-keep { flex: none; height: 28px !important; padding: 0 10px !important; font-size: 12px !important; white-space: nowrap; }
 .cf-empty { margin: 0; padding: 28px 0; text-align: center; font-size: 13px; color: var(--text-secondary); }
 .cf-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px !important; border-top: 1px solid var(--panel-border); }
 .cf-modal .btn-primary { height: 32px !important; min-height: 0 !important; padding: 0 18px !important; font-size: 13px !important; width: auto !important; flex: none;

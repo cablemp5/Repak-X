@@ -219,6 +219,7 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       // localStorage 'mock.crash' = '1': the newest crash the setup report names
       case 'xtra_newest_crash': return localStorage.getItem('mock.crash') === '1'
         ? { time: Math.floor(Date.now() / 1000) - 3600, crash_type: 'Access Violation', asset_path: '/Game/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001' } : null
+      case 'xtra_upstream_running': return Boolean(mock.__repakXOpen)
       case 'get_skip_launcher_status':
       case 'check_for_previous_crash': return false
       // localStorage 'mock.clashes': a JSON list of { file_path, mod_paths } to show conflicts (custom/conflicts.ts)
@@ -248,6 +249,7 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       }
       case 'toggle_mod': {
         if (mock.__toggleFail && String(args?.modPath).includes(mock.__toggleFail)) throw 'The file is in use' // window.__toggleFail = part of a path
+        if (mock.__repakXOpen) throw 'Repak X is open too. Close it to change mods in repakxtra: both apps change the same files.' // window.__repakXOpen = true
         const mod = data.mods.find((m: any) => m.path === args?.modPath)
         if (mod) mod.enabled = !mod.enabled
         return mod?.enabled ?? null

@@ -131,6 +131,7 @@ import CreditsPanel from './components/CreditsPanel'
 import ToolsPanel from './components/ToolsPanel'
 import SharingPanel from './components/SharingPanel'
 import ConflictsPanel from './custom/ConflictsPanel' // repakxtra: in place of Repak X's ClashPanel (grouped, in words)
+import { keepThisOne } from './custom/keepOne' // repakxtra: Keep this one
 
 type ModRecord = {
   path: string
@@ -3660,6 +3661,7 @@ function App() {
           characterData={characterData}
           onSetPriority={handleSetPriority}
           onToggleMod={stableToggleMod}
+          onKeep={(keep, others) => keepThisOne({ alert, isBlocked: undoBlocked, reload: loadMods }, keep, others)} /* repakxtra */
           onClose={() => setPanel('clash', false)}
         />
       )}
