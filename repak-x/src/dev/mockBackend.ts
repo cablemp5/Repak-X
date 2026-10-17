@@ -220,6 +220,10 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
       case 'xtra_newest_crash': return localStorage.getItem('mock.crash') === '1'
         ? { time: Math.floor(Date.now() / 1000) - 3600, crash_type: 'Access Violation', asset_path: '/Game/Marvel/Characters/1026/1026001/Meshes/SK_1026_1026001' } : null
       case 'xtra_upstream_running': return Boolean(mock.__repakXOpen)
+      case 'xtra_nexus_sources': return (args?.paths ?? []).map((p: string) => { // same rule as xtra_nexus.rs
+        const m = p.split(/[\\/]/).pop()!.match(/^(.+)_(\d+)_([0-9A-Za-z.-]+)_(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})Z_[0-9A-Za-z]+\.(zip|rar|7z)$/i)
+        return m ? { id: Number(m[2]), version: m[3].replace(/-/g, '.'), uploaded: Date.UTC(+m[4], +m[5] - 1, +m[6], +m[7], +m[8]) / 1000, paks: [m[1]] } : null
+      })
       // Crash suspects: mods whose path has window.__suspectMatch (part of a name) hold the crashed asset
       case 'xtra_crash_suspects': return (args?.modPaths ?? []).filter((p: string) => mock.__suspectMatch && p.includes(mock.__suspectMatch))
       // localStorage 'mock.prevCrash' = '1': a crash from before the app started (its toast at startup)
@@ -246,6 +250,7 @@ if (import.meta.env.DEV && !('__TAURI_INTERNALS__' in window)) {
         for (const m of args?.mods ?? []) {
           const path = `${data.gamePath}\\${normalizeModBaseName(m.customName || m.mod_name)}.pak`
           if (!data.mods.some((x: any) => x.path === path)) data.mods.push({ ...data.mods[0], path, enabled: true, modified_date: Date.now() / 1000 })
+          data.details[path] ??= { ...data.details[data.mods[0].path], mod_name: path.split('\\').pop()?.replace(/\.pak$/, '') } // details open for it
         }
         setTimeout(() => emit('install_complete', null), 300)
         return null

@@ -132,6 +132,7 @@ import ToolsPanel from './components/ToolsPanel'
 import SharingPanel from './components/SharingPanel'
 import ConflictsPanel from './custom/ConflictsPanel' // repakxtra: in place of Repak X's ClashPanel (grouped, in words)
 import { keepThisOne } from './custom/keepOne' // repakxtra: Keep this one
+import { recordSources, renameSource } from './custom/nexusSource' // repakxtra: Nexus source
 import CrashSuspects, { previousCrashes, withSuspects } from './custom/CrashSuspects' // repakxtra: crash suspects
 
 type ModRecord = {
@@ -2742,6 +2743,7 @@ function App() {
     try {
       const newPath = await invoke('rename_mod', { modPath, newName }) as string
       renameModKey(modKey(modPath), modKey(newPath)) // repakxtra: loadouts follow the rename
+      renameSource(modKey(modPath), modKey(newPath)) // repakxtra: so does its Nexus source
       setStatus(`Renamed to "${newName}"`)
       const refreshed = await loadMods()
       if (selectedMod && selectedMod.path === modPath) {
@@ -3386,6 +3388,7 @@ function App() {
         }
 
         await finishInstallLoadout(modsWithSettings, alert) // repakxtra: Save as a loadout
+        await recordSources(modsWithSettings) // repakxtra: Nexus source from the archive name
 
         // Reload in background so alert shows success immediately
         loadMods()

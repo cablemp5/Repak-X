@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { REPAKXTRA_VERSION } from './version'
 import { groupConflicts } from './ConflictsPanel'
 import { plural } from './modName'
+import { sourceOf } from './nexusSource'
 
 type Mod = { path: string; enabled?: boolean; modified_date?: number }
 type Details = { category?: string | null; character_name?: string | null }
@@ -64,7 +65,7 @@ const settled = <T,>(p: Promise<T>) => p.then(v => v, () => undefined)
 const BYPASS: Record<string, string> = { installed: 'installed', disabled: 'off', partial: 'incomplete', other: 'a different version', missing: 'not installed' }
 
 /** Reads everything the report needs; whatever cannot be read says "unknown". */
-export async function gatherReport(extra?: (m: Mod) => string | undefined): Promise<string> {
+export async function gatherReport(): Promise<string> {
   const src = reportSource.get?.() ?? { mods: [], modDetails: {}, launcherType: '', gamePath: '' }
   const [repakx, bypass, galacta, sigeon, clashes, crash] = await Promise.all([
     settled(invoke<string>('get_app_version')),
@@ -87,7 +88,7 @@ export async function gatherReport(extra?: (m: Mod) => string | undefined): Prom
       type: d?.category || 'Unknown',
       hero: d?.character_name || '',
       date: m.modified_date ? day(new Date(m.modified_date * 1000)) : '-',
-      extra: extra?.(m),
+      extra: sourceOf(m.path) ? `Nexus ${sourceOf(m.path)!.id}` : undefined,
     }
   }).sort((a, b) => a.name.localeCompare(b.name))
   const crashText = crash === undefined ? 'unknown' : !crash ? 'none found' : [

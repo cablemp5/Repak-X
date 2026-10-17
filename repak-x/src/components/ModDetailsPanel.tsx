@@ -11,6 +11,7 @@ import { FALLBACK_HERO_ID, resolveHeroImage, useHeroImages } from '../utils/hero
 import './ModDetailsPanel.css'
 import { ModPreview } from '../custom/previews' // repakxtra
 import { ModName } from '../custom/modName' // repakxtra
+import { NexusSourceLine } from '../custom/nexusSource' // repakxtra
 
 type CharacterDataEntry = {
   name: string
@@ -315,6 +316,7 @@ export default function ModDetailsPanel({ mod, initialDetails, onClose, characte
                   <span className="detail-value">{mod.folder_id}</span>
                 </div>
               )}
+              <NexusSourceLine path={mod.path} />{/* repakxtra: Nexus source */}
             </div>
 
             {mod.custom_tags && mod.custom_tags.length > 0 && (
