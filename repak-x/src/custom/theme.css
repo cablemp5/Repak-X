@@ -2114,3 +2114,7 @@ button.btn-icon, .view-switcher .btn-icon-small, .copy-paths-btn.icon-only { wid
 .install-mod-card .imp-folder-item, .install-mod-card .imp-folder-item .folder-name { font-size: 13px !important; font-weight: 400 !important; }
 .install-mod-card .imp-folder-item.selected .folder-name { font-weight: 500 !important; }
 .install-actions .install-loadout .repakx-checkbox-label, .install-actions .install-loadout .repakx-checkbox-label span { font-weight: 400 !important; }
+/* Add to loadout: the + right after its label (an empty chip list no longer holds a gap between them) */
+.install-mod-card__tags .install-mod-card__row { gap: 4px !important; }
+.install-mod-card__tags .tags-list:empty { display: none; }
+.install-mod-card__tags .tags-list:not(:empty) { margin-left: 4px; }   /* picked loadouts keep a little room from the label */
