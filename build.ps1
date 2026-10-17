@@ -74,10 +74,13 @@ if (-not $Test -and -not $Release) {
 }
 Write-Host "Built: $out\repakxtra.exe" -ForegroundColor Green
 if ($Release) {
-    # tar (bsdtar, in Windows 10+) writes forward-slash entries; the in-app updater unzips this over the app folder
+    # Windows' own tar (bsdtar, Windows 10+) writes a zip with forward-slash entries; the in-app updater unzips it over
+    # the app folder. By full path: from Git Bash, PATH finds GNU tar first, which ignores -a and writes a tar named .zip
     $zip = "dist\repak-xtra-v$ver-windows.zip"
     Remove-Item $zip -ErrorAction SilentlyContinue
-    Run { tar.exe -a -cf $zip -C $out repakxtra.exe UAssetTool.dll data }
+    Run { & "$env:SystemRoot\System32\tar.exe" -a -cf $zip -C $out repakxtra.exe UAssetTool.dll data }
+    $magic = [System.IO.File]::ReadAllBytes((Resolve-Path $zip))[0..1]
+    if ($magic[0] -ne 0x50 -or $magic[1] -ne 0x4B) { throw "$zip is not a zip: the in-app updater could not unpack it." }
     Write-Host "Packed: $zip (SHA-256 $((Get-FileHash $zip).Hash.ToLower()))" -ForegroundColor Green
     # On the clipboard as one line: a wrapped terminal line copied by hand can pick up a line break and fail to parse
     $publish = "gh release create v$ver $zip -R cablemp5/repak-xtra --target main --prerelease --title `"repak-xtra $ver`" --generate-notes"
