@@ -2144,3 +2144,6 @@ button.btn-icon, .view-switcher .btn-icon-small, .copy-paths-btn.icon-only { wid
 .nx-source { gap: 12px; }
 .nx-source .detail-value { display: inline-flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 2px 10px; text-align: right; }
 .nx-open { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Type hint under the type badges in mod details (custom/typeHints.tsx) */
+.type-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.5; color: var(--text-secondary); text-wrap: pretty; }

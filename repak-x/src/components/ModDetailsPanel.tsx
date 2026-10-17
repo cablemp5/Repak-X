@@ -12,6 +12,7 @@ import './ModDetailsPanel.css'
 import { ModPreview } from '../custom/previews' // repakxtra
 import { ModName } from '../custom/modName' // repakxtra
 import { NexusSourceLine } from '../custom/nexusSource' // repakxtra
+import { TypeHint, useTypeHint } from '../custom/typeHints' // repakxtra
 
 type CharacterDataEntry = {
   name: string
@@ -54,6 +55,7 @@ export default function ModDetailsPanel({ mod, initialDetails, onClose, characte
   // Repaint when the synced hero portraits finish loading.
   useHeroImages()
   const [details, setDetails] = useState<ModDetailsData | null>(initialDetails || null)
+  const typeHint = useTypeHint(details?.category) // repakxtra: type badge tooltip
   const [loading, setLoading] = useState(!initialDetails)
   const [error, setError] = useState<string | null>(null)
 
@@ -235,7 +237,7 @@ export default function ModDetailsPanel({ mod, initialDetails, onClose, characte
                     </div>
                   </Tooltip>
                 )}
-                <div className={`category-badge ${details.category ? details.category.toLowerCase().replace(/\s+/g, '-') + '-badge' : ''}`} title="Mod Type">
+                <div className={`category-badge ${details.category ? details.category.toLowerCase().replace(/\s+/g, '-') + '-badge' : ''}`} title={typeHint ?? 'Mod Type'}>
                   {details.category || 'Unknown'}
                 </div>
                 {/* Render additional categories (Blueprint, Text) */}
@@ -249,6 +251,7 @@ export default function ModDetailsPanel({ mod, initialDetails, onClose, characte
                   </div>
                 ))}
               </div>
+              <TypeHint category={details.category} />{/* repakxtra */}
             </div>
 
             <div className="detail-section">
